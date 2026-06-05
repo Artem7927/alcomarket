@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ALCOMARKET 1 — Лента магазина</title>
+<!--
+  ============================================================
+  ALCOMARKET 1 — Лента магазина (Reels-style video feed)
+  ------------------------------------------------------------
+  Это самостоятельный файл: можно залить на GitHub Pages / открыть локально.
+  Чтобы встроить в index.html:
+    1. <style> — в свою таблицу стилей (или оставь как есть).
+    2. <section class="am-feed"> + обе шторки — туда, где должна быть лента.
+    3. <script> — в конец body.
+    4. Заполни CONFIG ниже: ссылки, лого, видео, адрес бэкенда, shareUrl.
+
+  ВИДЕО: положи свои mp4 на GitHub/Railway/CDN и впиши URL в массив VIDEOS.
+  В этом превью стоят тестовые ролики Google — замени на свои.
+
+  ЛАЙКИ/КОММЕНТЫ: по умолчанию работают "в памяти" (для теста).
+  Чтобы сделать их настоящими (общими для всех) — поставь USE_BACKEND = true
+  и подними Flask-эндпоинты.
+  ============================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --am-bg:        #0e0c0b;
+    --am-card:      #1b1816;
+    --am-card-2:    #242019;
+    --am-red:       #c8102e;
+    --am-red-glow:  rgba(200,16,46,.55);
+    --am-gold:      #e8b04b;
+    --am-gold-soft: #f3d089;
+    --am-green:     #25d366;
+    --am-ig1:       #f58529;
+    --am-ig2:       #dd2a7b;
+    --am-ig3:       #8134af;
+    --am-text:      #f4efe9;
+    --am-muted:     #9a9088;
+  }
+
+  /* фон страницы (для самостоятельного файла; при встройке можно убрать) */
+  html, body { margin: 0; background: var(--am-bg); }
+
+  .am-feed * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .am-feed {
+    font-family: 'Manrope', sans-serif;
+    color: var(--am-text);
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(200,16,46,.10), transparent 60%),
+      var(--am-bg);
+    padding: 16px 16px 56px;
+    min-height: 100vh;
+  }
+
+  /* ---- Reels track ---- */
+  .am-reels {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 26px;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .am-reel {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    max-height: 78vh;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #000;
+    box-shadow:
+      0 18px 50px rgba(0,0,0,.6),
+      0 0 0 1px rgba(232,176,75,.18),
+      0 0 30px -8px var(--am-red-glow);
+  }
+  .am-reel video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* затемнение сверху и снизу для читаемости оверлеев */
+  .am-reel__shade {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(to bottom, rgba(0,0,0,.55) 0%, transparent 22%),
+      linear-gradient(to top, rgba(0,0,0,.72) 0%, transparent 38%);
+    pointer-events: none;
+  }
+
+  /* ---- Логотип магазина (верх) ---- */
+  .am-reel__brand {
+    position: absolute; top: 14px; left: 14px;
+    display: flex; align-items: center; gap: 10px;
+    z-index: 3;
+  }
+  .am-logo {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--am-red);
+    display: grid; place-items: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px; color: #fff;
+    border: 2px solid var(--am-gold);
+    box-shadow: 0 0 16px -2px var(--am-red-glow);
+    overflow: hidden;
+    flex: none;
+  }
+  .am-logo img { width: 100%; height: 100%; object-fit: cover; }
+  /* когда задан реальный логотип-картинка: без красной заливки, тонкое золотое кольцо */
+  .am-logo--img { background: transparent; border: 2px solid rgba(232,176,75,.55); }
+  .am-brand__name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 19px; letter-spacing: 1px; line-height: 1;
+  }
+  .am-brand__tag { font-size: 11px; color: var(--am-gold-soft); letter-spacing: .5px; }
+
+  /* ---- Правая панель действий (TikTok-style) ---- */
+  .am-actions {
+    position: absolute; right: 12px; bottom: 92px;
+    display: flex; flex-direction: column; gap: 18px;
+    z-index: 3;
+  }
+  .am-act {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer; color: #fff;
+    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700;
+  }
+  .am-act__ic {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(20,18,16,.55);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.12);
+    transition: transform .15s ease, background .2s ease;
+  }
+  .am-act:active .am-act__ic { transform: scale(.9); }
+  .am-act svg { width: 24px; height: 24px; }
+
+  .am-act--like.is-liked .am-act__ic { background: var(--am-red); border-color: var(--am-red); }
+  .am-act--like.is-liked svg { fill: #fff; }
+  .am-act--like.bump .am-act__ic { animation: amBump .35s ease; }
+  @keyframes amBump { 0%{transform:scale(1)} 40%{transform:scale(1.3)} 100%{transform:scale(1)} }
+
+  /* ---- Летящие сердечки при лайке ---- */
+  .am-act--like { position: relative; }
+  .am-heart-fly {
+    position: absolute; left: 50%; top: 6px;
+    font-size: 20px; line-height: 1;
+    pointer-events: none; will-change: transform, opacity;
+    transform: translate(-50%, 0) scale(.4);
+    opacity: 0;
+    animation: amHeartFly var(--dur, 1s) ease-out forwards;
+    filter: drop-shadow(0 0 6px var(--am-red-glow));
+  }
+  @keyframes amHeartFly {
+    0%   { transform: translate(-50%, 0) scale(.4) rotate(0deg);              opacity: 0; }
+    15%  { opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--dx, 0px)), -130px) scale(var(--sc, 1.1)) rotate(var(--rot, 0deg)); opacity: 0; }
+  }
+
+  .am-act--ig .am-act__ic {
+    background: linear-gradient(45deg, var(--am-ig1), var(--am-ig2) 50%, var(--am-ig3));
+    border-color: transparent;
+  }
+  .am-act--wa .am-act__ic { background: var(--am-green); border-color: transparent; }
+
+  /* ---- Подпись внизу ---- */
+  .am-reel__caption {
+    position: absolute; left: 14px; right: 78px; bottom: 16px;
+    z-index: 3;
+  }
+  .am-reel__caption p { font-size: 14px; line-height: 1.35; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+
+  /* ---- Мут/звук ---- */
+  .am-mute {
+    position: absolute; top: 14px; right: 14px; z-index: 4;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(20,18,16,.55); backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.12);
+    display: grid; place-items: center; cursor: pointer; color:#fff;
+  }
+  .am-mute svg { width: 18px; height: 18px; }
+
+  /* ---- Панель комментариев ---- */
+  .am-sheet-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55);
+    opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: 90;
+  }
+  .am-sheet-bg.open { opacity: 1; pointer-events: auto; }
+  .am-sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 91;
+    max-width: 460px; margin: 0 auto;
+    background: var(--am-card);
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+    max-height: 72vh; display: flex; flex-direction: column;
+    border-top: 1px solid rgba(232,176,75,.2);
+  }
+  .am-sheet.open { transform: translateY(0); }
+  .am-sheet__head {
+    padding: 16px; text-align: center; font-weight: 800;
+    border-bottom: 1px solid rgba(255,255,255,.06); position: relative;
+  }
+  .am-sheet__close {
+    position:absolute; right:14px; top:12px; background:none; border:none;
+    color: var(--am-muted); font-size: 22px; cursor: pointer;
+  }
+  .am-sheet__list { padding: 8px 16px; overflow-y: auto; flex: 1; }
+  .am-comment { display: flex; gap: 10px; padding: 10px 0; }
+  .am-comment__av {
+    width: 34px; height: 34px; border-radius: 50%; flex: none;
+    background: var(--am-card-2); display: grid; place-items: center;
+    font-weight: 800; color: var(--am-gold);
+  }
+  .am-comment__body { flex: 1; }
+  .am-comment__name { font-weight: 700; font-size: 13px; }
+  .am-comment__text { font-size: 14px; color: #ddd2c7; margin-top: 2px; }
+  .am-sheet__empty { text-align:center; color: var(--am-muted); padding: 30px 0; font-size: 14px; }
+
+  /* кнопка "Ответить" под комментом */
+  .am-comment__reply {
+    background: none; border: none; color: var(--am-muted);
+    font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+    padding: 4px 0 0;
+  }
+  .am-comment__reply:active { color: var(--am-gold); }
+
+  /* вложенные ответы (один уровень, как в TikTok) */
+  .am-replies { margin-top: 6px; padding-left: 8px; border-left: 1px solid rgba(255,255,255,.08); }
+  .am-comment--reply { padding: 6px 0; }
+  .am-comment__av--sm { width: 26px; height: 26px; font-size: 12px; }
+
+  /* чип "Ответ @имя" над полем ввода */
+  .am-sheet__reply {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 8px 16px; font-size: 13px; color: var(--am-muted);
+    background: var(--am-card-2); border-top: 1px solid rgba(255,255,255,.06);
+  }
+  .am-sheet__reply[hidden] { display: none; }
+  .am-sheet__reply b { color: var(--am-gold); }
+  .am-sheet__reply button { background: none; border: none; color: var(--am-muted); font-size: 18px; cursor: pointer; line-height: 1; }
+
+  /* поле ввода в стиле TikTok (иконка комента + инпут + отправка) */
+  .am-sheet__form { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,.06); }
+  .am-sheet__formic { width: 30px; height: 30px; flex: none; display: grid; place-items: center; color: var(--am-gold); }
+  .am-sheet__formic svg { width: 22px; height: 22px; }
+  .am-sheet__form input {
+    flex: 1; background: var(--am-card-2); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 999px; padding: 11px 16px; color: #fff; font-family: inherit; font-size: 14px;
+  }
+  .am-sheet__form input::placeholder { color: var(--am-muted); }
+  .am-sheet__form button {
+    background: var(--am-gold); color: #1a1410; border: none; border-radius: 999px;
+    padding: 0 18px; height: 40px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: 18px;
+  }
+
+  /* IG-ссылка вместо комментов, если включён режим "комменты в инсте" */
+  .am-ig-note { text-align:center; padding: 30px 20px; color: var(--am-muted); font-size: 14px; }
+  .am-ig-note a { color: var(--am-gold); font-weight: 700; text-decoration: none; }
+
+  /* тост ("ссылка скопирована") */
+  .am-toast {
+    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px);
+    background: var(--am-card-2); color: var(--am-text);
+    border: 1px solid rgba(232,176,75,.3); border-radius: 12px;
+    padding: 11px 20px; font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 700;
+    opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 9000;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  }
+  .am-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<section class="am-feed">
+  <div class="am-reels" id="amReels"><!-- видео вставит JS --></div>
+</section>
+
+<!-- Шторка комментариев -->
+<div class="am-sheet-bg" id="amSheetBg"></div>
+<div class="am-sheet" id="amSheet">
+  <div class="am-sheet__head">
+    Комментарии
+    <button class="am-sheet__close" id="amSheetClose">×</button>
+  </div>
+  <div class="am-sheet__list" id="amSheetList"></div>
+
+  <!-- чип "отвечаешь на …" -->
+  <div class="am-sheet__reply" id="amReplyChip" hidden>
+    <span id="amReplyText"></span>
+    <button id="amReplyCancel" type="button" aria-label="Отменить ответ">×</button>
+  </div>
+
+  <div class="am-sheet__form" id="amSheetForm">
+    <span class="am-sheet__formic" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 2.1 1 4 2.8 5.4L4 21l4.8-1.3c1 .2 2.1.3 3.2.3 5.5 0 10-3.6 10-8s-4.5-9-10-9z"/></svg>
+    </span>
+    <input id="amCmtInput" type="text" placeholder="Добавить комментарий…" maxlength="200">
+    <button id="amCmtSend" type="button">→</button>
+  </div>
+</div>
+
+
+<script>
+(function () {
+  // ================= CONFIG — НАСТРОЙ ЗДЕСЬ =================
+  const CONFIG = {
+    storeName:  "ALCOMARKET 1",
+    storeTag:   "Экибастуз",
+    logoUrl:    "https://raw.githubusercontent.com/Artem7927/alcomarket/main/icon-512.png", // свой логотип; "" -> покажет "1"
+    instagram:  "https://instagram.com/alkomarket_1ekb",
+    whatsapp:   "https://wa.me/77786723500",
+    // Ссылка на витрину магазина (GitHub Pages). Кнопка "Поделиться" шлёт её + #id видео.
+    // ПРОВЕРЬ адрес под свой репозиторий.
+    shareUrl:   "https://artem7927.github.io/alcomarket/",
+    // Бэкенд для лайков/комментов. false = всё в памяти (для теста).
+    USE_BACKEND: false,
+    BACKEND_URL: "https://alcodelivery-db-production.up.railway.app",
+    // "instagram" = комменты заменяются ссылкой в инсту (без модерации),
+    // "native"    = свои комментарии прямо в ленте.
+    COMMENT_MODE: "native"
+  };
+
+  // Твои видео. Замени src на свои mp4. poster — превью-картинка (необязательно).
+  const VIDEOS = [
+    { id: "v1", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+      caption: "🔥 Дарим 10 литров каждое воскресенье! Покупка от 7000 ₸" },
+    { id: "v2", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+      caption: "🍷 Большой выбор. Лучшие цены в Экибастузе" },
+    { id: "v3", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      caption: "🎁 5 победителей каждую неделю — по 2 литра!" },
+  ];
+  // ========================================================
+
+  // локальное состояние (используется когда USE_BACKEND = false)
+  const mem = {};
+  VIDEOS.forEach(v => mem[v.id] = { likes: Math.floor(Math.random()*120)+20, liked:false, comments: [] });
+  let _cid = 0;
+  const newId = () => 'c' + (++_cid) + Date.now().toString(36);
+
+  const reels = document.getElementById('amReels');
+  const sheet = document.getElementById('amSheet');
+  const sheetBg = document.getElementById('amSheetBg');
+  const sheetList = document.getElementById('amSheetList');
+  const sheetForm = document.getElementById('amSheetForm');
+  const cmtInput = document.getElementById('amCmtInput');
+  let activeVideoId = null;
+
+  // ответ: на какой коммент отвечаем
+  let replyTo = null; // { cid, name }
+  const replyChip   = document.getElementById('amReplyChip');
+  const replyTextEl = document.getElementById('amReplyText');
+
+  const ICONS = {
+    heart: '<svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 21s-7.5-4.6-10-9.5C.6 8.3 2.3 5 5.5 5 8 5 9.4 6.7 12 9c2.6-2.3 4-4 6.5-4 3.2 0 4.9 3.3 3.5 6.5C19.5 16.4 12 21 12 21z"/></svg>',
+    comment: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 2.1 1 4 2.8 5.4L4 21l4.8-1.3c1 .2 2.1.3 3.2.3 5.5 0 10-3.6 10-8s-4.5-9-10-9z"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>',
+    ig: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.2c3.2 0 3.6 0 4.9.07 3.3.15 4.8 1.7 4.95 4.95.06 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.15 3.2-1.65 4.8-4.95 4.95-1.3.06-1.7.07-4.9.07s-3.6 0-4.9-.07c-3.3-.15-4.8-1.7-4.95-4.95C2.09 15.6 2.08 15.2 2.08 12s0-3.6.07-4.9C2.3 3.9 3.8 2.3 7.1 2.2 8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.1 0-3.5 0-4.7.07-2.4.1-3.3 1.05-3.4 3.4C3.8 8.7 3.8 9.1 3.8 12s0 3.3.07 4.5c.1 2.35 1 3.3 3.4 3.4 1.2.07 1.6.07 4.7.07s3.5 0 4.7-.07c2.4-.1 3.3-1.05 3.4-3.4.07-1.2.07-1.6.07-4.5s0-3.3-.07-4.5c-.1-2.35-1-3.3-3.4-3.4C15.5 4 15.1 4 12 4zm0 3.1a4.9 4.9 0 100 9.8 4.9 4.9 0 000-9.8zm0 8a3.1 3.1 0 110-6.2 3.1 3.1 0 010 6.2zm5.1-8.2a1.15 1.15 0 100 2.3 1.15 1.15 0 000-2.3z"/></svg>',
+    wa: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.27-.1-.46-.15-.65.15s-.75.94-.92 1.13c-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.4-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3 0-.46.13-.6.13-.13.3-.34.45-.5.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.57-.48-.49-.65-.5h-.56c-.2 0-.5.07-.77.37s-1.02 1-1.02 2.42 1.05 2.8 1.2 3c.15.2 2.05 3.13 4.97 4.4.69.3 1.23.48 1.65.6.7.22 1.33.19 1.83.12.56-.08 1.7-.7 1.95-1.36.24-.67.24-1.24.17-1.36-.07-.12-.27-.2-.56-.34zM12 2.2C6.6 2.2 2.2 6.6 2.2 12c0 1.7.45 3.3 1.23 4.7L2 22l5.4-1.4A9.7 9.7 0 0012 21.8c5.4 0 9.8-4.4 9.8-9.8S17.4 2.2 12 2.2zm0 17.8a8 8 0 01-4.06-1.1l-.3-.18-3.2.84.85-3.12-.2-.32A8 8 0 1112 20z"/></svg>',
+    soundOn: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4z"/></svg>',
+    soundOff:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm16 .4L17.6 8 16 9.6 14.4 8 13 9.4 14.6 11 13 12.6 14.4 14 16 12.4 17.6 14 19 12.6 17.4 11z"/></svg>',
+  };
+
+  function logoHtml() {
+    return CONFIG.logoUrl
+      ? `<div class="am-logo am-logo--img"><img src="${CONFIG.logoUrl}" alt=""></div>`
+      : `<div class="am-logo">1</div>`;
+  }
+
+  // создаёт пузырьки-сердечки над кнопкой лайка
+  function spawnHearts(btn) {
+    const n = 6 + Math.floor(Math.random() * 4); // 6–9 штук
+    for (let i = 0; i < n; i++) {
+      const h = document.createElement('span');
+      h.className = 'am-heart-fly';
+      h.textContent = '❤️';
+      h.style.setProperty('--dx',  (Math.random() * 80 - 40).toFixed(0) + 'px');
+      h.style.setProperty('--sc',  (0.7 + Math.random() * 0.8).toFixed(2));
+      h.style.setProperty('--rot', (Math.random() * 60 - 30).toFixed(0) + 'deg');
+      h.style.setProperty('--dur', (0.8 + Math.random() * 0.7).toFixed(2) + 's');
+      h.style.fontSize = (14 + Math.random() * 12).toFixed(0) + 'px';
+      btn.appendChild(h);
+      setTimeout(() => h.remove(), 1600);
+    }
+  }
+
+  function reelHtml(v) {
+    const s = mem[v.id];
+    return `
+    <article class="am-reel" data-id="${v.id}">
+      <video src="${v.src}" loop muted playsinline preload="metadata"></video>
+      <div class="am-reel__shade"></div>
+
+      <button class="am-mute" data-mute>${ICONS.soundOff}</button>
+
+      <div class="am-reel__brand">
+        ${logoHtml()}
+        <div>
+          <div class="am-brand__name">${CONFIG.storeName}</div>
+          <div class="am-brand__tag">${CONFIG.storeTag}</div>
+        </div>
+      </div>
+
+      <div class="am-actions">
+        <button class="am-act am-act--like" data-like>
+          <span class="am-act__ic">${ICONS.heart}</span>
+          <span data-likecount>${s.likes}</span>
+        </button>
+        <button class="am-act am-act--cmt" data-comment>
+          <span class="am-act__ic">${ICONS.comment}</span>
+          <span data-cmtcount>${s.comments.length}</span>
+        </button>
+        <button class="am-act am-act--share" data-share>
+          <span class="am-act__ic">${ICONS.share}</span>
+        </button>
+        <a class="am-act am-act--ig" href="${CONFIG.instagram}" target="_blank" rel="noopener">
+          <span class="am-act__ic">${ICONS.ig}</span>
+        </a>
+        <a class="am-act am-act--wa" href="${CONFIG.whatsapp}" target="_blank" rel="noopener">
+          <span class="am-act__ic">${ICONS.wa}</span>
+        </a>
+      </div>
+
+      <div class="am-reel__caption"><p>${v.caption}</p></div>
+    </article>`;
+  }
+
+  reels.innerHTML = VIDEOS.map(reelHtml).join('');
+
+  // если открыли по ссылке вида .../#v2 — проматываем к этому ролику
+  (function jumpToHash() {
+    const h = (location.hash || '').replace('#', '');
+    if (!h) return;
+    const target = reels.querySelector(`.am-reel[data-id="${h}"]`);
+    if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 250);
+  })();
+
+  // ---- автоплей видимого видео ----
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      const vid = e.target.querySelector('video');
+      if (e.isIntersecting && e.intersectionRatio > 0.6) vid.play().catch(()=>{});
+      else vid.pause();
+    });
+  }, { threshold: [0, 0.6, 1] });
+  reels.querySelectorAll('.am-reel').forEach(r => io.observe(r));
+
+  // ---- клики ----
+  reels.addEventListener('click', async (e) => {
+    const reel = e.target.closest('.am-reel');
+    if (!reel) return;
+    const id = reel.dataset.id;
+
+    if (e.target.closest('[data-mute]')) {
+      const v = reel.querySelector('video');
+      v.muted = !v.muted;
+      e.target.closest('[data-mute]').innerHTML = v.muted ? ICONS.soundOff : ICONS.soundOn;
+      return;
+    }
+    if (e.target.closest('[data-like]')) {
+      const btn = e.target.closest('[data-like]');
+      await toggleLike(id, btn);
+      return;
+    }
+    if (e.target.closest('[data-comment]')) {
+      openComments(id);
+      return;
+    }
+    if (e.target.closest('[data-share]')) {
+      shareVideo(id);
+      return;
+    }
+  });
+
+  // ---- ПОДЕЛИТЬСЯ ----
+  async function shareVideo(id) {
+    const base = CONFIG.shareUrl || location.href.split('#')[0];
+    const url  = base + '#' + id;
+    const data = { title: CONFIG.storeName, text: `${CONFIG.storeName} — смотри в ленте 🍷`, url };
+    if (navigator.share) {                       // нативное меню "Поделиться" на телефонах
+      try { await navigator.share(data); return; }
+      catch (err) { if (err && err.name === 'AbortError') return; }
+    }
+    try {                                        // запасной вариант — копируем ссылку
+      await navigator.clipboard.writeText(url);
+      showToast('Ссылка скопирована');
+    } catch (e) { prompt('Скопируйте ссылку:', url); }
+  }
+
+  // тост
+  let toastTimer = null;
+  function showToast(msg) {
+    let t = document.getElementById('amToast');
+    if (!t) { t = document.createElement('div'); t.id = 'amToast'; t.className = 'am-toast'; document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  // ---- ЛАЙКИ ----
+  async function toggleLike(id, btn) {
+    btn.classList.add('bump');
+    setTimeout(()=>btn.classList.remove('bump'), 350);
+    const countEl = btn.querySelector('[data-likecount]');
+
+    if (CONFIG.USE_BACKEND) {
+      try {
+        const r = await fetch(`${CONFIG.BACKEND_URL}/feed/like/${id}`, { method: 'POST' });
+        const d = await r.json();              // ожидаем {likes: 123, liked: true}
+        countEl.textContent = d.likes;
+        btn.classList.toggle('is-liked', d.liked);
+        if (d.liked) spawnHearts(btn);
+      } catch (err) { console.error(err); }
+    } else {
+      const s = mem[id];
+      s.liked = !s.liked;
+      s.likes += s.liked ? 1 : -1;
+      countEl.textContent = s.likes;
+      btn.classList.toggle('is-liked', s.liked);
+      if (s.liked) spawnHearts(btn);
+    }
+  }
+
+  // ---- КОММЕНТАРИИ ----
+  function openComments(id) {
+    activeVideoId = id;
+    cancelReply();
+
+    if (CONFIG.COMMENT_MODE === 'instagram') {
+      sheetForm.style.display = 'none';
+      sheetList.innerHTML = `<div class="am-ig-note">
+        Комментарии и отзывы — в нашем Instagram.<br><br>
+        <a href="${CONFIG.instagram}" target="_blank" rel="noopener">Открыть в Instagram →</a>
+      </div>`;
+    } else {
+      sheetForm.style.display = 'flex';
+      renderComments(id);
+    }
+    sheet.classList.add('open');
+    sheetBg.classList.add('open');
+  }
+
+  function closeComments() {
+    sheet.classList.remove('open');
+    sheetBg.classList.remove('open');
+    cancelReply();
+  }
+  sheetBg.addEventListener('click', closeComments);
+  document.getElementById('amSheetClose').addEventListener('click', closeComments);
+
+  // --- ответы ---
+  function setReply(cid, name) {
+    replyTo = { cid, name };
+    replyTextEl.innerHTML = `Ответ <b>@${escapeHtml(name)}</b>`;
+    replyChip.hidden = false;
+    cmtInput.focus();
+  }
+  function cancelReply() { replyTo = null; if (replyChip) replyChip.hidden = true; }
+  document.getElementById('amReplyCancel').addEventListener('click', cancelReply);
+
+  function repliesHtml(c) {
+    if (!c.replies || !c.replies.length) return '';
+    return `<div class="am-replies">` + c.replies.map(r => `
+      <div class="am-comment am-comment--reply">
+        <div class="am-comment__av am-comment__av--sm">${(r.name||'A')[0].toUpperCase()}</div>
+        <div class="am-comment__body">
+          <div class="am-comment__name">${escapeHtml(r.name||'Гость')}</div>
+          <div class="am-comment__text">${escapeHtml(r.text)}</div>
+        </div>
+      </div>`).join('') + `</div>`;
+  }
+
+  function renderComments(id) {
+    const list = mem[id].comments;
+    if (!list.length) {
+      sheetList.innerHTML = `<div class="am-sheet__empty">Пока нет комментариев. Будь первым!</div>`;
+      return;
+    }
+    sheetList.innerHTML = list.map(c => `
+      <div class="am-comment" data-cid="${c.id}">
+        <div class="am-comment__av">${(c.name||'A')[0].toUpperCase()}</div>
+        <div class="am-comment__body">
+          <div class="am-comment__name">${escapeHtml(c.name||'Гость')}</div>
+          <div class="am-comment__text">${escapeHtml(c.text)}</div>
+          <button class="am-comment__reply" data-reply="${c.id}" data-name="${escapeHtml(c.name||'Гость')}">Ответить</button>
+          ${repliesHtml(c)}
+        </div>
+      </div>`).join('');
+    sheetList.scrollTop = sheetList.scrollHeight;
+  }
+
+  // клик по "Ответить"
+  sheetList.addEventListener('click', e => {
+    const r = e.target.closest('[data-reply]');
+    if (r) setReply(r.dataset.reply, r.dataset.name);
+  });
+
+  document.getElementById('amCmtSend').addEventListener('click', sendComment);
+  cmtInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendComment(); });
+
+  function cmtTotal(id) {
+    return mem[id].comments.reduce((n, c) => n + 1 + (c.replies ? c.replies.length : 0), 0);
+  }
+  function updateCmtCount(id) {
+    const el = reels.querySelector(`.am-reel[data-id="${id}"] [data-cmtcount]`);
+    if (el) el.textContent = cmtTotal(id);
+  }
+
+  async function sendComment() {
+    const text = cmtInput.value.trim();
+    if (!text || !activeVideoId) return;
+    cmtInput.value = '';
+    const parentId = replyTo ? replyTo.cid : null;
+
+    if (CONFIG.USE_BACKEND) {
+      try {
+        await fetch(`${CONFIG.BACKEND_URL}/feed/comment/${activeVideoId}`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ text, name: 'Гость', parentId })   // бэк должен принять parentId
+        });
+        const r = await fetch(`${CONFIG.BACKEND_URL}/feed/comments/${activeVideoId}`);
+        mem[activeVideoId].comments = await r.json();
+      } catch (err) { console.error(err); }
+    } else {
+      const store = mem[activeVideoId].comments;
+      if (parentId) {
+        const parent = store.find(c => c.id === parentId);
+        if (parent) { if (!parent.replies) parent.replies = []; parent.replies.push({ name: 'Гость', text }); }
+      } else {
+        store.push({ id: newId(), name: 'Гость', text, replies: [] });
+      }
+    }
+    cancelReply();
+    renderComments(activeVideoId);
+    updateCmtCount(activeVideoId);
+  }
+
+  function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+})();
+</script>
+</body>
+</html>
