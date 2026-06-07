@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AlcoMarket — Кабинет магазина</title>
+  <link rel="manifest" href="./cabinet.webmanifest">
+<meta name="theme-color" content="#0E0E0E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Кабинет">
+<link rel="apple-touch-icon" href="./cabinet-icon-192.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
   :root {
@@ -717,6 +724,15 @@ function showTab(name, el) {
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function showLoading(v) { document.getElementById('loadingBar').style.display = v?'block':'none'; }
+</script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./cabinet-sw.js')
+        .then(reg => console.log('SW кабинета:', reg.scope))
+        .catch(err => console.warn('SW не зарегистрировался:', err));
+    });
+  }
 </script>
 </body>
 </html>
