@@ -7,7 +7,7 @@
 //  иначе старый SW застрянет в кэше (как с видео).
 // ============================================================
 
-const CACHE_VERSION = 'cab-v1';
+const CACHE_VERSION = 'cab-v2';
 
 // — Установка: активируем новый SW сразу, без ожидания —
 self.addEventListener('install', (event) => {
@@ -22,8 +22,14 @@ self.addEventListener('activate', (event) => {
 // — Fetch: простой passthrough. Нужен, чтобы Chrome считал
 //   кабинет устанавливаемым. Ничего чужого не ломает. —
 self.addEventListener('fetch', (event) => {
-  // отдаём сетевой ответ как есть
-  return;
+  // Браузеру нужен fetch-обработчик с respondWith, иначе «Установить» не предложит.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('./store-cabinet.html'))
+    );
+    return;
+  }
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });
 
 // — Push: сюда прилетит уведомление о новом заказе (шаг 2) —
