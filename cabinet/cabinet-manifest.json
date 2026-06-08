@@ -1,0 +1,17 @@
+{
+  "name": "AlcoMarket — Кабинет",
+  "short_name": "Кабинет",
+  "description": "Кабинет владельца магазина",
+  "lang": "ru",
+  "start_url": "./store-cabinet.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0E0E0E",
+  "icons": [
+    { "src": "./cabinet-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./cabinet-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./cabinet-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
