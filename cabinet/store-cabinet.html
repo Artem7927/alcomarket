@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AlcoMarket — Кабинет магазина</title>
+  <link rel="manifest" href="./cabinet-manifest.json">
+<meta name="theme-color" content="#0E0E0E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Кабинет">
+<link rel="apple-touch-icon" href="./cabinet-icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
+  :root {
+    --bg:#0a0a0a; --surface:#141414; --card:#1e1e1e; --card2:#252525;
+    --border:#2a2a2a; --text:#f0f0f0; --muted:#777;
+    --red:#D42B2B; --dark-red:#A51E1E; --gold:#F2A900;
+    --green:#27AE60; --blue:#3498db; --purple:#9b59b6;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body { font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  .loading-bar { height:3px; background:var(--red); position:fixed; top:0; left:0; z-index:9999; display:none; animation:loading 1.5s ease infinite; }
+  @keyframes loading { 0%{width:0} 50%{width:70%} 100%{width:100%} }
+
+  /* ── LOGIN ── */
+  #loginScreen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px; background:linear-gradient(135deg,#0a0a0a,#0a0a1a); }
+  .login-logo { width:90px; height:90px; background:var(--red); border-radius:22px; display:flex; align-items:center; justify-content:center; font-size:40px; margin-bottom:20px; box-shadow:0 0 40px rgba(212,43,43,0.5); }
+  .login-title { font-size:24px; font-weight:900; margin-bottom:4px; }
+  .login-sub { font-size:12px; color:var(--muted); margin-bottom:32px; letter-spacing:1px; }
+  .login-input { width:100%; max-width:320px; padding:16px; background:var(--card); border:1.5px solid var(--border); border-radius:14px; color:var(--text); font-family:'Montserrat'; font-size:15px; font-weight:700; outline:none; margin-bottom:10px; }
+  .login-input:focus { border-color:var(--red); }
+  .login-input::placeholder { color:var(--muted); }
+  .login-btn { width:100%; max-width:320px; padding:16px; background:var(--red); border:none; border-radius:14px; color:#fff; font-family:'Montserrat'; font-size:15px; font-weight:800; cursor:pointer; }
+  .login-error { color:var(--red); font-size:12px; font-weight:700; margin-top:10px; display:none; }
+
+  /* ── DASHBOARD ── */
+  #dashboard { display:none; padding-bottom:80px; }
+
+  .top-bar { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .store-name { font-size:14px; font-weight:900; color:var(--red); }
+  .store-sub { font-size:10px; color:var(--muted); margin-top:1px; }
+  .top-right { display:flex; gap:8px; }
+  .icon-btn { background:var(--card); border:1px solid var(--border); color:var(--text); font-size:18px; width:36px; height:36px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:rgba(10,10,10,0.97); backdrop-filter:blur(20px); border-top:1px solid var(--border); display:flex; padding:10px 0 20px; z-index:200; }
+  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; color:var(--muted); font-size:10px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:4px 0; }
+  .nav-item.active { color:var(--red); }
+  .nav-item .ni { font-size:22px; }
+
+  /* ── TABS ── */
+  .tab { display:none; padding:16px; }
+  .tab.active { display:block; }
+
+  /* ── STAT CARDS ── */
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .stat-card { background:var(--card); border-radius:14px; padding:14px; border:1px solid var(--border); }
+  .stat-label { font-size:10px; color:var(--muted); font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+  .stat-value { font-size:20px; font-weight:900; }
+  .stat-sub { font-size:10px; color:var(--muted); margin-top:3px; font-weight:600; }
+  .gold { color:var(--gold); } .green { color:var(--green); } .red { color:var(--red); } .blue { color:var(--blue); }
+
+  .period-tabs { display:flex; gap:6px; margin-bottom:14px; }
+  .period-tab { flex:1; padding:7px; background:var(--card); border:1.5px solid var(--border); border-radius:10px; color:var(--muted); font-family:'Montserrat'; font-size:11px; font-weight:700; cursor:pointer; text-align:center; }
+  .period-tab.active { background:rgba(212,43,43,0.15); border-color:var(--red); color:var(--red); }
+
+  /* ── ORDERS ── */
+  .order-card { background:var(--card); border-radius:14px; border:1px solid var(--border); margin-bottom:10px; overflow:hidden; }
+  .order-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; cursor:pointer; }
+  .order-card.open .order-head { border-bottom:1px solid var(--border); }
+  .order-num { font-size:13px; font-weight:800; color:var(--gold); }
+  .order-meta { font-size:10px; color:var(--muted); margin-top:2px; font-weight:600; }
+  .order-badge { font-size:9px; font-weight:800; padding:3px 8px; border-radius:6px; text-transform:uppercase; }
+  .badge-new { background:rgba(52,152,219,0.2); color:var(--blue); }
+  .badge-done { background:rgba(39,174,96,0.2); color:var(--green); }
+  .badge-cancel { background:rgba(212,43,43,0.2); color:var(--red); }
+  .order-body { display:none; padding:12px 14px; }
+  .order-card.open .order-body { display:block; }
+  .orow { display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px; }
+  .orow span:first-child { color:var(--muted); font-weight:600; }
+  .orow span:last-child { font-weight:700; }
+  .odivider { height:1px; background:var(--border); margin:8px 0; }
+  .oitems { background:var(--card2); border-radius:8px; padding:8px; margin:6px 0; }
+  .oitem { font-size:11px; color:var(--muted); padding:2px 0; font-weight:600; }
+  .status-btns { display:flex; gap:8px; margin-top:10px; }
+  .status-btn { flex:1; padding:9px; border:1.5px solid var(--border); border-radius:10px; background:transparent; color:var(--muted); font-family:'Montserrat'; font-size:11px; font-weight:800; cursor:pointer; }
+  .status-btn.done { border-color:var(--green); color:var(--green); }
+  .status-btn.cancel { border-color:var(--red); color:var(--red); }
+
+  /* ── PRODUCTS ── */
+  .section-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .section-title { font-size:14px; font-weight:800; }
+  .add-btn { background:var(--red); border:none; color:#fff; font-family:'Montserrat'; font-size:12px; font-weight:800; padding:8px 14px; border-radius:10px; cursor:pointer; }
+
+  .prod-item { background:var(--card); border-radius:12px; border:1px solid var(--border); padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+  .prod-emoji { font-size:28px; flex-shrink:0; }
+  .prod-info { flex:1; min-width:0; }
+  .prod-name { font-size:13px; font-weight:800; margin-bottom:2px; }
+  .prod-cat { font-size:10px; color:var(--muted); font-weight:600; }
+  .prod-price { font-size:14px; font-weight:900; color:var(--gold); }
+  .prod-actions { display:flex; flex-direction:column; gap:6px; }
+  .edit-btn { background:var(--card2); border:1px solid var(--border); color:var(--text); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .del-btn { background:rgba(212,43,43,0.1); border:1px solid rgba(212,43,43,0.3); color:var(--red); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; }
+
+  /* ── PROMOS ── */
+  .promo-card { background:linear-gradient(135deg,#1a0a00,#2a1500); border:1px solid var(--gold); border-radius:14px; padding:14px; margin-bottom:10px; position:relative; }
+  .promo-title { font-size:14px; font-weight:800; color:var(--gold); margin-bottom:4px; }
+  .promo-desc { font-size:12px; color:rgba(255,255,255,0.7); line-height:1.5; }
+  .promo-dates { font-size:10px; color:var(--muted); margin-top:6px; font-weight:600; }
+  .promo-active { display:inline-block; font-size:9px; font-weight:800; padding:2px 8px; border-radius:6px; background:rgba(39,174,96,0.2); color:var(--green); margin-top:6px; }
+  .promo-inactive { background:rgba(212,43,43,0.15); color:var(--red); }
+  .promo-del { position:absolute; top:12px; right:12px; background:transparent; border:none; color:var(--muted); font-size:16px; cursor:pointer; }
+
+  /* ── COMMISSION ── */
+  .comm-card { background:var(--card); border-radius:14px; border:1px solid var(--border); padding:16px; margin-bottom:12px; }
+  .comm-title { font-size:12px; color:var(--muted); font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+  .comm-row { display:flex; justify-content:space-between; font-size:13px; padding:6px 0; border-bottom:1px solid var(--border); }
+  .comm-row:last-child { border-bottom:none; }
+  .comm-row span:first-child { color:var(--muted); font-weight:600; }
+  .comm-row span:last-child { font-weight:800; }
+  .pay-comm-btn { width:100%; padding:14px; background:linear-gradient(135deg,var(--gold),#d4920a); border:none; border-radius:14px; color:#000; font-family:'Montserrat'; font-size:14px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity 0.3s; z-index:500; }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal { width:100%; background:var(--surface); border-radius:24px 24px 0 0; padding:20px 20px 40px; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); max-height:90vh; overflow-y:auto; }
+  .modal-overlay.open .modal { transform:translateY(0); }
+  .modal-handle { width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 20px; }
+  .modal-title { font-size:18px; font-weight:900; margin-bottom:16px; }
+  .form-group { margin-bottom:14px; }
+  .form-label { font-size:11px; color:var(--muted); font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; display:block; }
+  .form-input { width:100%; background:var(--card); border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; color:var(--text); font-family:'Montserrat'; font-size:14px; font-weight:600; outline:none; }
+  .form-input:focus { border-color:var(--red); }
+  .modal-btn { width:100%; padding:16px; background:var(--red); border:none; border-radius:14px; color:#fff; font-family:'Montserrat'; font-size:15px; font-weight:800; cursor:pointer; margin-top:8px; }
+  .modal-btn-sec { background:var(--card); border:1px solid var(--border); color:var(--muted); margin-top:8px; }
+
+  .empty { text-align:center; padding:50px 20px; color:var(--muted); }
+  .empty-icon { font-size:48px; margin-bottom:12px; }
+  .empty-text { font-size:14px; font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar"></div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-logo">🏪</div>
+  <div class="login-title">AlcoMarket 1</div>
+  <div class="login-sub">Кабинет владельца магазина</div>
+  <input class="login-input" type="text" id="storeIdInput" placeholder="ID магазина (alcomarket)" value="alcomarket">
+  <input class="login-input" type="password" id="storePassInput" placeholder="Пароль магазина" style="margin-top:0"
+    onkeydown="if(event.key==='Enter')tryStoreLogin()">
+  <button class="login-btn" onclick="tryStoreLogin()">Войти</button>
+  <div class="login-error" id="loginError">Неверный пароль</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="top-bar">
+    <div>
+      <div class="store-name" id="storeName">AlcoMarket</div>
+      <div class="store-sub" id="storeAddr"></div>
+    </div>
+    <div class="top-right">
+      <button class="icon-btn" id="notifBtn" onclick="enablePush()" title="Уведомления">🔔</button>
+      <button class="icon-btn" onclick="loadAll()" title="Обновить">🔄</button>
+      <button class="icon-btn" onclick="logout()" title="Выйти">🚪</button>
+    </div>
+  </div>
+
+  <!-- ЗАКАЗЫ -->
+  <div class="tab active" id="tab-orders">
+    <div class="period-tabs">
+      <button class="period-tab active" onclick="setOrderPeriod('today',this)">Сегодня</button>
+      <button class="period-tab" onclick="setOrderPeriod('week',this)">Неделя</button>
+      <button class="period-tab" onclick="setOrderPeriod('month',this)">Месяц</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Заказов</div>
+        <div class="stat-value blue" id="sOrders">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Оборот</div>
+        <div class="stat-value gold" id="sRevenue">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Вам на руки</div>
+        <div class="stat-value green" id="sNet">—</div>
+        <div class="stat-sub">после комиссии</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ср. чек</div>
+        <div class="stat-value" id="sAvg">—</div>
+      </div>
+    </div>
+    <div id="ordersList"></div>
+  </div>
+
+  <!-- ТОВАРЫ -->
+  <div class="tab" id="tab-products">
+    <div class="section-hdr">
+      <div class="section-title">Товары и цены</div>
+      <button class="add-btn" onclick="openProductModal()">+ Добавить</button>
+    </div>
+    <div id="productsList"></div>
+  </div>
+
+  <!-- АКЦИИ -->
+  <div class="tab" id="tab-promos">
+    <div class="section-hdr">
+      <div class="section-title">Акции и спецпредложения</div>
+      <button class="add-btn" onclick="openPromoModal()">+ Добавить</button>
+    </div>
+    <div id="promosList"></div>
+  </div>
+
+  <!-- КОМИССИЯ -->
+  <div class="tab" id="tab-commission">
+    <div class="comm-card">
+      <div class="comm-title">💰 Комиссия платформы</div>
+      <div class="comm-row"><span>Ставка</span><span style="color:var(--red)">10% с каждого заказа</span></div>
+      <div class="comm-row"><span>За месяц — оборот</span><span id="cMonthRev">—</span></div>
+      <div class="comm-row"><span>За месяц — комиссия</span><span id="cMonthComm" style="color:var(--red)">—</span></div>
+      <div class="comm-row"><span>Уже оплачено</span><span id="cPaid" style="color:var(--green)">—</span></div>
+      <div class="comm-row"><span>К оплате</span><span id="cUnpaid" style="color:var(--gold)">—</span></div>
+      <button class="pay-comm-btn" onclick="requestInvoice()">
+        💬 Запросить счёт в WhatsApp
+      </button>
+    </div>
+    <div class="comm-card">
+      <div class="comm-title">📊 История платежей</div>
+      <div id="commHistory"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="showTab('orders',this)">
+      <div class="ni">📋</div><div>Заказы</div>
+    </div>
+    <div class="nav-item" onclick="showTab('products',this)">
+      <div class="ni">🛒</div><div>Товары</div>
+    </div>
+    <div class="nav-item" onclick="showTab('promos',this)">
+      <div class="ni">🎁</div><div>Акции</div>
+    </div>
+    <div class="nav-item" onclick="showTab('commission',this)">
+      <div class="ni">💰</div><div>Комиссия</div>
+    </div>
+  </nav>
+</div>
+
+<!-- MODAL ТОВАР -->
+<div class="modal-overlay" id="productModal" onclick="if(event.target===this)closeModal('productModal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="productModalTitle">Новый товар</div>
+    <input type="hidden" id="editProductId">
+    <div class="form-group">
+      <label class="form-label">Название</label>
+      <input class="form-input" id="pName" placeholder="Пражское светлое">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Категория</label>
+      <input class="form-input" id="pCat" placeholder="Разливное">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Цена (₸)</label>
+      <input class="form-input" id="pPrice" type="number" placeholder="350">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Единица</label>
+      <input class="form-input" id="pUnit" placeholder="л / бут / шт / уп">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Эмодзи</label>
+      <input class="form-input" id="pEmoji" placeholder="🍺">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Описание</label>
+      <input class="form-input" id="pDesc" placeholder="Краткое описание">
+    </div>
+    <button class="modal-btn" onclick="saveProduct()">Сохранить</button>
+    <button class="modal-btn modal-btn-sec" onclick="closeModal('productModal')">Отмена</button>
+  </div>
+</div>
+
+<!-- MODAL АКЦИЯ -->
+<div class="modal-overlay" id="promoModal" onclick="if(event.target===this)closeModal('promoModal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Новая акция</div>
+    <div class="form-group">
+      <label class="form-label">Название акции</label>
+      <input class="form-input" id="promoTitle" placeholder="3+1 на разливное">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Описание</label>
+      <input class="form-input" id="promoDesc" placeholder="При покупке 3л — 1л в подарок">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Действует до</label>
+      <input class="form-input" id="promoDate" type="date">
+    </div>
+    <button class="modal-btn" onclick="savePromo()">Сохранить акцию</button>
+    <button class="modal-btn modal-btn-sec" onclick="closeModal('promoModal')">Отмена</button>
+  </div>
+</div>
+
+<script>
+const SERVER_URL  = 'https://alcodelivery-db-production.up.railway.app';
+const PLATFORM_WA = '+77714144534'; // номер платформы для счётов
+
+let storeId   = '';
+let storePass = '';
+let storeData = null;
+let allOrders = [];
+let products  = [];
+let promos    = [];
+let orderPeriod = 'today';
+
+// ── АВТОРИЗАЦИЯ ──────────────────────────────────────
+async function tryStoreLogin() {
+  storeId   = document.getElementById('storeIdInput').value.trim();
+  storePass = document.getElementById('storePassInput').value.trim();
+  if (!storeId || !storePass) return;
+
+  try {
+    showLoading(true);
+    const res  = await fetch(`${SERVER_URL}/auth/store`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeId, password: storePass }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      storeData = data.store;
+      sessionStorage.setItem('store_auth', JSON.stringify({ storeId, storePass }));
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display  = 'block';
+      document.getElementById('storeName').textContent = storeData.name || storeId;
+      document.getElementById('storeAddr').textContent = storeData.address || storeData.city || '';
+      loadAll();
+      refreshPushState();
+      clearBadge();
+    } else {
+      showError(data.error || 'Неверный пароль');
+    }
+  } catch (e) {
+    showError('Сервер недоступен');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+function logout() {
+  sessionStorage.removeItem('store_auth');
+  location.reload();
+}
+
+// Автовход
+const saved = sessionStorage.getItem('store_auth');
+if (saved) {
+  try {
+    const { storeId: sid, storePass: sp } = JSON.parse(saved);
+    document.getElementById('storeIdInput').value   = sid;
+    document.getElementById('storePassInput').value = sp;
+    tryStoreLogin();
+  } catch(e) {}
+}
+
+// ── ЗАГРУЗКА ─────────────────────────────────────────
+async function loadAll() {
+  await Promise.all([loadOrders(), loadProducts(), loadPromos()]);
+}
+
+async function loadOrders() {
+  try {
+    showLoading(true);
+    const res  = await fetch(`${SERVER_URL}/orders?storeId=${storeId}&password=${encodeURIComponent(storePass)}`);
+    const data = await res.json();
+    if (!data.ok) return;
+    allOrders = (data.orders || []).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    renderOrders();
+    renderCommission();
+  } catch(e) {
+    document.getElementById('ordersList').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Нет подключения</div></div>`;
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadProducts() {
+  try {
+    const res  = await fetch(`${SERVER_URL}/products/${storeId}`);
+    const data = await res.json();
+    products = data.products || [];
+    renderProducts();
+  } catch(e) {}
+}
+
+async function loadPromos() {
+  try {
+    const res  = await fetch(`${SERVER_URL}/promos/${storeId}`);
+    const data = await res.json();
+    promos = data.promos || [];
+    renderPromos();
+  } catch(e) {}
+}
+
+// ── ЗАКАЗЫ ───────────────────────────────────────────
+function getFilteredOrders() {
+  const now = new Date();
+  return allOrders.filter(o => {
+    const d = new Date(o.createdAt);
+    if (orderPeriod === 'today') return d.toDateString() === now.toDateString();
+    if (orderPeriod === 'week')  return d >= new Date(now - 7*24*60*60*1000);
+    return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+  });
+}
+
+function setOrderPeriod(p, el) {
+  orderPeriod = p;
+  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderOrders();
+}
+
+function renderOrders() {
+  const orders  = getFilteredOrders();
+  const revenue = orders.reduce((s,o) => s+o.orderTotal, 0);
+  const net     = orders.reduce((s,o) => s+o.storeAmount, 0);
+  const avg     = orders.length ? Math.round(revenue/orders.length) : 0;
+
+  document.getElementById('sOrders').textContent  = orders.length;
+  document.getElementById('sRevenue').textContent = revenue.toLocaleString() + ' ₸';
+  document.getElementById('sNet').textContent     = net.toLocaleString() + ' ₸';
+  document.getElementById('sAvg').textContent     = avg.toLocaleString() + ' ₸';
+
+  const list = document.getElementById('ordersList');
+  if (!orders.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Заказов нет</div></div>`;
+    return;
+  }
+  list.innerHTML = orders.map(o => `
+    <div class="order-card" id="oc-${o.id}">
+      <div class="order-head" onclick="toggleOrder('${o.id}')">
+        <div>
+          <div class="order-num">${o.id}</div>
+          <div class="order-meta">${o.date} ${o.time}</div>
+          <div class="order-meta">${o.client} · ${o.phone}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:900">${o.orderTotal.toLocaleString()} ₸</div>
+          <div style="font-size:11px;color:var(--green);font-weight:700">вам: ${o.storeAmount.toLocaleString()} ₸</div>
+          <div style="margin-top:4px">
+            <span class="order-badge ${o.status==='done'?'badge-done':o.status==='cancel'?'badge-cancel':'badge-new'}">
+              ${o.status==='done'?'✅ выполнен':o.status==='cancel'?'❌ отменён':'🔵 новый'}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="order-body">
+        <div class="orow"><span>Адрес</span><span>${o.address}</span></div>
+        <div class="orow"><span>Оплата</span><span>${o.payMethod==='kaspi'?'💳 Kaspi':'💵 Наличные'}</span></div>
+        <div class="orow"><span>Доставка</span><span>${o.deliveryCost>0?o.deliveryCost.toLocaleString()+' ₸':'Самовывоз'}</span></div>
+        ${o.comment?`<div class="orow"><span>Комментарий</span><span>${o.comment}</span></div>`:''}
+        <div class="odivider"></div>
+        <div class="oitems">${(o.items||[]).map(i=>`<div class="oitem">• ${i.emoji||''} ${i.name} ×${i.qty} — ${i.sum.toLocaleString()} ₸</div>`).join('')}</div>
+        <div class="odivider"></div>
+        <div class="orow"><span>Итого заказ</span><span style="color:var(--gold);font-weight:900">${o.orderTotal.toLocaleString()} ₸</span></div>
+        <div class="orow"><span>Комиссия 10%</span><span style="color:var(--red)">−${o.commission.toLocaleString()} ₸</span></div>
+        <div class="orow"><span>Вам к получению</span><span style="color:var(--green);font-weight:900">${o.storeAmount.toLocaleString()} ₸</span></div>
+        ${o.status==='new'?`
+        <div class="status-btns">
+          <button class="status-btn done" onclick="updateOrderStatus('${o.id}','done')">✅ Выполнен</button>
+          <button class="status-btn cancel" onclick="updateOrderStatus('${o.id}','cancel')">❌ Отменить</button>
+        </div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function toggleOrder(id) {
+  document.getElementById('oc-'+id)?.classList.toggle('open');
+}
+
+async function updateOrderStatus(orderId, status) {
+  try {
+    showLoading(true);
+    await fetch(`${SERVER_URL}/orders/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, storeId, password: storePass }),
+      signal: AbortSignal.timeout(6000),
+    });
+    await loadOrders();
+  } catch(e) { alert('Ошибка обновления'); }
+  finally { showLoading(false); }
+}
+
+// ── ТОВАРЫ ───────────────────────────────────────────
+function renderProducts() {
+  const list = document.getElementById('productsList');
+  if (!products.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🛒</div><div class="empty-text">Товары не добавлены</div></div>`;
+    return;
+  }
+  list.innerHTML = products.map((p,i) => `
+    <div class="prod-item">
+      <div class="prod-emoji">${p.emoji||'📦'}</div>
+      <div class="prod-info">
+        <div class="prod-name">${p.name}</div>
+        <div class="prod-cat">${p.cat} · за ${p.unit}</div>
+        <div class="prod-price">${p.price.toLocaleString()} ₸</div>
+      </div>
+      <div class="prod-actions">
+        <button class="edit-btn" onclick="openProductModal(${i})">✏️</button>
+        <button class="del-btn" onclick="deleteProduct(${i})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function openProductModal(idx) {
+  const modal = document.getElementById('productModal');
+  if (idx !== undefined) {
+    const p = products[idx];
+    document.getElementById('productModalTitle').textContent = 'Редактировать товар';
+    document.getElementById('editProductId').value = idx;
+    document.getElementById('pName').value  = p.name;
+    document.getElementById('pCat').value   = p.cat;
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pUnit').value  = p.unit;
+    document.getElementById('pEmoji').value = p.emoji||'';
+    document.getElementById('pDesc').value  = p.desc||'';
+  } else {
+    document.getElementById('productModalTitle').textContent = 'Новый товар';
+    document.getElementById('editProductId').value = '';
+    ['pName','pCat','pPrice','pUnit','pEmoji','pDesc'].forEach(id => document.getElementById(id).value = '');
+  }
+  modal.classList.add('open');
+}
+
+async function saveProduct() {
+  const name  = document.getElementById('pName').value.trim();
+  const cat   = document.getElementById('pCat').value.trim();
+  const price = parseInt(document.getElementById('pPrice').value);
+  const unit  = document.getElementById('pUnit').value.trim();
+  const emoji = document.getElementById('pEmoji').value.trim() || '📦';
+  const desc  = document.getElementById('pDesc').value.trim();
+
+  if (!name || !price || !unit) { alert('Заполните обязательные поля'); return; }
+
+  const product = { id: Date.now(), name, cat, price, unit, emoji, desc };
+  const idx = document.getElementById('editProductId').value;
+
+  if (idx !== '') { products[parseInt(idx)] = product; }
+  else { products.push(product); }
+
+  try {
+    showLoading(true);
+    await fetch(`${SERVER_URL}/products/${storeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ products, password: storePass }),
+      signal: AbortSignal.timeout(8000),
+    });
+    closeModal('productModal');
+    renderProducts();
+  } catch(e) { alert('Ошибка сохранения'); }
+  finally { showLoading(false); }
+}
+
+async function deleteProduct(idx) {
+  if (!confirm('Удалить товар?')) return;
+  products.splice(idx, 1);
+  try {
+    showLoading(true);
+    await fetch(`${SERVER_URL}/products/${storeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ products, password: storePass }),
+      signal: AbortSignal.timeout(8000),
+    });
+    renderProducts();
+  } catch(e) { alert('Ошибка удаления'); }
+  finally { showLoading(false); }
+}
+
+// ── АКЦИИ ────────────────────────────────────────────
+function renderPromos() {
+  const list = document.getElementById('promosList');
+  if (!promos.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🎁</div><div class="empty-text">Акции не добавлены</div></div>`;
+    return;
+  }
+  const now = new Date();
+  list.innerHTML = promos.map((p,i) => {
+    const active = !p.endDate || new Date(p.endDate) >= now;
+    return `
+    <div class="promo-card">
+      <button class="promo-del" onclick="deletePromo(${i})">🗑</button>
+      <div class="promo-title">🎉 ${p.title}</div>
+      <div class="promo-desc">${p.desc}</div>
+      ${p.endDate?`<div class="promo-dates">До: ${new Date(p.endDate).toLocaleDateString('ru')}</div>`:''}
+      <div class="promo-active ${active?'':'promo-inactive'}">${active?'Активна':'Завершена'}</div>
+    </div>`;
+  }).join('');
+}
+
+function openPromoModal() {
+  document.getElementById('promoTitle').value = '';
+  document.getElementById('promoDesc').value  = '';
+  document.getElementById('promoDate').value  = '';
+  document.getElementById('promoModal').classList.add('open');
+}
+
+async function savePromo() {
+  const title   = document.getElementById('promoTitle').value.trim();
+  const desc    = document.getElementById('promoDesc').value.trim();
+  const endDate = document.getElementById('promoDate').value;
+  if (!title || !desc) { alert('Заполните название и описание'); return; }
+
+  promos.push({ id: Date.now(), title, desc, endDate, createdAt: new Date().toISOString() });
+  try {
+    showLoading(true);
+    await fetch(`${SERVER_URL}/promos/${storeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ promos, password: storePass }),
+      signal: AbortSignal.timeout(8000),
+    });
+    closeModal('promoModal');
+    renderPromos();
+  } catch(e) { alert('Ошибка сохранения'); }
+  finally { showLoading(false); }
+}
+
+async function deletePromo(idx) {
+  if (!confirm('Удалить акцию?')) return;
+  promos.splice(idx, 1);
+  try {
+    showLoading(true);
+    await fetch(`${SERVER_URL}/promos/${storeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ promos, password: storePass }),
+      signal: AbortSignal.timeout(8000),
+    });
+    renderPromos();
+  } catch(e) {}
+  finally { showLoading(false); }
+}
+
+// ── КОМИССИЯ ─────────────────────────────────────────
+function renderCommission() {
+  const now   = new Date();
+  const month = allOrders.filter(o => {
+    const d = new Date(o.createdAt);
+    return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+  });
+  const rev    = month.reduce((s,o) => s+o.orderTotal, 0);
+  const comm   = month.reduce((s,o) => s+o.commission, 0);
+  const paid   = month.filter(o=>o.commissionPaid).reduce((s,o) => s+o.commission, 0);
+  const unpaid = comm - paid;
+
+  document.getElementById('cMonthRev').textContent  = rev.toLocaleString() + ' ₸';
+  document.getElementById('cMonthComm').textContent = comm.toLocaleString() + ' ₸';
+  document.getElementById('cPaid').textContent      = paid.toLocaleString() + ' ₸';
+  document.getElementById('cUnpaid').textContent    = unpaid.toLocaleString() + ' ₸';
+
+  // История по дням
+  const byDay = {};
+  month.forEach(o => { byDay[o.date] = (byDay[o.date]||0) + o.commission; });
+  const history = document.getElementById('commHistory');
+  const days = Object.entries(byDay).sort((a,b) => new Date(b[0])-new Date(a[0]));
+  history.innerHTML = days.length
+    ? days.map(([date, amt]) => `
+        <div class="comm-row">
+          <span>${date}</span>
+          <span style="color:var(--red)">${amt.toLocaleString()} ₸</span>
+        </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Данных нет</div>';
+}
+
+function requestInvoice() {
+  const now   = new Date();
+  const month = allOrders.filter(o => {
+    const d = new Date(o.createdAt);
+    return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+  });
+  const unpaid = month.filter(o => !o.commissionPaid);
+  const total  = unpaid.reduce((s,o) => s+o.commission, 0);
+
+  if (!unpaid.length) { alert('Все комиссии за этот месяц уже оплачены'); return; }
+
+  const waText =
+    `🙏 Добрый день! Прошу выставить счёт на комиссию платформы AlcoDelivery.\n\n` +
+    `📅 Месяц: ${now.toLocaleDateString('ru',{month:'long',year:'numeric'})}\n` +
+    `📦 Заказов: ${unpaid.length} шт\n` +
+    `💰 Сумма к оплате: *${total.toLocaleString()} ₸*\n\n` +
+    `Магазин: AlcoMarket 1 (alcomarket)`;
+
+  window.open(`https://wa.me/${PLATFORM_WA}?text=${encodeURIComponent(waText)}`, '_blank');
+}
+
+// ── UI ────────────────────────────────────────────────
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showLoading(v) { document.getElementById('loadingBar').style.display = v?'block':'none'; }
+
+// ── ПУШ-УВЕДОМЛЕНИЯ ──────────────────────────────────
+const VAPID_PUBLIC_KEY = 'BJu91015XDibxQL29AH0ge3re8mNXcC91UA-Dcg7I2Q1XHjbgsh4kTMUDN6qUb_wD5W581DgGYXESSxza8xv1rw';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function enablePush() {
+  const btn = document.getElementById('notifBtn');
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Уведомления не поддерживаются этим браузером');
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      alert('Разрешение на уведомления не выдано. Включи их в настройках приложения.');
+      return;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    await fetch(`${SERVER_URL}/push/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeId, password: storePass, subscription: sub }),
+    });
+    if (btn) { btn.textContent = '🔔'; btn.style.color = 'var(--green)'; }
+    unlockAudio();
+    alert('✅ Уведомления включены! Теперь заказы будут звенеть.');
+  } catch (e) {
+    console.error('Push error:', e);
+    alert('Не удалось включить уведомления: ' + e.message);
+  }
+}
+
+async function refreshPushState() {
+  try {
+    if (!('serviceWorker' in navigator)) return;
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    const btn = document.getElementById('notifBtn');
+    if (btn && sub && Notification.permission === 'granted') {
+      btn.style.color = 'var(--green)';
+    }
+  } catch(e) {}
+}
+
+// ── ЗВУК + ВИБРАЦИЯ + СБРОС БЕЙДЖА ───────────────────
+// Когда кабинет ОТКРЫТ, Android глушит звук обычного пуша
+// («ты и так в приложении»). Поэтому страница пикает сама:
+// SW при заказе шлёт сюда сообщение, мы играем звук через
+// Web Audio (без mp3 — чтобы кэш не мешал) и вибрируем.
+let _audioCtx = null;
+function unlockAudio() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  } catch (e) {}
+}
+
+function playOrderSound() {
+  try {
+    unlockAudio();
+    const ctx = _audioCtx;
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    [0, 0.28].forEach((t) => {       // два коротких бипа
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now + t);
+      gain.gain.setValueAtTime(0.0001, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.5, now + t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.25);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now + t);
+      osc.stop(now + t + 0.27);
+    });
+  } catch (e) {}
+}
+
+// Новый заказ, пока кабинет открыт
+function onNewOrderPush(data) {
+  playOrderSound();
+  if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
+  if (storeId && storePass) loadOrders();   // подтянуть свежий заказ в список
+}
+
+// Гасим счётчик на иконке, когда владелец смотрит кабинет
+function clearBadge() {
+  try { if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch (e) {}
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'clear-badge' });
+    }
+  } catch (e) {}
+}
+</script>
+
+<!-- Кнопка установки приложения (как в витрине) -->
+<button id="pwaInstallBtn" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:9500;background:#D42B2B;color:#fff;border:none;border-radius:24px;padding:12px 22px;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:800;box-shadow:0 6px 20px rgba(212,43,43,.5);cursor:pointer">⬇️ Установить кабинет</button>
+
+<script>
+  // Регистрация service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./cabinet-sw.js')
+        .then(reg => console.log('SW кабинета:', reg.scope))
+        .catch(err => console.warn('SW не зарегистрировался:', err));
+    });
+
+    // Сообщения от service worker (новый заказ при открытом кабинете)
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'new-order') onNewOrderPush(e.data.data || {});
+    });
+  }
+
+  // Звук разблокируем при любом касании (требование мобильных браузеров)
+  document.addEventListener('pointerdown', unlockAudio);
+
+  // Когда кабинет на экране — гасим счётчик заказов на иконке
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) clearBadge(); });
+  window.addEventListener('focus', clearBadge);
+
+  // Своя кнопка установки — ловим момент, когда Chrome готов предложить установку
+  let pwaPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    pwaPrompt = e;
+    const b = document.getElementById('pwaInstallBtn');
+    if (b) b.style.display = 'block';
+  });
+  document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
+    if (!pwaPrompt) return;
+    pwaPrompt.prompt();
+    await pwaPrompt.userChoice;
+    pwaPrompt = null;
+    document.getElementById('pwaInstallBtn').style.display = 'none';
+  });
+  window.addEventListener('appinstalled', () => {
+    const b = document.getElementById('pwaInstallBtn');
+    if (b) b.style.display = 'none';
+  });
+</script>
+</body>
+</html>
