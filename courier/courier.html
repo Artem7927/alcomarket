@@ -1,1 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#14213D">
+<title>Доставка · AlcoMarket</title>
+<style>
+  /* ── Токены ──────────────────────────────────────────
+     Палитра: чернильно-синий каркас (вечер/логистика/доверие),
+     прохладная бумага под контент, янтарь — деньги и действие
+     (привязка к алкомаркету: виски/пиво/золото), лес-зелёный —
+     только финальное «Доставлено». Шрифт системный: курьер на
+     мобильном трафике, грузить веб-шрифт = задержка и расход. */
+  :root{
+    --ink:#14213D; --ink-2:#1E2D4F;
+    --paper:#ECEEF1; --card:#FFFFFF; --line:#E2E5EA;
+    --text:#16203A; --muted:#5C6677;
+    --gold:#E8A33D; --gold-press:#CE8C28; --gold-soft:#FBEFD7;
+    --go:#2E7D54; --go-press:#256646;
+    --warn-bg:#FCEFE0;
+    --r:16px; --r-sm:11px;
+    --shadow:0 1px 0 rgba(20,33,61,.04), 0 8px 24px -16px rgba(20,33,61,.35);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    font-family:var(--font); background:var(--paper); color:var(--text);
+    font-size:16px; line-height:1.4; -webkit-font-smoothing:antialiased;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .wrap{max-width:560px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column}
 
+  /* ── Шапка ── */
+  header{
+    background:var(--ink); color:#fff;
+    padding:calc(18px + env(safe-area-inset-top)) 20px 20px;
+    border-radius:0 0 22px 22px;
+  }
+  .eyebrow{
+    font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    color:#9FB0CF; font-weight:700; display:flex; justify-content:space-between; align-items:center;
+  }
+  .refresh{
+    background:none; border:0; color:#9FB0CF; font:inherit; font-size:12px;
+    letter-spacing:.04em; text-transform:none; font-weight:600; padding:6px 2px; cursor:pointer;
+  }
+  .store{font-size:20px; font-weight:800; letter-spacing:-.01em; margin:8px 0 2px}
+  .order-id{font-size:13px; color:#B9C5DD; font-weight:600; font-variant-numeric:tabular-nums}
+
+  /* ── Трек прогресса (настоящая последовательность) ── */
+  .track{display:flex; gap:6px; margin-top:16px}
+  .step{flex:1; text-align:center}
+  .dot{
+    height:6px; border-radius:99px; background:#33436A; transition:background .35s ease;
+  }
+  .step.done .dot{background:var(--gold)}
+  .step.now  .dot{background:#fff}
+  .step span{
+    display:block; margin-top:7px; font-size:10.5px; font-weight:700;
+    letter-spacing:.02em; color:#7E8FB2;
+  }
+  .step.done span,.step.now span{color:#DCE5F4}
+
+  /* ── Контент ── */
+  main{flex:1; padding:16px 16px 4px; display:flex; flex-direction:column; gap:13px}
+
+  .cash{
+    background:var(--gold-soft); border:1.5px solid var(--gold);
+    border-radius:var(--r); padding:14px 16px;
+  }
+  .cash .k{font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-press)}
+  .cash .v{font-size:30px; font-weight:900; letter-spacing:-.02em; font-variant-numeric:tabular-nums; margin-top:2px; line-height:1.05}
+  .cash .v small{font-size:15px; font-weight:700}
+  .cash .sub{font-size:13px; color:#8a6a2e; margin-top:3px; font-weight:600}
+  .kaspi{
+    background:#EEF1F6; border:1px solid var(--line); border-radius:var(--r);
+    padding:12px 16px; font-size:14px; font-weight:700; color:#3B4763;
+    display:flex; gap:9px; align-items:center;
+  }
+  .kaspi b{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden}
+  .card-h{padding:13px 16px 0; font-size:11.5px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  .card-b{padding:8px 16px 16px}
+  .name{font-size:18px; font-weight:800; letter-spacing:-.01em; margin:2px 0}
+  .addr{font-size:15px; color:#33405C; margin-top:3px}
+  .meta{font-size:13px; color:var(--muted); margin-top:2px}
+
+  .row{display:flex; gap:10px; margin-top:13px}
+  .btn{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
+    min-height:46px; border-radius:var(--r-sm); border:1.5px solid var(--line);
+    background:#fff; color:var(--ink); font:inherit; font-weight:700; font-size:14.5px;
+    text-decoration:none; cursor:pointer; transition:transform .05s ease, background .15s ease;
+  }
+  .btn:active{transform:scale(.985)}
+  .btn.solid{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .btn.wa{background:#25D366; color:#fff; border-color:#25D366}
+  .phone{display:inline-block; margin-top:4px; font-size:15px; font-weight:700; color:var(--gold-press); text-decoration:none; font-variant-numeric:tabular-nums}
+  .btn svg{width:18px; height:18px; flex:none}
+
+  /* ── Список товаров ── */
+  .items{list-style:none; margin:6px 0 0; padding:0}
+  .items li{display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid #F0F2F5}
+  .items li:last-child{border-bottom:0}
+  .it-name{font-size:15px}
+  .it-name .q{color:var(--gold-press); font-weight:800}
+  .it-sum{font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; color:#33405C}
+  .totals{margin-top:10px; padding-top:11px; border-top:1.5px dashed var(--line); font-size:14px}
+  .totals .t{display:flex; justify-content:space-between; padding:3px 0; color:var(--muted)}
+  .totals .grand{color:var(--text); font-weight:900; font-size:18px; padding-top:6px}
+  .totals .grand b{font-variant-numeric:tabular-nums}
+  .comment{margin-top:12px; background:#FFF9EC; border-left:3px solid var(--gold); padding:10px 12px; border-radius:0 8px 8px 0; font-size:14px; color:#5b4a26}
+
+  /* ── Sticky действие (зона большого пальца) ── */
+  .action{
+    position:sticky; bottom:0; margin-top:auto;
+    padding:12px 16px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, var(--paper) 72%, rgba(236,238,241,0));
+  }
+  .cta{
+    width:100%; min-height:60px; border:0; border-radius:15px; cursor:pointer;
+    font:inherit; font-weight:800; font-size:18px; letter-spacing:.01em; color:#fff;
+    background:var(--gold); box-shadow:0 8px 20px -8px rgba(232,163,61,.7);
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    transition:transform .06s ease, background .15s ease;
+  }
+  .cta:active{transform:scale(.99); background:var(--gold-press)}
+  .cta:disabled{background:#C7CDD7; box-shadow:none; color:#fff}
+  .cta.final{background:var(--go); box-shadow:0 8px 20px -8px rgba(46,125,84,.7)}
+  .cta.final:active{background:var(--go-press)}
+  .cta svg{width:22px; height:22px}
+  .confirm{display:flex; gap:10px}
+  .confirm .cta{flex:1}
+  .ghost{
+    width:104px; min-height:60px; border-radius:15px; border:1.5px solid var(--line);
+    background:#fff; color:var(--muted); font:inherit; font-weight:700; font-size:15px; cursor:pointer;
+  }
+  .hint{text-align:center; font-size:12.5px; color:var(--muted); margin:9px 4px 0}
+
+  /* ── Экраны-состояния ── */
+  .screen{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 28px; gap:6px}
+  .screen .ico{width:64px; height:64px; margin-bottom:6px}
+  .screen h2{font-size:22px; font-weight:850; letter-spacing:-.01em; margin:0}
+  .screen p{font-size:15.5px; color:var(--muted); margin:0; max-width:30ch}
+  .screen .order-tag{margin-top:8px; font-size:13px; color:var(--muted); font-weight:700; font-variant-numeric:tabular-nums}
+  .spinner{width:34px; height:34px; border:3px solid var(--line); border-top-color:var(--ink); border-radius:50%; animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .toast{
+    position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:11px 18px; border-radius:12px; font-size:14px; font-weight:600;
+    box-shadow:0 10px 30px -8px rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .2s ease; max-width:90vw; z-index:50;
+  }
+  .toast.show{opacity:1}
+
+  [hidden]{display:none !important}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Загрузка -->
+  <div id="loading" class="screen">
+    <div class="spinner"></div>
+    <p>Загружаю заказ…</p>
+  </div>
+
+  <!-- Состояние-сообщение (ошибка / отменён / истёк / доставлено) -->
+  <div id="state" class="screen" hidden>
+    <div id="state-ico"></div>
+    <h2 id="state-title"></h2>
+    <p id="state-text"></p>
+    <div id="state-order" class="order-tag" hidden></div>
+  </div>
+
+  <!-- Рабочий экран -->
+  <div id="app" hidden style="display:flex;flex-direction:column;flex:1">
+    <header>
+      <div class="eyebrow">
+        <span>Доставка</span>
+        <button class="refresh" id="refresh" type="button">Обновить</button>
+      </div>
+      <div class="store" id="storeName">—</div>
+      <div class="order-id" id="orderId">—</div>
+      <div class="track" id="track"></div>
+    </header>
+
+    <main>
+      <div id="pay"></div>
+
+      <section class="card">
+        <div class="card-h">Забрать в магазине</div>
+        <div class="card-b">
+          <div class="name" id="pickName">—</div>
+          <div class="addr" id="pickAddr"></div>
+          <div class="row">
+            <a class="btn" id="pickCall" href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
+              Магазин
+            </a>
+            <a class="btn" id="pickNav" href="#" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              Маршрут
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h">Доставить клиенту</div>
+        <div class="card-b">
+          <div class="name" id="clientName">—</div>
+          <div class="addr" id="clientAddr"></div>
+          <a class="phone" id="clientPhone" href="#"></a>
+          <div class="row">
+            <a class="btn solid" id="clientCall" href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
+              Позвонить
+            </a>
+            <a class="btn wa" id="clientWa" href="#" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm5.8 14.16c-.24.68-1.42 1.32-1.95 1.36-.5.05-.97.23-3.27-.68-2.77-1.09-4.5-3.91-4.64-4.09-.13-.18-1.1-1.46-1.1-2.79 0-1.32.7-1.97.94-2.24.25-.27.54-.34.72-.34.18 0 .36 0 .52.01.17.01.39-.06.61.47.24.55.79 1.9.86 2.04.07.14.12.3.02.48-.09.18-.14.3-.27.46-.14.16-.29.36-.41.48-.14.14-.28.29-.12.56.16.27.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.21 1.37.27.14.43.12.59-.07.16-.18.68-.79.86-1.07.18-.27.36-.22.61-.13.25.09 1.59.75 1.86.89.27.14.45.2.52.32.07.11.07.64-.17 1.32Z"/></svg>
+              WhatsApp
+            </a>
+          </div>
+          <div class="row">
+            <a class="btn" id="clientNav" href="#" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              Маршрут до клиента
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h">Состав заказа</div>
+        <div class="card-b">
+          <ul class="items" id="items"></ul>
+          <div class="totals" id="totals"></div>
+          <div class="comment" id="comment" hidden></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="action">
+      <div id="actionSlot"></div>
+      <div class="hint" id="hint"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ── Конфиг ──
+  var API = "https://alcodelivery-db-production.up.railway.app";
+  var TOKEN = new URLSearchParams(location.search).get("t") || "";
+
+  // ── Утилиты ──
+  var $ = function(id){ return document.getElementById(id); };
+  function money(n){ return Number(n||0).toLocaleString("ru-RU"); }
+  function tel(p){ return "tel:" + String(p||"").replace(/[^\d+]/g,""); }
+  function waLink(p){ var d=String(p||"").replace(/\D/g,""); if(d.length>10) d=d.slice(-10); return d ? "https://wa.me/7"+d : ""; }
+  function mapUrl(q){ return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q||""); }
+  function esc(s){ var d=document.createElement("div"); d.textContent=(s==null?"":String(s)); return d.innerHTML; }
+
+  var toastTimer;
+  function toast(msg){
+    var t=$("toast"); t.textContent=msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
+
+  function show(which){
+    $("loading").hidden = which!=="loading";
+    $("state").hidden   = which!=="state";
+    $("app").hidden     = which!=="app";
+  }
+
+  // ── Иконки для экранов-состояний ──
+  var ICO = {
+    ok:   '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#2E7D54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    warn: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#C9890F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    dead: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#8A93A3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+  };
+  function stateScreen(ico, title, text, orderId){
+    $("state-ico").innerHTML = ICO[ico] || "";
+    $("state-title").textContent = title;
+    $("state-text").textContent = text;
+    var tag=$("state-order");
+    if(orderId){ tag.textContent="Заказ "+orderId; tag.hidden=false; } else { tag.hidden=true; }
+    show("state");
+  }
+
+  // ── Трек прогресса ──
+  var FLOW = [
+    {k:"assigned",  s:"Назначен"},
+    {k:"picked_up", s:"Забрал"},
+    {k:"on_way",    s:"В пути"},
+    {k:"delivered", s:"Доставлен"}
+  ];
+  function renderTrack(status){
+    var cur = FLOW.findIndex(function(f){ return f.k===status; });
+    if(cur<0) cur=0;
+    $("track").innerHTML = FLOW.map(function(f,i){
+      var cls = i<cur ? "done" : (i===cur ? "now" : "");
+      return '<div class="step '+cls+'"><div class="dot"></div><span>'+f.s+'</span></div>';
+    }).join("");
+  }
+
+  // ── Блок оплаты ──
+  function renderPay(o){
+    var box=$("pay");
+    if(o.payMethod==="kaspi"){
+      box.innerHTML = '<div class="kaspi">'
+        + '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3B4763" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>'
+        + '<span>Оплата <b>Kaspi</b> — наличные не берём</span></div>';
+    } else {
+      box.innerHTML = '<div class="cash"><div class="k">Взять с клиента наличными</div>'
+        + '<div class="v">'+money(o.orderTotal)+' <small>₸</small></div>'
+        + '<div class="sub">оплата при получении</div></div>';
+    }
+  }
+
+  // ── Состав заказа ──
+  function renderItems(o){
+    $("items").innerHTML = (o.items||[]).map(function(it){
+      var sum = Number(it.price||0)*Number(it.qty||0);
+      return '<li><span class="it-name"><span class="q">'+esc(it.qty)+'×</span> '+esc(it.name)+'</span>'
+           + '<span class="it-sum">'+money(sum)+' ₸</span></li>';
+    }).join("") || '<li><span class="it-name">—</span></li>';
+
+    var rows = '<div class="t"><span>Товары</span><span>'+money(o.goodsTotal)+' ₸</span></div>';
+    if(o.deliveryCost>0) rows += '<div class="t"><span>Доставка</span><span>'+money(o.deliveryCost)+' ₸</span></div>';
+    rows += '<div class="t grand"><span>Итого</span><b>'+money(o.orderTotal)+' ₸</b></div>';
+    $("totals").innerHTML = rows;
+
+    var c=$("comment");
+    if(o.comment && o.comment.trim()){ c.textContent="Комментарий: "+o.comment; c.hidden=false; }
+    else c.hidden=true;
+  }
+
+  // ── Кнопка действия по текущему статусу ──
+  var NEXT = {
+    assigned:  {to:"picked_up", label:"Забрал товар", hint:"Нажми, когда заберёшь заказ из магазина"},
+    picked_up: {to:"on_way",    label:"Я в пути",     hint:"Нажми, когда выехал к клиенту"},
+    on_way:    {to:"delivered", label:"Доставил",     hint:"Нажми, когда передал заказ клиенту", confirm:true, final:true}
+  };
+  function svgCheck(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'; }
+  function svgArrow(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'; }
+
+  function renderAction(status){
+    var slot=$("actionSlot"), hint=$("hint"), step=NEXT[status];
+    if(!step){ slot.innerHTML=""; hint.textContent=""; return; }
+    hint.textContent = step.hint;
+    var primary = '<button class="cta'+(step.final?" final":"")+'" id="go">'
+      + (step.final?svgCheck():svgArrow()) + step.label + '</button>';
+    slot.innerHTML = primary;
+    $("go").onclick = function(){
+      if(step.confirm){ askConfirm(step); }
+      else send(step.to);
+    };
+  }
+  function askConfirm(step){
+    var slot=$("actionSlot");
+    slot.innerHTML = '<div class="confirm">'
+      + '<button class="cta final" id="goYes">'+svgCheck()+'Подтвердить</button>'
+      + '<button class="ghost" id="goNo">Назад</button></div>';
+    $("hint").textContent = "Заказ закроется как доставленный — отменить нельзя";
+    $("goYes").onclick = function(){ send(step.to); };
+    $("goNo").onclick  = function(){ renderAction(CUR); };
+  }
+  function lockAction(text){
+    $("actionSlot").innerHTML = '<button class="cta" disabled>'+text+'</button>';
+  }
+
+  // ── Отрисовка рабочего экрана ──
+  var CUR = "assigned";
+  function render(o){
+    CUR = o.deliveryStatus || "assigned";
+    $("storeName").textContent = o.storeName || "Магазин";
+    $("orderId").textContent   = "Заказ " + o.id;
+    renderTrack(CUR);
+    renderPay(o);
+
+    $("pickName").textContent = o.storeName || "Магазин";
+    $("pickAddr").textContent = o.storeAddress || "";
+    var pc=$("pickCall");
+    if(o.storePhone){ pc.href=tel(o.storePhone); pc.style.display=""; } else pc.style.display="none";
+    $("pickNav").href = mapUrl((o.storeName?o.storeName+", ":"")+(o.storeAddress||""));
+
+    $("clientName").textContent = o.client || "Клиент";
+    $("clientAddr").textContent = o.address || "";
+    var cc=$("clientCall"), cw=$("clientWa"), cp=$("clientPhone");
+    if(o.phone){
+      cc.href=tel(o.phone); cc.style.display="";
+      cw.href=waLink(o.phone); cw.style.display="";
+      cp.textContent=o.phone; cp.href=tel(o.phone); cp.style.display="";
+    } else {
+      cc.style.display="none"; cw.style.display="none"; cp.style.display="none";
+    }
+    $("clientNav").href = mapUrl(o.address||"");
+
+    renderItems(o);
+    renderAction(CUR);
+    show("app");
+  }
+
+  // ── Сеть ──
+  function load(){
+    if(!TOKEN){ stateScreen("dead","Ссылка неполная","Похоже, ссылка скопирована не целиком. Попросите магазин прислать её заново."); return; }
+    show("loading");
+    fetch(API + "/courier/" + encodeURIComponent(TOKEN))
+      .then(function(r){ return r.json().then(function(d){ return {status:r.status, d:d}; }); })
+      .then(function(res){
+        var d=res.d;
+        if(d && d.cancelled){ stateScreen("warn","Заказ отменён","Магазин отменил этот заказ — доставка не нужна.", d.id); return; }
+        if(d && d.delivered){ stateScreen("ok","Доставлено","Заказ уже отмечен доставленным. Спасибо за работу!", d.id); return; }
+        if(d && d.expired){ stateScreen("dead","Ссылка истекла","Срок действия ссылки закончился. Попросите магазин прислать новую."); return; }
+        if(res.status===404 || !d || d.ok===false || !d.order){
+          stateScreen("dead","Ссылка недействительна", (d&&d.error) || "Заказ по этой ссылке не найден. Попросите магазин прислать новую.");
+          return;
+        }
+        render(d.order);
+      })
+      .catch(function(){ stateScreen("dead","Нет связи","Не удалось загрузить заказ. Проверьте интернет и нажмите «обновить»."); });
+  }
+
+  function send(to){
+    lockAction("Отправляю…");
+    fetch(API + "/courier/" + encodeURIComponent(TOKEN) + "/status", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({status:to})
+    })
+    .then(function(r){ return r.json().then(function(d){ return {status:r.status, d:d}; }); })
+    .then(function(res){
+      var d=res.d;
+      if(d && d.ok){
+        if(to==="delivered"){ stateScreen("ok","Доставлено","Заказ закрыт. Спасибо за работу!", d.order&&d.order.id); return; }
+        CUR = d.deliveryStatus || to;
+        renderTrack(CUR);
+        renderAction(CUR);
+        toast("Статус обновлён: " + (d.label||CUR));
+        return;
+      }
+      // отказ сервера — объясняем и перечитываем актуальное состояние
+      if(res.status===410){ stateScreen("dead","Ссылка истекла","Срок действия ссылки закончился. Попросите магазин прислать новую."); return; }
+      if(res.status===409){ toast((d&&d.error)||"Статус уже изменился"); load(); return; }
+      toast((d&&d.error)||"Не получилось. Попробуйте ещё раз.");
+      renderAction(CUR);
+    })
+    .catch(function(){ toast("Нет связи. Попробуйте ещё раз."); renderAction(CUR); });
+  }
+
+  $("refresh").onclick = load;
+  load();
+})();
+</script>
+</body>
+</html>
