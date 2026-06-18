@@ -269,7 +269,7 @@
   function money(n){ return Number(n||0).toLocaleString("ru-RU"); }
   function tel(p){ return "tel:" + String(p||"").replace(/[^\d+]/g,""); }
   function waLink(p){ var d=String(p||"").replace(/\D/g,""); if(d.length>10) d=d.slice(-10); return d ? "https://wa.me/7"+d : ""; }
-  function mapUrl(q){ return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q||""); }
+  function mapUrl(q){ return "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(q||"") + "&travelmode=driving"; }
   function esc(s){ var d=document.createElement("div"); d.textContent=(s==null?"":String(s)); return d.innerHTML; }
 
   var toastTimer;
