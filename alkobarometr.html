@@ -20,8 +20,8 @@
   .eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
 
   /* fixed-design screen, scaled to viewport */
-  .fit{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;overflow:hidden}
-  .screen{width:900px;height:1160px;transform-origin:top center;
+  .fit{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .screen{width:900px;height:1160px;transform-origin:center center;
     display:flex;flex-direction:column;padding:22px;gap:13px;flex:none}
 
   /* top */
@@ -212,6 +212,7 @@
 </style></head><body>
 
 
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v7</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -671,9 +672,7 @@ const Model = (() => {
   /* ---- масштаб под экран (один экран, как макет) ---- */
   function fit(){
     const s=Math.min(innerWidth/900, innerHeight/1160);
-    const sc=$('screen');
-    sc.style.height=(innerHeight/s)+'px';   // тянем по высоте — .main (flex:1) заполнит экран
-    sc.style.transform='scale('+s+')';
+    $('screen').style.transform='scale('+s+')';
   }
   window.addEventListener('resize',()=>{fit();render();});
 
