@@ -212,7 +212,7 @@
 </style></head><body>
 
 
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v10</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v11</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -268,8 +268,17 @@
       </div>
       <div class="card">
         <div class="chead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18h6M10 21h4M12 2a6 6 0 0 0-4 10.5c.6.6 1 1.4 1 2.5h6c0-1.1.4-1.9 1-2.5A6 6 0 0 0 12 2z"/></svg><span class="eyebrow">Рекомендация</span></div>
-        <div id="advice" style="font-family:'Manrope';font-weight:600;font-size:16px;line-height:1.3;color:var(--gold2);margin:2px 0 6px">—</div>
-        <div class="sub" id="kcal">≈ 0 ккал от алкоголя</div>
+        <div id="advice" style="font-family:'Manrope';font-weight:600;font-size:16px;line-height:1.3;color:var(--gold2);margin:2px 0 0">—</div>
+      </div>
+      <div class="card">
+        <div class="chead"><svg viewBox="0 0 24 24" fill="none" stroke="#E6A23C" stroke-width="1.5"><path d="M12 2c3 4 1 6 1 8a2 2 0 0 1-4 0c0-1 .5-2 0-3-2 2-3 4-3 6a6 6 0 0 0 12 0c0-5-4-7-6-11z"/></svg><span class="eyebrow">Калории от алкоголя</span></div>
+        <div class="big"><span id="kcal">0</span> <u style="font-size:.5em">ккал</u></div>
+        <div class="sub">«пустые» калории спирта (≈7 ккал на грамм)</div>
+      </div>
+      <div class="card">
+        <div class="chead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M6 9h12"/></svg><span class="eyebrow">Стандартных доз</span></div>
+        <div class="big"><span id="doses">0</span></div>
+        <div class="sub">1 доза ≈ 10 г чистого спирта</div>
       </div>
       <div class="card">
         <div class="chead"><span class="eyebrow">Вода для восстановления</span></div>
@@ -317,8 +326,8 @@
 
   <div class="foot">
     <div class="fc" id="cartBtn2"><svg viewBox="0 0 24 24" width="26" fill="none" stroke="var(--gold)" stroke-width="1.4"><path d="M5 7h15l-1.5 9h-12z"/><path d="M5 7 4 4H2"/></svg><div><span class="eyebrow">Корзина</span><b><span id="fCount">0</span> товаров</b></div></div>
-    <div class="fc total"><div><span class="eyebrow">Итого</span><b id="fTotal">0 ₽</b></div></div>
-    <button class="fc checkout">ОФОРМИТЬ ЗАКАЗ<svg viewBox="0 0 24 24" width="22" fill="none" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <div class="fc total"><div><span class="eyebrow">Итого</span><b id="fTotal">0 ₸</b></div></div>
+    <button class="fc checkout" onclick="parent.postMessage({type:'abm-checkout'},'*')">ОФОРМИТЬ ЗАКАЗ<svg viewBox="0 0 24 24" width="22" fill="none" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </div>
 
 </div></div>
@@ -373,13 +382,14 @@ function classifyCat(item){
 
 function orderToBarometer(cart){
   const drinks=[], counts={shot:0,glass:0,mug:0,beer:0,own:0};
-  let count=0, volMl=0, grams=0;
+  let count=0, volMl=0, grams=0, price=0;
   for(const item of cart){
+    const qty = item.qty || 1;
+    price += (item.price||0)*qty;                          // вся корзина, ₸
     const base = classifyCat(item); if(!base) continue;
     const txt = (item.name||'')+' '+(item.desc||'');
     const abv = (parseAbv(txt) != null) ? parseAbv(txt) : base.abv;
     if(abv <= 0) continue;                                 // безалкогольное (0.0%)
-    const qty = item.qty || 1;
     const unitMl = base.draft ? 1000 : (parseMl(txt) || base.ml); // разлив: qty=литры
     const totalMl = unitMl * qty;
     drinks.push({vol:totalMl, abv, disc:base.disc});
@@ -391,7 +401,7 @@ function orderToBarometer(cart){
     else                        counts.own  += qty;
   }
   for(const k in counts) counts[k]=Math.round(counts[k]);
-  return {drinks, counts, totals:{count, volMl:Math.round(volMl), grams:Math.round(grams)}};
+  return {drinks, counts, totals:{count, volMl:Math.round(volMl), grams:Math.round(grams), price}};
 }
 
 /* drinks.js — 6 напитков вокруг силуэта (x,y — позиция кружка в .body, дизайн-px) */
@@ -604,7 +614,7 @@ const Model = (() => {
     const a=snap.agg;
     $('badge').textContent=a.count; $('fCount').textContent=a.count; $('cCount').textContent=a.count;
     $('cVol').innerHTML=a.vol+' <u>мл</u>'; $('cEth').innerHTML=Math.round(a.grams)+' <u>г</u>';
-    $('fTotal').textContent=a.total.toLocaleString('ru-RU')+' ₽';
+    $('fTotal').textContent=(S.orderMode?(S.orderTotal||0):a.total).toLocaleString('ru-RU')+' ₸';
     // прогноз
     $('rpeak').innerHTML=snap.peak.toFixed(2)+' <u>‰</u>';
     $('r03').innerHTML=snap.t03!=null?(snap.t03<=S.now?'сейчас':durTxt(snap.t03-S.now)):'—';
@@ -612,11 +622,11 @@ const Model = (() => {
     // вода для восстановления: ~0.5 л на каждые 10 г чистого спирта
     const waterL = Math.round(a.grams*0.05*10)/10;
     $('waterL').textContent = waterL.toFixed(1);
-    $('kcal').textContent = '≈ '+Math.round(a.grams*7)+' ккал от алкоголя';
-    $('advice').textContent = adviceText(snap.cur);
     const f = clamp(waterL/10,0,1), H=60, wf=$('waterFill');
     wf.setAttribute('y', (86-H*f).toFixed(1)); wf.setAttribute('height', (H*f).toFixed(1));
-    $('kcal').textContent = Math.round(a.grams*7.1);
+    $('advice').textContent = adviceText(snap.cur);
+    $('kcal').textContent = Math.round(a.grams*7).toLocaleString('ru-RU');
+    $('doses').textContent = Math.max(0, Math.round(a.grams/10));
     // за руль
     const dm=snap.cur>0.3 ? (snap.t03!=null?snap.t03-S.now:0) : 0;
     const t=hm(dm); $('dt').textContent=`${pad(t.h)} : ${pad(t.m)}`;
@@ -705,6 +715,7 @@ const Model = (() => {
     loadOrder(order){
       S.orderMode = true;
       S.discCounts = order.counts || {};
+      S.orderTotal = (order.totals && order.totals.price) || 0;
       S.drinks = (order.drinks||[]).map(x=>({uid:uid++, pid:x.disc, vol:x.vol, abv:x.abv, price:0, tMin:S.now-ADD_OFFSET}));
       paintStatic(snapshot()); render();
     },
