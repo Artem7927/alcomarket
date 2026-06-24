@@ -1,0 +1,704 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Алкобарометр</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>:root{
+    --bg:#070708;--panel:#121214;--panel2:#17171a;--stroke:#26262b;
+    --sgold:rgba(232,185,100,.32);--gold:#E8B964;--gold2:#F2CE86;--goldb:#FFDC92;
+    --txt:#EDE6D6;--dim:#8b8b92;--dim2:#5a5a61;
+    --green:#56B86A;--amber:#E6A23C;--red:#DC5238;--blue:#5AA9E6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:radial-gradient(900px 600px at 50% -5%,#16130c 0,transparent 55%),
+      radial-gradient(700px 500px at 100% 110%,#0d1116 0,transparent 50%),var(--bg);
+    font-family:'Manrope',system-ui,sans-serif;color:var(--txt);
+    display:flex;align-items:center;justify-content:center}
+  .num{font-family:'Oswald',sans-serif}
+  .eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+
+  /* fixed-design screen, scaled to viewport */
+  .fit{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;overflow:hidden}
+  .screen{width:900px;height:1160px;transform-origin:top center;
+    display:flex;flex-direction:column;padding:22px;gap:13px;flex:none}
+
+  /* top */
+  .top{display:flex;align-items:center;justify-content:space-between}
+  .ibtn{width:54px;height:54px;border-radius:16px;border:1px solid var(--stroke);
+    background:linear-gradient(180deg,var(--panel2),var(--panel));display:flex;align-items:center;
+    justify-content:center;color:var(--gold);cursor:pointer;position:relative}
+  .ttl{font-family:'Oswald';font-weight:400;font-size:34px;letter-spacing:9px;color:var(--gold2);
+    text-transform:uppercase;text-shadow:0 0 26px rgba(232,185,100,.35)}
+  .badge{position:absolute;top:-7px;right:-7px;min-width:23px;height:23px;border-radius:12px;
+    background:linear-gradient(180deg,var(--goldb),var(--gold));color:#1a1305;font-weight:700;font-size:13px;
+    display:flex;align-items:center;justify-content:center;padding:0 6px;box-shadow:0 4px 12px rgba(232,185,100,.45)}
+
+  /* params */
+  .params{display:flex;align-items:center;gap:4px;background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--stroke);border-radius:18px;padding:12px 18px}
+  .par{padding:0 20px 0 4px}.par .eyebrow{margin-bottom:3px}
+  .par b{font-family:'Oswald';font-weight:500;font-size:19px}
+  .pdiv{width:1px;height:30px;background:var(--stroke)}
+  .edit{margin-left:auto;display:flex;align-items:center;gap:8px;border:1px solid var(--sgold);
+    color:var(--gold2);background:rgba(232,185,100,.05);border-radius:13px;padding:11px 20px;font-size:13px;
+    letter-spacing:1px;cursor:pointer}
+  .edit:hover{background:rgba(232,185,100,.12)}
+
+  /* main two-column */
+  .main{flex:1;display:grid;grid-template-columns:1fr 296px;gap:14px;min-height:0}
+  .stage{position:relative;background:radial-gradient(360px 360px at 50% 40%,rgba(232,185,100,.05),transparent 70%),
+    linear-gradient(180deg,var(--panel),#0d0d0f);border:1px solid var(--stroke);border-radius:26px;
+    padding:18px 12px;display:flex;flex-direction:column}
+
+  .gauge{position:relative;width:340px;margin:0 auto;aspect-ratio:2/1.12}
+  .gread{position:absolute;left:0;right:0;top:36%;text-align:center}
+  .gval{font-family:'Oswald';font-weight:500;font-size:52px;color:var(--gold2);line-height:1;
+    text-shadow:0 0 30px rgba(232,185,100,.4)}
+  .gval small{font-size:.4em;color:var(--gold);vertical-align:.5em;margin-left:4px}
+  .gcap{font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:6px}
+
+  .body{position:relative;flex:1;min-height:0;display:flex;justify-content:center;align-items:flex-end}
+  .figure{position:relative;width:290px;height:480px;margin:0 auto;align-self:flex-end}
+  .fill{position:absolute;inset:0;clip-path:inset(78% 0 0 0);
+    -webkit-mask:var(--mask) center/contain no-repeat;mask:var(--mask) center/contain no-repeat}
+  .outline{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+    filter:drop-shadow(0 0 9px rgba(232,185,100,.3))}
+  .surface{position:absolute;left:50%;transform:translateX(-50%);width:130px;height:2px;border-radius:2px;
+    bottom:0;opacity:0;transition:opacity .3s;pointer-events:none}
+  .drink{position:absolute;width:96px;display:flex;flex-direction:column;align-items:center;gap:5px;
+    transform:translate(-50%,-50%)}
+  .disc{width:80px;height:80px;border-radius:50%;border:1px solid var(--sgold);
+    background:radial-gradient(circle at 50% 30%,#1c1a15,#0c0b09);display:flex;align-items:center;
+    justify-content:center;color:var(--gold);position:relative;cursor:pointer;
+    box-shadow:inset 0 0 0 5px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.5)}
+  .disc:hover{border-color:var(--gold);box-shadow:inset 0 0 0 5px rgba(0,0,0,.4),0 0 22px rgba(232,185,100,.3)}
+  .disc svg{width:34px;height:34px}
+  .add{position:absolute;right:-3px;bottom:-2px;width:27px;height:27px;border-radius:50%;
+    background:linear-gradient(180deg,#1d1b16,#0c0b09);border:1px solid var(--gold);color:var(--goldb);
+    display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:300}
+  .cnt{position:absolute;top:-3px;left:-3px;min-width:22px;height:22px;border-radius:11px;background:var(--gold);
+    color:#1a1305;font-weight:700;font-size:12px;display:none;align-items:center;justify-content:center;padding:0 5px}
+  .drink.has .cnt{display:flex}
+  .lbl{text-align:center;font-size:10px;letter-spacing:.3px;color:var(--dim);line-height:1.25}
+  .lbl b{display:block;color:var(--txt);font-weight:600;font-size:11px;letter-spacing:.6px}
+
+  /* right column cards */
+  .col{display:flex;flex-direction:column;gap:11px;min-height:0}
+  .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--stroke);
+    border-radius:18px;padding:14px 16px}
+  .card.glow{border-color:var(--sgold)}
+  .chead{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+  .chead svg{width:16px;height:16px;color:var(--gold)}
+  .big{font-family:'Oswald';font-weight:500;font-size:40px;color:var(--gold2);line-height:1}
+  .big small{font-size:.4em;color:var(--gold);margin-left:4px}
+  .sub{font-size:11px;color:var(--dim);margin-top:4px}
+  .sname{font-family:'Oswald';font-weight:500;font-size:25px;line-height:1.05;color:var(--amber)}
+  .rrow{display:flex;gap:11px;align-items:center;margin-bottom:9px}
+  .rrow:last-child{margin-bottom:0}
+  .rbar{width:3px;align-self:stretch;border-radius:3px;background:linear-gradient(180deg,var(--blue),transparent)}
+  .rrow .eyebrow{display:block;margin-bottom:1px}
+  .rrow b{font-family:'Oswald';font-weight:500;font-size:22px}
+  .rrow b u{font-style:normal;text-decoration:none;font-size:12px;color:var(--dim);margin:0 1px 0 3px}
+  .ringwrap{display:flex;align-items:center;gap:14px}
+  .ring{position:relative;width:78px;height:78px;flex:none}
+  .bucket{width:74px;flex:none;display:flex;align-items:center;justify-content:center}
+  .ring .pc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Oswald';font-size:22px;color:var(--blue)}
+  .ring .pc small{font-size:.5em;color:var(--dim)}
+
+  /* cart strip */
+  .strip{background:linear-gradient(180deg,var(--panel),#0d0d0f);border:1px solid var(--stroke);
+    border-radius:18px;padding:11px 18px}
+  .strip>.eyebrow{text-align:center;display:block;margin-bottom:9px}
+  .sgrid{display:flex;align-items:center;justify-content:space-between}
+  .sitem{display:flex;align-items:center;gap:9px;color:var(--gold)}
+  .sitem .v{font-family:'Oswald';font-size:21px;color:var(--txt)}
+  .sitem .v u{font-style:normal;text-decoration:none;font-size:12px;color:var(--dim);margin-left:3px}
+  .sitem .k{font-size:11px;color:var(--dim)}
+  .sdiv{width:1px;height:34px;background:var(--stroke)}
+
+  /* drive */
+  .drive{background:linear-gradient(180deg,#0f0f11,#0a0a0b);border:1px solid var(--stroke);
+    border-radius:22px;padding:15px 22px 13px}
+  .dtop{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:10px}
+  .dgrid{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center}
+  .wheel{width:84px;height:84px;position:relative;flex:none}
+  .wheel .ok{position:absolute;right:-2px;bottom:-2px;width:28px;height:28px;border-radius:50%;
+    background:var(--green);display:flex;align-items:center;justify-content:center;color:#06210c;
+    border:3px solid var(--bg);font-weight:800;font-size:14px}
+  .wheel.no .ok{background:var(--red);color:#2a0a04}
+  .clock{text-align:center}
+  .clock .t{font-family:'Oswald';font-weight:500;font-size:72px;color:var(--gold2);line-height:.9;
+    letter-spacing:2px;text-shadow:0 0 28px rgba(232,185,100,.3)}
+  .clock .t.no{color:var(--red);text-shadow:0 0 28px rgba(220,82,56,.3)}
+  .clock .u{display:flex;justify-content:center;gap:96px;margin-top:3px}
+  .clock .u span{font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase}
+  .dyn{text-align:right}
+  .dyn .eyebrow{display:block;margin-bottom:8px}
+  .bars{display:flex;align-items:flex-end;gap:5px;height:62px;justify-content:flex-end}
+  .bars .b{width:11px;border-radius:3px 3px 0 0;background:var(--green);min-height:3px;transition:.4s}
+  .barx{display:flex;justify-content:space-between;font-size:9px;color:var(--dim2);margin-top:5px}
+  .dtrack{height:5px;border-radius:3px;margin-top:13px;
+    background:linear-gradient(90deg,var(--green),var(--amber) 55%,var(--red))}
+
+  /* footer */
+  .foot{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:12px}
+  .fc{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--stroke);
+    border-radius:16px;padding:13px 18px;display:flex;align-items:center;gap:12px;cursor:pointer}
+  .fc:hover{border-color:var(--sgold)}
+  .fc .eyebrow{display:block}
+  .fc b{font-family:'Oswald';font-size:17px}
+  .fc .arr{margin-left:auto;color:var(--dim)}
+  .total b{font-family:'Oswald';font-size:27px;color:var(--gold2)}
+  .checkout{justify-content:center;border:none;color:#1c1406;font-weight:700;letter-spacing:2px;font-size:15px;
+    background:linear-gradient(180deg,var(--goldb),var(--gold) 60%,#cda255);box-shadow:0 12px 30px rgba(232,185,100,.28)}
+  .checkout svg{stroke:#1c1406}
+
+  /* modal */
+  .mbg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:none;
+    align-items:center;justify-content:center;z-index:50}
+  .mbg.on{display:flex}
+  .modal{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--sgold);
+    border-radius:22px;padding:24px;width:340px}
+  .modal h3{font-family:'Oswald';font-weight:500;letter-spacing:2px;color:var(--gold2);margin-bottom:16px;
+    text-transform:uppercase;font-size:18px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:6px}
+  .seg{display:flex;gap:8px}
+  .seg button{flex:1;padding:10px;border-radius:11px;border:1px solid var(--stroke);background:transparent;
+    color:var(--dim);cursor:pointer;font-family:inherit;font-size:14px}
+  .seg button.on{border-color:var(--gold);color:var(--gold2);background:rgba(232,185,100,.08)}
+  .field input{width:100%;padding:11px 14px;border-radius:11px;border:1px solid var(--stroke);
+    background:#0c0c0e;color:var(--txt);font-family:'Oswald';font-size:18px}
+  .mact{display:flex;gap:10px;margin-top:4px}
+  .mact button{flex:1;padding:12px;border-radius:12px;font-family:inherit;font-weight:600;cursor:pointer;border:none}
+  .ghost{background:transparent;border:1px solid var(--stroke)!important;color:var(--dim)}
+  .gold{background:linear-gradient(180deg,var(--goldb),var(--gold));color:#1c1406}
+
+  /* ===== bottom-sheet корзины с временами (дизайн-пространство 900px) ===== */
+  .ov{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(5px);z-index:60;
+    display:none;align-items:flex-end;justify-content:center}
+  .ov.on{display:flex}
+  .csheet{width:560px;max-width:94%;background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--sgold);border-radius:26px;padding:22px;margin-bottom:24px;box-shadow:0 -10px 50px rgba(0,0,0,.6)}
+  .csheet h3{font-family:'Oswald';font-weight:500;letter-spacing:2px;color:var(--gold2);text-transform:uppercase;
+    font-size:22px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+  .csheet h3 .x{cursor:pointer;color:var(--dim);font-size:24px}
+  .clist{display:flex;flex-direction:column;gap:9px;max-height:430px;overflow-y:auto}
+  .crow{display:flex;align-items:center;gap:14px;background:rgba(0,0,0,.22);border:1px solid var(--stroke);
+    border-radius:15px;padding:12px 14px}
+  .crow .cic{width:42px;height:42px;flex:none;border-radius:12px;border:1px solid var(--sgold);
+    background:radial-gradient(circle at 50% 30%,#1c1a15,#0c0b09);color:var(--gold);
+    display:flex;align-items:center;justify-content:center}
+  .crow .cic svg{width:24px;height:24px}
+  .crow .cinfo b{font-family:'Oswald';font-size:22px;color:var(--txt)}
+  .crow .cinfo b u{font-style:normal;text-decoration:none;font-size:13px;color:var(--dim);margin-left:2px}
+  .crow .cinfo span{display:block;font-size:13px;color:var(--dim)}
+  .crow .ctime{margin-left:auto;background:#0c0c0e;border:1px solid var(--stroke);border-radius:12px;
+    color:var(--gold2);font-family:'Oswald';font-size:20px;padding:9px 12px}
+  .crow .cdel{width:40px;height:40px;flex:none;border-radius:12px;border:1px solid var(--stroke);
+    background:transparent;color:var(--dim2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .crow .cdel:active{color:var(--red);border-color:var(--red)}
+  .cempty{color:var(--dim2);text-align:center;padding:26px;font-size:16px}
+
+  /* кнопка сброса на карточке силуэта */
+  .reset{position:absolute;top:16px;right:16px;z-index:6;font-family:'Manrope';font-weight:600;
+    font-size:13px;letter-spacing:1.5px;color:var(--dim);border:1px solid var(--stroke);
+    background:rgba(0,0,0,.28);border-radius:12px;padding:8px 15px;cursor:pointer;transition:.15s}
+  .reset:hover{color:var(--gold2);border-color:var(--sgold)}
+  .reset:active{transform:scale(.96)}
+</style></head><body>
+
+
+<div class="fit"><div class="screen" id="screen">
+
+  <div class="top">
+    <button class="ibtn" onclick="parent.postMessage({type:'abm-close'},'*')" title="Назад в корзину"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 6l-7 6 7 6"/></svg></button>
+    <div class="ttl">Алкобарометр</div>
+    <button class="ibtn" id="cartBtn"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 3H2"/></svg><span class="badge" id="badge">6</span></button>
+  </div>
+
+  <div class="params">
+    <div class="par"><span class="eyebrow">Пол</span><b id="pSex">Женский</b></div><div class="pdiv"></div>
+    <div class="par"><span class="eyebrow">Вес</span><b id="pW">58 кг</b></div><div class="pdiv"></div>
+    <div class="par"><span class="eyebrow">Рост</span><b id="pH">165 см</b></div><div class="pdiv"></div>
+    <div class="par"><span class="eyebrow">Возраст</span><b id="pA">29 лет</b></div>
+    <button class="edit" id="edit"><svg viewBox="0 0 24 24" width="15" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>ИЗМЕНИТЬ</button>
+  </div>
+
+  <div class="main">
+    <div class="stage">
+      <button class="reset" id="resetBtn">СБРОС</button>
+      <div class="gauge">
+        <svg viewBox="0 0 200 118" width="100%">
+          <defs><linearGradient id="garc" x1="0" x2="1"><stop offset="0" stop-color="#56B86A"/><stop offset=".5" stop-color="#E6A23C"/><stop offset="1" stop-color="#DC5238"/></linearGradient></defs>
+          <path d="M14 108 A86 86 0 0 1 186 108" fill="none" stroke="#1d1d20" stroke-width="9" stroke-linecap="round"/>
+          <path id="gfill" d="M14 108 A86 86 0 0 1 186 108" fill="none" stroke="url(#garc)" stroke-width="9" stroke-linecap="round"/>
+          <circle id="gknob" cx="14" cy="108" r="7" fill="#FFDC92" stroke="#1a1305" stroke-width="2"/>
+        </svg>
+        <div class="gread"><div class="gval"><span id="gv">0.00</span><small>‰</small></div><div class="gcap" id="gpm">± 0.05 ‰</div></div>
+      </div>
+      <div class="body">
+        <div class="figure" id="figure">
+          <div class="fill" id="fill"></div>
+          <img class="outline" id="outline" src="human_female.png" alt="">
+          <div class="surface" id="surface"></div>
+        </div>
+        <div id="drinks"></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card glow">
+        <div class="chead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg><span class="eyebrow">Текущий уровень</span></div>
+        <div class="big"><span id="cb">0.00</span><small>‰</small></div><div class="sub" id="cbpm">± 0.05 ‰ · промилле в крови</div>
+      </div>
+      <div class="card">
+        <div class="chead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><span class="eyebrow">Состояние</span></div>
+        <div class="sname" id="sn">Трезвость</div><div class="sub" id="sd">Алкоголь не обнаружен</div>
+      </div>
+      <div class="card">
+        <div class="chead"><svg viewBox="0 0 24 24" fill="none" stroke="#5AA9E6" stroke-width="1.5"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg><span class="eyebrow">Прогноз</span></div>
+        <div class="rrow"><div class="rbar"></div><div><span class="eyebrow">Пик</span><b id="rpeak">0.00 <u>‰</u></b></div></div>
+        <div class="rrow"><div class="rbar"></div><div><span class="eyebrow">До 0.3‰ (за руль)</span><b id="r03">—</b></div></div>
+        <div class="rrow"><div class="rbar"></div><div><span class="eyebrow">До 0.0‰</span><b id="r00">—</b></div></div>
+      </div>
+      <div class="card">
+        <div class="chead"><span class="eyebrow">Вода для восстановления</span></div>
+        <div class="ringwrap">
+          <div class="bucket"><svg viewBox="0 0 80 92" width="74">
+            <defs><clipPath id="bclip"><path d="M16 26 L64 26 L58 84 Q57.6 86 55.6 86 L24.4 86 Q22.4 86 22 84 Z"/></clipPath></defs>
+            <rect id="waterFill" x="14" y="86" width="52" height="0" fill="#5AA9E6" opacity="0.85" clip-path="url(#bclip)"/>
+            <path d="M16 26 L64 26 L58 84 Q57.6 86 55.6 86 L24.4 86 Q22.4 86 22 84 Z" fill="none" stroke="var(--gold)" stroke-width="2"/>
+            <path d="M20 26 Q40 8 60 26" fill="none" stroke="var(--gold)" stroke-width="2"/>
+            <ellipse cx="40" cy="26" rx="24" ry="3.4" fill="none" stroke="var(--gold)" stroke-width="2.4"/>
+          </svg></div>
+          <div><div class="big"><span id="waterL">0</span> <u>л</u></div><div class="sub">выпейте столько воды после, чтобы избежать обезвоживания</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="strip" id="cartStrip">
+    <span class="eyebrow">Из корзины</span>
+    <div class="sgrid">
+      <div class="sitem"><svg viewBox="0 0 24 24" width="22" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5 7h15l-1.5 9h-12z"/><path d="M5 7 4 4H2"/></svg><div><div class="v" id="cCount">0</div><div class="k">товаров</div></div></div>
+      <div class="sdiv"></div>
+      <div class="sitem"><div><div class="v" id="cVol">0 <u>мл</u></div><div class="k">общий объём</div></div></div>
+      <div class="sdiv"></div>
+      <div class="sitem"><div><div class="v" id="cEth">0 <u>г</u></div><div class="k">чистого спирта</div></div></div>
+    </div>
+  </div>
+
+  <div class="drive">
+    <div class="dtop"><span class="eyebrow" style="letter-spacing:3px">Можно за руль через</span><svg viewBox="0 0 24 24" width="16" fill="none" stroke="var(--dim)" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></div>
+    <div class="dgrid">
+      <div class="wheel no" id="wheel"><svg viewBox="0 0 100 100" width="84" fill="none" stroke="#7a7a82" stroke-width="3"><circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="13"/><path d="M50 37V8M40 56 16 78M60 56l24 22"/></svg><div class="ok" id="wok">✕</div></div>
+      <div class="clock"><div class="t no" id="dt">00 : 00</div><div class="u"><span>часов</span><span>минут</span></div></div>
+      <div class="dyn"><span class="eyebrow">Динамика выведения</span><div class="bars" id="bars"></div><div class="barx"><span>0ч</span><span>6ч</span><span>12ч</span><span>18ч</span><span>24ч</span></div></div>
+    </div>
+    <div class="dtrack"></div>
+  </div>
+
+  <div class="foot">
+    <div class="fc" id="cartBtn2"><svg viewBox="0 0 24 24" width="26" fill="none" stroke="var(--gold)" stroke-width="1.4"><path d="M5 7h15l-1.5 9h-12z"/><path d="M5 7 4 4H2"/></svg><div><span class="eyebrow">Корзина</span><b><span id="fCount">0</span> товаров</b></div></div>
+    <div class="fc total"><div><span class="eyebrow">Итого</span><b id="fTotal">0 ₽</b></div></div>
+    <button class="fc checkout">ОФОРМИТЬ ЗАКАЗ<svg viewBox="0 0 24 24" width="22" fill="none" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
+
+</div></div>
+
+<!-- модалка параметров тела -->
+<div class="mbg" id="mbg"><div class="modal">
+  <h3>Параметры тела</h3>
+  <div class="field"><label>Пол</label><div class="seg" id="segSex"><button data-sex="f" class="on">Женский</button><button data-sex="m">Мужской</button></div></div>
+  <div class="field"><label>Вес, кг</label><input type="number" id="iW" value="58"></div>
+  <div class="field"><label>Рост, см</label><input type="number" id="iH" value="165"></div>
+  <div class="field"><label>Возраст, лет</label><input type="number" id="iA" value="29"></div>
+  <div class="mact"><button class="ghost" id="mC">Отмена</button><button class="gold" id="mS">Сохранить</button></div>
+</div></div>
+
+<!-- bottom-sheet корзины с временами напитков -->
+<div class="ov" id="csOv"><div class="csheet">
+  <h3>Корзина и время <span class="x" id="csX">✕</span></h3>
+  <div class="clist" id="clist"></div>
+</div></div>
+
+
+<script>/* alc-map.js — маппинг заказа в напитки барометра ПО КАТЕГОРИИ (без привязки к id).
+   Объём и крепость берутся из name/desc; если нет — по умолчанию для категории.
+   disc: shot=рюмка(50), glass=бокал(150), mug=кружка(500 разлив), beer=бутылка пива, own=свой. */
+
+function _num(s){ return parseFloat(String(s).replace(',', '.')); }
+function parseMl(text){
+  text = text || '';
+  let m = text.match(/(\d+(?:[.,]\d+)?)\s*мл/i);      if(m) return _num(m[1]);
+  let l = text.match(/(\d+(?:[.,]\d+)?)\s*л(?![а-я])/i); if(l) return _num(l[1])*1000;
+  return null;
+}
+function parseAbv(text){
+  text = text || '';
+  let m = text.match(/(\d+(?:[.,]\d+)?)\s*%/);         // "5.4%", "40 %"
+  return m ? _num(m[1])/100 : null;
+}
+/* категория -> иконка + значения по умолчанию */
+function classifyCat(item){
+  const c = (item.cat || '').toLowerCase();
+  const n = ((item.name||'')+' '+(item.desc||'')).toLowerCase();
+  if(c.includes('креп'))                                   return {disc:'shot',  ml:500,  abv:.40};
+  if(c.includes('вин'))                                    return {disc:'glass', ml:750,  abv:.12};
+  if(c.includes('пив'))                                    return {disc:'beer',  ml:500,  abv:.05};
+  if(c.includes('разлив')){
+    if(/(вино|шампан|игрист|asti|брют|brut)/.test(n))      return {disc:'glass', ml:1000, abv:.08, draft:true};
+    return {disc:'mug', ml:1000, abv:.045, draft:true};    // разливное пиво (литры)
+  }
+  if(c.includes('коктейл'))                                return {disc:'own',   ml:330,  abv:.06};
+  return null; // безалкоголь, закуски, рыба и т.п.
+}
+
+function orderToBarometer(cart){
+  const drinks=[], counts={shot:0,glass:0,mug:0,beer:0,own:0};
+  let count=0, volMl=0, grams=0;
+  for(const item of cart){
+    const base = classifyCat(item); if(!base) continue;
+    const txt = (item.name||'')+' '+(item.desc||'');
+    const abv = (parseAbv(txt) != null) ? parseAbv(txt) : base.abv;
+    if(abv <= 0) continue;                                 // безалкогольное (0.0%)
+    const qty = item.qty || 1;
+    const unitMl = base.draft ? 1000 : (parseMl(txt) || base.ml); // разлив: qty=литры
+    const totalMl = unitMl * qty;
+    drinks.push({vol:totalMl, abv, disc:base.disc});
+    grams += totalMl*abv*0.789; volMl += totalMl; count += qty;
+    if(base.disc==='shot')      counts.shot += totalMl/50;
+    else if(base.disc==='glass')counts.glass+= totalMl/150;
+    else if(base.disc==='mug')  counts.mug  += totalMl/500;
+    else if(base.disc==='beer') counts.beer += qty;
+    else                        counts.own  += qty;
+  }
+  for(const k in counts) counts[k]=Math.round(counts[k]);
+  return {drinks, counts, totals:{count, volMl:Math.round(volMl), grams:Math.round(grams)}};
+}
+
+/* drinks.js — 6 напитков вокруг силуэта (x,y — позиция кружка в .body, дизайн-px) */
+const ICONS = {
+  shot:'<path d="M8 4h8l-1 16h-6z"/>',
+  wineG:'<path d="M7 3h10l-1 6a4 4 0 0 1-8 0z"/><path d="M12 13v6M8 20h8"/>',
+  mug:'<path d="M6 5h11v15H6z"/><path d="M17 8h3v6h-3"/><path d="M9 9v7M12 9v7"/>',
+  wineB:'<path d="M10 3h4v4l2 4v9H8v-9l2-4z"/><path d="M8 13h8"/>',
+  beerB:'<path d="M10 3h4v3l2 3v9H8V9l2-3z"/><path d="M8 12h8"/>',
+  cup:'<path d="M5 8h14l-2 11H7z"/><path d="M5 8 4 5M14 8V5"/>'
+};
+const DRINKS = [
+  { id:'shot',  name:'Рюмка',        ml:'50 мл',  vol:50,  abv:0.40, price:250,  icon:ICONS.shot,  x:54,  y:64  },
+  { id:'glass', name:'Бокал',        ml:'150 мл', vol:150, abv:0.12, price:450,  icon:ICONS.wineG, x:42,  y:200 },
+  { id:'mug',   name:'Кружка',       ml:'500 мл', vol:500, abv:0.05, price:320,  icon:ICONS.mug,   x:54,  y:336 },
+  { id:'wine',  name:'Бутылка вина', ml:'750 мл', vol:750, abv:0.13, price:1290, icon:ICONS.wineB, x:486, y:64  },
+  { id:'beer',  name:'Бутылка пива', ml:'500 мл', vol:500, abv:0.05, price:180,  icon:ICONS.beerB, x:498, y:200 },
+  { id:'own',   name:'Свой объём',   ml:'напиток',vol:0,   abv:0.40, price:0,    icon:ICONS.cup,   x:486, y:336, custom:true }
+];
+const drinkById = id => DRINKS.find(d => d.id === id);
+
+/* model.js — расчёт промилле. Чистые модульные функции, без DOM. */
+const Model = (() => {
+  const ETH = 0.789;            // плотность этанола, г/мл
+  const BETA = 0.15 / 60;       // элиминация, ‰ в минуту (~0.15 ‰/ч)
+  const BLOOD_WATER = 0.806;    // доля воды в крови (пересчёт вода тела → кровь)
+
+  /* граммы чистого спирта в напитке */
+  function ethanolGrams(volMl, abvFrac) {
+    return volMl * abvFrac * ETH;
+  }
+
+  /* число стандартных доз (1 доза ≈ 10 г спирта) */
+  function standardDrinks(grams) {
+    return grams / 10;
+  }
+
+  /* объём воды тела, л (Watson) — учитывает пол, рост, вес, возраст */
+  function totalBodyWater(sex, weightKg, heightCm, ageY) {
+    return sex === 'm'
+      ? 2.447 - 0.09516 * ageY + 0.1074 * heightCm + 0.3362 * weightKg
+      : -2.097 + 0.1069 * heightCm + 0.2466 * weightKg;
+  }
+
+  /* фаза всасывания: линейный выход на пик, длительность 20…90 мин */
+  function absorptionDuration(grams) {
+    return Math.max(20, Math.min(90, 20 + standardDrinks(grams) * 15));
+  }
+
+  /* максимальный вклад напитка в промилле (при полном всасывании) */
+  function drinkPeak(grams, tbw) {
+    return grams * BLOOD_WATER / tbw;
+  }
+
+  /* доля всосавшегося к моменту tMin (минута суток) */
+  function absorbedFraction(drink, tMin) {
+    const g = ethanolGrams(drink.vol, drink.abv);
+    const dur = absorptionDuration(g);
+    return Math.max(0, Math.min(1, (tMin - drink.tMin) / dur));
+  }
+
+  /* суммарное промилле в момент tMin по всем напиткам */
+  function totalBAC(drinks, p, tMin) {
+    if (!drinks.length) return 0;
+    const tbw = totalBodyWater(p.sex, p.weight, p.height, p.age);
+    let absorbed = 0;
+    let tStart = Infinity;
+    for (const d of drinks) {
+      tStart = Math.min(tStart, d.tMin);
+      const g = ethanolGrams(d.vol, d.abv);
+      absorbed += drinkPeak(g, tbw) * absorbedFraction(d, tMin);
+    }
+    const eliminated = BETA * Math.max(0, tMin - tStart);
+    return Math.max(0, absorbed - eliminated);
+  }
+
+  /* прогнозируемый пик и время его достижения */
+  function peakInfo(drinks, p) {
+    if (!drinks.length) return { peak: 0, tPeak: 0 };
+    const t0 = Math.min(...drinks.map(d => d.tMin));
+    let peak = 0, tPeak = t0;
+    for (let t = t0; t <= t0 + 24 * 60; t++) {
+      const b = totalBAC(drinks, p, t);
+      if (b > peak) { peak = b; tPeak = t; }
+    }
+    return { peak, tPeak };
+  }
+
+  /* минута суток, когда промилле опустится до level (начиная с fromT) */
+  function timeToLevel(drinks, p, level, fromT) {
+    if (!drinks.length) return null;
+    for (let t = fromT; t <= fromT + 48 * 60; t++) {
+      if (totalBAC(drinks, p, t) <= level) return t;
+    }
+    return null;
+  }
+
+  /* диапазон погрешности, ‰ */
+  function uncertainty(bac) {
+    return Math.max(0.05, 0.15 * bac);
+  }
+
+  return {
+    BETA, ethanolGrams, standardDrinks, totalBodyWater, absorptionDuration,
+    totalBAC, peakInfo, timeToLevel, uncertainty
+  };
+})();
+
+/* ui.js — рендер согласованного экрана через Model. Зависит от drinks.js, model.js */
+(() => {
+  const $ = id => document.getElementById(id);
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const pad = n => String(n).padStart(2,'0');
+  const toClock = m => { m=((Math.round(m)%1440)+1440)%1440; return pad(Math.floor(m/60))+':'+pad(m%60); };
+  const parseClock = s => { const [h,m]=s.split(':').map(Number); return h*60+m; };
+  const hm = mins => { mins=Math.max(0,Math.round(mins)); return {h:Math.floor(mins/60),m:mins%60}; };
+  const durTxt = mins => { const t=hm(mins); return `${t.h} <u>ч</u> ${pad(t.m)} <u>мин</u>`; };
+
+  const GMAX = 3.0, ADD_OFFSET = 60; // новый напиток считаем выпитым 60 мин назад (для отклика)
+  let uid = 1;
+  const S = {
+    sex:'f', weight:58, height:165, age:29, now: 23*60, orderMode:true, discCounts:{},
+    drinks: []
+  };
+  function mk(pid, tMin){ const d=drinkById(pid); return { uid:uid++, pid, vol:d.vol, abv:d.abv, price:d.price, tMin }; }
+  const P = () => ({ sex:S.sex, weight:S.weight, height:S.height, age:S.age });
+
+  function stInfo(b){
+    if(b<0.05) return ['Трезвость','Алкоголь не обнаружен','var(--green)'];
+    if(b<0.3)  return ['Лёгкое опьянение','Расслабление, лёгкая эйфория','var(--green)'];
+    if(b<0.5)  return ['Начальное опьянение','Реакция начинает снижаться','var(--amber)'];
+    if(b<1.5)  return ['Среднее опьянение','Внимание и реакция снижены','var(--amber)'];
+    if(b<2.5)  return ['Сильное опьянение','Нарушены координация и речь','var(--red)'];
+    return ['Тяжёлое опьянение','Опасно для здоровья','var(--red)'];
+  }
+  function levelColor(b){
+    const G=[86,184,106],A=[230,162,60],R=[220,82,56]; let t,c1,c2;
+    if(b<=1){t=clamp(b,0,1);c1=G;c2=A;}else{t=clamp((b-1)/1.5,0,1);c1=A;c2=R;}
+    return c1.map((v,i)=>Math.round(v+(c2[i]-v)*t));
+  }
+  function agg(){
+    let count=0,vol=0,grams=0,total=0;
+    for(const d of S.drinks){count++;vol+=d.vol;total+=d.price;grams+=Model.ethanolGrams(d.vol,d.abv);}
+    return {count,vol,grams,total};
+  }
+
+  /* ---- discs вокруг силуэта ---- */
+  const dr = $('drinks');
+  DRINKS.forEach(d=>{
+    const el=document.createElement('div'); el.className='drink'; el.dataset.id=d.id;
+    el.style.left=d.x+'px'; el.style.top=d.y+'px';
+    el.innerHTML=`<div class="disc"><span class="cnt">0</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">${d.icon}</svg>
+      <span class="add">+</span></div><div class="lbl">${d.ml}<b>${d.name.toUpperCase()}</b></div>`;
+    el.querySelector('.disc').onclick=()=>addDrink(d);
+    el.querySelector('.cnt').onclick=e=>{e.stopPropagation();removeLast(d.id);};
+    dr.appendChild(el);
+  });
+  function countOf(pid){return S.drinks.filter(d=>d.pid===pid).length;}
+  function addDrink(d){
+    if(S.orderMode) return; // в режиме заказа диски показывают заказ, не добавляют
+    let vol=d.vol, abv=d.abv, price=d.price;
+    if(d.custom){
+      const v=parseInt(prompt('Объём, мл:','100')); const a=parseFloat(prompt('Крепость, %:','40'));
+      if(!v||isNaN(a))return; vol=v; abv=a/100; price=Math.round(v*1.4);
+    }
+    S.drinks.push({uid:uid++,pid:d.id,vol,abv,price,tMin:S.now-ADD_OFFSET});
+    render();
+  }
+  function removeLast(pid){
+    for(let i=S.drinks.length-1;i>=0;i--){ if(S.drinks[i].pid===pid){S.drinks.splice(i,1);break;} }
+    render();
+  }
+
+  /* ---- bars (динамика) ---- */
+  const bars=$('bars'); for(let i=0;i<9;i++){const b=document.createElement('div');b.className='b';bars.appendChild(b);}
+
+  /* ---- gauge + fill ---- */
+  function gaugeArc(b){
+    const f=Math.min(1,b/GMAX), p=$('gfill'), L=p.getTotalLength();
+    p.style.strokeDasharray=L; p.style.strokeDashoffset=L*(1-f);
+    const a=Math.PI*(1-f); $('gknob').setAttribute('cx',100+86*Math.cos(a)); $('gknob').setAttribute('cy',108-86*Math.sin(a));
+  }
+  function setFill(b){
+    const pct=clamp(b/GMAX*100,0,100), [r,g,bl]=levelColor(b), c=`rgb(${r},${g},${bl})`, fig=$('figure').clientHeight||480;
+    $('fill').style.background=`linear-gradient(180deg,rgba(${r},${g},${bl},.45),rgba(${r},${g},${bl},.92))`;
+    $('fill').style.filter=`drop-shadow(0 0 11px rgba(${r},${g},${bl},.55))`;
+    $('fill').style.clipPath=`inset(${100-pct}% 0 0 0)`;
+    $('surface').style.bottom=(pct/100*fig-1)+'px';
+    $('surface').style.background=`linear-gradient(90deg,transparent,${c},transparent)`;
+    $('surface').style.boxShadow=`0 0 11px ${c},0 0 24px rgba(${r},${g},${bl},.6)`;
+    $('surface').style.opacity=pct<2?0:.95;
+  }
+
+  /* ---- мгновенные поля ---- */
+  function paintStatic(snap){
+    $('pSex').textContent=S.sex==='m'?'Мужской':'Женский';
+    $('pW').textContent=S.weight+' кг'; $('pH').textContent=S.height+' см'; $('pA').textContent=S.age+' лет';
+    $('outline').src=S.sex==='m'?'human_male.png':'human_female.png';
+    $('figure').style.setProperty('--mask',`url(human_${S.sex==='m'?'male':'female'}_mask.png)`);
+    DRINKS.forEach(d=>{const el=dr.querySelector(`[data-id="${d.id}"]`);const n=S.orderMode?(S.discCounts[d.id]||0):countOf(d.id);
+      el.classList.toggle('has',n>0);el.querySelector('.cnt').textContent=n;});
+    const a=snap.agg;
+    $('badge').textContent=a.count; $('fCount').textContent=a.count; $('cCount').textContent=a.count;
+    $('cVol').innerHTML=a.vol+' <u>мл</u>'; $('cEth').innerHTML=Math.round(a.grams)+' <u>г</u>';
+    $('fTotal').textContent=a.total.toLocaleString('ru-RU')+' ₽';
+    // прогноз
+    $('rpeak').innerHTML=snap.peak.toFixed(2)+' <u>‰</u>';
+    $('r03').innerHTML=snap.t03!=null?(snap.t03<=S.now?'сейчас':durTxt(snap.t03-S.now)):'—';
+    $('r00').innerHTML=snap.t00!=null?(snap.t00<=S.now?'сейчас':durTxt(snap.t00-S.now)):'—';
+    // вода для восстановления: ~0.5 л на каждые 10 г чистого спирта
+    const waterL = Math.round(a.grams*0.05*10)/10;
+    $('waterL').textContent = waterL.toFixed(1);
+    const f = clamp(waterL/10,0,1), H=60, wf=$('waterFill');
+    wf.setAttribute('y', (86-H*f).toFixed(1)); wf.setAttribute('height', (H*f).toFixed(1));
+    // за руль
+    const dm=snap.cur>0.3 ? (snap.t03!=null?snap.t03-S.now:0) : 0;
+    const t=hm(dm); $('dt').textContent=`${pad(t.h)} : ${pad(t.m)}`;
+    const ok=snap.cur<=0.3; $('dt').classList.toggle('no',!ok); $('wheel').classList.toggle('no',!ok); $('wok').textContent=ok?'✓':'✕';
+    // динамика
+    for(let i=0;i<9;i++){const bv=Model.totalBAC(S.drinks,P(),S.now+i*180);
+      bars.children[i].style.height=(5+(bv/GMAX)*57)+'px';
+      bars.children[i].style.background=bv>1.5?'var(--red)':bv>0.3?'var(--amber)':'var(--green)';}
+    $('sd').textContent=stInfo(snap.cur)[1];
+  }
+
+  /* ---- анимируемая часть (bac) ---- */
+  function paintBac(b){
+    $('gv').textContent=b.toFixed(2); $('cb').textContent=b.toFixed(2);
+    const u=Model.uncertainty(b).toFixed(2);
+    $('gpm').textContent='± '+u+' ‰'; $('cbpm').textContent='± '+u+' ‰ · промилле в крови';
+    gaugeArc(b); setFill(b);
+    const [name,,col]=stInfo(b); $('sn').textContent=name; $('sn').style.color=col;
+  }
+
+  let disp=0, from=0, to=0, t0=0, raf=null;
+  const DUR=600, ease=k=>1-Math.pow(1-k,3);
+  function loop(now){
+    const k=clamp((now-t0)/DUR,0,1); disp=from+(to-from)*ease(k); paintBac(disp);
+    if(k<1) raf=requestAnimationFrame(loop); else { raf=null; disp=to; paintBac(disp); }
+  }
+  function snapshot(){
+    const cur=Model.totalBAC(S.drinks,P(),S.now);
+    const {peak}=Model.peakInfo(S.drinks,P());
+    return { cur, peak,
+      t03:Model.timeToLevel(S.drinks,P(),0.3,S.now),
+      t00:Model.timeToLevel(S.drinks,P(),0.05,S.now), agg:agg() };
+  }
+  function render(){
+    const snap=snapshot(); paintStatic(snap);
+    from=disp; to=snap.cur; t0=performance.now(); if(!raf) raf=requestAnimationFrame(loop);
+  }
+
+  /* ---- модалка параметров ---- */
+  $('edit').onclick=()=>{ $('iW').value=S.weight; $('iH').value=S.height; $('iA').value=S.age;
+    document.querySelectorAll('#segSex button').forEach(b=>b.classList.toggle('on',b.dataset.sex===S.sex));
+    $('mbg').classList.add('on'); };
+  $('mC').onclick=()=>$('mbg').classList.remove('on');
+  $('mbg').onclick=e=>{if(e.target===$('mbg'))$('mbg').classList.remove('on');};
+  $('segSex').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    document.querySelectorAll('#segSex button').forEach(x=>x.classList.remove('on'));b.classList.add('on');};
+  $('mS').onclick=()=>{ S.sex=document.querySelector('#segSex .on').dataset.sex;
+    S.weight=clamp(+$('iW').value||58,30,250); S.height=clamp(+$('iH').value||165,120,220); S.age=clamp(+$('iA').value||29,14,100);
+    $('mbg').classList.remove('on'); paintStatic(snapshot()); render(); };
+
+  /* ---- лист корзины с временами ---- */
+  function openCart(){ renderCart(); $('csOv').classList.add('on'); }
+  $('cartBtn').onclick=openCart;
+  $('resetBtn').onclick=()=>{ if(S.drinks.length){ S.drinks=[]; paintStatic(snapshot()); render(); } };
+  $('csX').onclick=()=>$('csOv').classList.remove('on');
+  $('csOv').onclick=e=>{if(e.target===$('csOv'))$('csOv').classList.remove('on');};
+  function renderCart(){
+    const el=$('clist');
+    const list=S.drinks.slice().sort((a,b)=>a.tMin-b.tMin);
+    if(!list.length){el.innerHTML='<div class="cempty">Корзина пуста. Добавьте напиток кнопкой «+».</div>';return;}
+    el.innerHTML=list.map(d=>{const p=drinkById(d.pid);
+      return `<div class="crow" data-uid="${d.uid}">
+        <div class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">${p.icon}</svg></div>
+        <div class="cinfo"><b>${d.vol}<u>мл</u> · ${Math.round(d.abv*100)}%</b><span>${p.name}</span></div>
+        <input class="ctime" type="time" value="${toClock(d.tMin)}">
+        <button class="cdel"><svg viewBox="0 0 24 24" width="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>`;}).join('');
+    el.querySelectorAll('.crow').forEach(row=>{
+      const id=+row.dataset.uid;
+      row.querySelector('.ctime').onchange=e=>{const dd=S.drinks.find(x=>x.uid===id);if(dd)dd.tMin=parseClock(e.target.value);render();};
+      row.querySelector('.cdel').onclick=()=>{S.drinks=S.drinks.filter(x=>x.uid!==id);renderCart();render();};
+    });
+  }
+
+  /* ---- масштаб под экран (один экран, как макет) ---- */
+  function fit(){
+    const s=Math.min(innerWidth/900, innerHeight/1160);
+    const sc=$('screen');
+    sc.style.height=(innerHeight/s)+'px';   // тянем по высоте — .main (flex:1) заполнит экран
+    sc.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize',()=>{fit();render();});
+
+  // ---- API для магазина: загрузить заказ из корзины ----
+  window.ABM = {
+    loadOrder(order){
+      S.orderMode = true;
+      S.discCounts = order.counts || {};
+      S.drinks = (order.drinks||[]).map(x=>({uid:uid++, pid:x.disc, vol:x.vol, abv:x.abv, price:0, tMin:S.now-ADD_OFFSET}));
+      paintStatic(snapshot()); render();
+    },
+    open(){ const o=document.getElementById('abmOverlay'); if(o) o.classList.add('on'); fit(); render(); },
+    close(){ const o=document.getElementById('abmOverlay'); if(o) o.classList.remove('on'); }
+  };
+
+  // ---- связь с магазином (iframe) ----
+  window.addEventListener('message', e=>{
+    const d = e.data || {};
+    if(d.type==='abm-cart' && typeof orderToBarometer==='function'){
+      ABM.loadOrder(orderToBarometer(d.cart||[]));
+    }
+  });
+  try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'abm-ready'},'*'); }catch(_){}
+
+  fit(); render();
+})();
+</script>
+</body></html>
