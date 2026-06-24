@@ -20,8 +20,8 @@
   .eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
 
   /* fixed-design screen, scaled to viewport */
-  .fit{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
-  .screen{width:900px;height:1160px;transform-origin:center center;
+  .fit{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;overflow:hidden}
+  .screen{width:900px;height:1160px;transform-origin:top center;
     display:flex;flex-direction:column;padding:22px;gap:13px;flex:none}
 
   /* top */
@@ -50,7 +50,7 @@
   .main{flex:1;display:grid;grid-template-columns:1fr 296px;gap:14px;min-height:0}
   .stage{position:relative;background:radial-gradient(360px 360px at 50% 40%,rgba(232,185,100,.05),transparent 70%),
     linear-gradient(180deg,var(--panel),#0d0d0f);border:1px solid var(--stroke);border-radius:26px;
-    padding:18px 12px;display:flex;flex-direction:column}
+    padding:18px 12px;display:flex;flex-direction:column;justify-content:center}
 
   .gauge{position:relative;width:340px;margin:0 auto;aspect-ratio:2/1.12}
   .gread{position:absolute;left:0;right:0;top:36%;text-align:center}
@@ -59,7 +59,7 @@
   .gval small{font-size:.4em;color:var(--gold);vertical-align:.5em;margin-left:4px}
   .gcap{font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:6px}
 
-  .body{position:relative;flex:1;min-height:0;display:flex;justify-content:center;align-items:flex-end}
+  .body{position:relative;flex:0 0 auto;display:flex;justify-content:center;align-items:flex-end}
   .figure{position:relative;width:290px;height:480px;margin:0 auto;align-self:flex-end}
   .fill{position:absolute;inset:0;clip-path:inset(78% 0 0 0);
     -webkit-mask:var(--mask) center/contain no-repeat;mask:var(--mask) center/contain no-repeat}
@@ -85,7 +85,7 @@
   .lbl b{display:block;color:var(--txt);font-weight:600;font-size:11px;letter-spacing:.6px}
 
   /* right column cards */
-  .col{display:flex;flex-direction:column;gap:11px;min-height:0}
+  .col{display:flex;flex-direction:column;gap:11px;min-height:0;justify-content:space-between}
   .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--stroke);
     border-radius:18px;padding:14px 16px}
   .card.glow{border-color:var(--sgold)}
@@ -212,7 +212,7 @@
 </style></head><body>
 
 
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v7</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v8</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -671,8 +671,10 @@ const Model = (() => {
 
   /* ---- масштаб под экран (один экран, как макет) ---- */
   function fit(){
-    const s=Math.min(innerWidth/900, innerHeight/1160);
-    $('screen').style.transform='scale('+s+')';
+    const s=innerWidth/900;
+    const sc=$('screen');
+    sc.style.height=(innerHeight/s)+'px';   // экран = высота вьюпорта (после scale)
+    sc.style.transform='scale('+s+')';
   }
   window.addEventListener('resize',()=>{fit();render();});
 
