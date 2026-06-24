@@ -1,11 +1,15 @@
 // AlcoMarket service worker
-const CACHE = 'alcomarket-v4';
+const CACHE = 'alcomarket-v5';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './alkobarometr/index.html','./alkobarometr/css/styles.css',
+  './alkobarometr/js/alc-map.js','./alkobarometr/js/drinks.js','./alkobarometr/js/model.js','./alkobarometr/js/ui.js',
+  './alkobarometr/images/human_female.png','./alkobarometr/images/human_female_mask.png',
+  './alkobarometr/images/human_male.png','./alkobarometr/images/human_male_mask.png'
 ];
 
 self.addEventListener('install', (e) => {
