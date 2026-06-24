@@ -60,7 +60,7 @@
   .gcap{font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:6px}
 
   .body{position:relative;flex:0 0 auto;display:flex;justify-content:center;align-items:flex-end}
-  .figure{position:relative;width:350px;height:600px;margin:0 auto;align-self:flex-end}
+  .figure{position:relative;width:336px;height:586px;margin:0 auto;align-self:flex-end}
   .fill{position:absolute;inset:0;clip-path:inset(78% 0 0 0);
     -webkit-mask:var(--mask) center/contain no-repeat;mask:var(--mask) center/contain no-repeat}
   .outline{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
@@ -212,7 +212,7 @@
 </style></head><body>
 
 
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v9</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v10</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -267,6 +267,11 @@
         <div class="rrow"><div class="rbar"></div><div><span class="eyebrow">До 0.0‰</span><b id="r00">—</b></div></div>
       </div>
       <div class="card">
+        <div class="chead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18h6M10 21h4M12 2a6 6 0 0 0-4 10.5c.6.6 1 1.4 1 2.5h6c0-1.1.4-1.9 1-2.5A6 6 0 0 0 12 2z"/></svg><span class="eyebrow">Рекомендация</span></div>
+        <div id="advice" style="font-family:'Manrope';font-weight:600;font-size:16px;line-height:1.3;color:var(--gold2);margin:2px 0 6px">—</div>
+        <div class="sub" id="kcal">≈ 0 ккал от алкоголя</div>
+      </div>
+      <div class="card">
         <div class="chead"><span class="eyebrow">Вода для восстановления</span></div>
         <div class="ringwrap">
           <div class="bucket"><svg viewBox="0 0 80 92" width="74">
@@ -277,6 +282,13 @@
             <ellipse cx="40" cy="26" rx="24" ry="3.4" fill="none" stroke="var(--gold)" stroke-width="2.4"/>
           </svg></div>
           <div><div class="big"><span id="waterL">0</span> <u>л</u></div><div class="sub">выпейте столько воды после, чтобы избежать обезвоживания</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chead"><span class="eyebrow">Калории от алкоголя</span></div>
+        <div class="ringwrap">
+          <div style="font-size:36px;width:74px;text-align:center;flex:none">🔥</div>
+          <div><div class="big"><span id="kcal">0</span> <u>ккал</u></div><div class="sub">«пустые» калории спирта (≈7 ккал на грамм)</div></div>
         </div>
       </div>
     </div>
@@ -392,12 +404,12 @@ const ICONS = {
   cup:'<path d="M5 8h14l-2 11H7z"/><path d="M5 8 4 5M14 8V5"/>'
 };
 const DRINKS = [
-  { id:'shot',  name:'Рюмка',        ml:'50 мл',  vol:50,  abv:0.40, price:250,  icon:ICONS.shot,  x:40,  y:64  },
-  { id:'glass', name:'Бокал',        ml:'150 мл', vol:150, abv:0.12, price:450,  icon:ICONS.wineG, x:28,  y:200 },
-  { id:'mug',   name:'Кружка',       ml:'500 мл', vol:500, abv:0.05, price:320,  icon:ICONS.mug,   x:40,  y:336 },
-  { id:'wine',  name:'Бутылка вина', ml:'750 мл', vol:750, abv:0.13, price:1290, icon:ICONS.wineB, x:500, y:64  },
-  { id:'beer',  name:'Бутылка пива', ml:'500 мл', vol:500, abv:0.05, price:180,  icon:ICONS.beerB, x:512, y:200 },
-  { id:'own',   name:'Свой объём',   ml:'напиток',vol:0,   abv:0.40, price:0,    icon:ICONS.cup,   x:500, y:336, custom:true }
+  { id:'shot',  name:'Рюмка',        ml:'50 мл',  vol:50,  abv:0.40, price:250,  icon:ICONS.shot,  x:54,  y:64  },
+  { id:'glass', name:'Бокал',        ml:'150 мл', vol:150, abv:0.12, price:450,  icon:ICONS.wineG, x:48,  y:200 },
+  { id:'mug',   name:'Кружка',       ml:'500 мл', vol:500, abv:0.05, price:320,  icon:ICONS.mug,   x:54,  y:336 },
+  { id:'wine',  name:'Бутылка вина', ml:'750 мл', vol:750, abv:0.13, price:1290, icon:ICONS.wineB, x:490, y:64  },
+  { id:'beer',  name:'Бутылка пива', ml:'500 мл', vol:500, abv:0.05, price:180,  icon:ICONS.beerB, x:492, y:200 },
+  { id:'own',   name:'Свой объём',   ml:'напиток',vol:0,   abv:0.40, price:0,    icon:ICONS.cup,   x:490, y:336, custom:true }
 ];
 const drinkById = id => DRINKS.find(d => d.id === id);
 
@@ -507,6 +519,13 @@ const Model = (() => {
   function mk(pid, tMin){ const d=drinkById(pid); return { uid:uid++, pid, vol:d.vol, abv:d.abv, price:d.price, tMin }; }
   const P = () => ({ sex:S.sex, weight:S.weight, height:S.height, age:S.age });
 
+  function adviceText(b){
+    if(b<0.05) return 'Алкоголь не обнаружен.';
+    if(b<0.5)  return 'Можно расслабиться, но за руль уже нельзя.';
+    if(b<1.5)  return 'Чередуйте с водой и закусывайте.';
+    if(b<2.5)  return 'Сильное опьянение — вызовите такси.';
+    return 'Опасный уровень. Остановитесь и пейте воду.';
+  }
   function stInfo(b){
     if(b<0.05) return ['Трезвость','Алкоголь не обнаружен','var(--green)'];
     if(b<0.3)  return ['Лёгкое опьянение','Расслабление, лёгкая эйфория','var(--green)'];
@@ -593,8 +612,11 @@ const Model = (() => {
     // вода для восстановления: ~0.5 л на каждые 10 г чистого спирта
     const waterL = Math.round(a.grams*0.05*10)/10;
     $('waterL').textContent = waterL.toFixed(1);
+    $('kcal').textContent = '≈ '+Math.round(a.grams*7)+' ккал от алкоголя';
+    $('advice').textContent = adviceText(snap.cur);
     const f = clamp(waterL/10,0,1), H=60, wf=$('waterFill');
     wf.setAttribute('y', (86-H*f).toFixed(1)); wf.setAttribute('height', (H*f).toFixed(1));
+    $('kcal').textContent = Math.round(a.grams*7.1);
     // за руль
     const dm=snap.cur>0.3 ? (snap.t03!=null?snap.t03-S.now:0) : 0;
     const t=hm(dm); $('dt').textContent=`${pad(t.h)} : ${pad(t.m)}`;
