@@ -60,7 +60,7 @@
   .gcap{font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:6px}
 
   .body{position:relative;flex:0 0 auto;display:flex;justify-content:center;align-items:flex-end}
-  .figure{position:relative;width:290px;height:480px;margin:0 auto;align-self:flex-end}
+  .figure{position:relative;width:350px;height:600px;margin:0 auto;align-self:flex-end}
   .fill{position:absolute;inset:0;clip-path:inset(78% 0 0 0);
     -webkit-mask:var(--mask) center/contain no-repeat;mask:var(--mask) center/contain no-repeat}
   .outline{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
@@ -212,7 +212,7 @@
 </style></head><body>
 
 
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v8</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v9</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -392,12 +392,12 @@ const ICONS = {
   cup:'<path d="M5 8h14l-2 11H7z"/><path d="M5 8 4 5M14 8V5"/>'
 };
 const DRINKS = [
-  { id:'shot',  name:'Рюмка',        ml:'50 мл',  vol:50,  abv:0.40, price:250,  icon:ICONS.shot,  x:54,  y:64  },
-  { id:'glass', name:'Бокал',        ml:'150 мл', vol:150, abv:0.12, price:450,  icon:ICONS.wineG, x:42,  y:200 },
-  { id:'mug',   name:'Кружка',       ml:'500 мл', vol:500, abv:0.05, price:320,  icon:ICONS.mug,   x:54,  y:336 },
-  { id:'wine',  name:'Бутылка вина', ml:'750 мл', vol:750, abv:0.13, price:1290, icon:ICONS.wineB, x:486, y:64  },
-  { id:'beer',  name:'Бутылка пива', ml:'500 мл', vol:500, abv:0.05, price:180,  icon:ICONS.beerB, x:498, y:200 },
-  { id:'own',   name:'Свой объём',   ml:'напиток',vol:0,   abv:0.40, price:0,    icon:ICONS.cup,   x:486, y:336, custom:true }
+  { id:'shot',  name:'Рюмка',        ml:'50 мл',  vol:50,  abv:0.40, price:250,  icon:ICONS.shot,  x:40,  y:64  },
+  { id:'glass', name:'Бокал',        ml:'150 мл', vol:150, abv:0.12, price:450,  icon:ICONS.wineG, x:28,  y:200 },
+  { id:'mug',   name:'Кружка',       ml:'500 мл', vol:500, abv:0.05, price:320,  icon:ICONS.mug,   x:40,  y:336 },
+  { id:'wine',  name:'Бутылка вина', ml:'750 мл', vol:750, abv:0.13, price:1290, icon:ICONS.wineB, x:500, y:64  },
+  { id:'beer',  name:'Бутылка пива', ml:'500 мл', vol:500, abv:0.05, price:180,  icon:ICONS.beerB, x:512, y:200 },
+  { id:'own',   name:'Свой объём',   ml:'напиток',vol:0,   abv:0.40, price:0,    icon:ICONS.cup,   x:500, y:336, custom:true }
 ];
 const drinkById = id => DRINKS.find(d => d.id === id);
 
@@ -564,7 +564,7 @@ const Model = (() => {
     const a=Math.PI*(1-f); $('gknob').setAttribute('cx',100+86*Math.cos(a)); $('gknob').setAttribute('cy',108-86*Math.sin(a));
   }
   function setFill(b){
-    const pct=clamp(b/GMAX*100,0,100), [r,g,bl]=levelColor(b), c=`rgb(${r},${g},${bl})`, fig=$('figure').clientHeight||480;
+    const pct=clamp(b/GMAX*100,0,100), [r,g,bl]=levelColor(b), c=`rgb(${r},${g},${bl})`, fig=$('figure').clientHeight||600;
     $('fill').style.background=`linear-gradient(180deg,rgba(${r},${g},${bl},.45),rgba(${r},${g},${bl},.92))`;
     $('fill').style.filter=`drop-shadow(0 0 11px rgba(${r},${g},${bl},.55))`;
     $('fill').style.clipPath=`inset(${100-pct}% 0 0 0)`;
@@ -648,7 +648,7 @@ const Model = (() => {
   /* ---- лист корзины с временами ---- */
   function openCart(){ renderCart(); $('csOv').classList.add('on'); }
   $('cartBtn').onclick=openCart;
-  $('resetBtn').onclick=()=>{ if(S.drinks.length){ S.drinks=[]; paintStatic(snapshot()); render(); } };
+  $('resetBtn').onclick=()=>{ S.orderMode=false; S.discCounts={}; S.drinks=[]; paintStatic(snapshot()); render(); };
   $('csX').onclick=()=>$('csOv').classList.remove('on');
   $('csOv').onclick=e=>{if(e.target===$('csOv'))$('csOv').classList.remove('on');};
   function renderCart(){
@@ -671,9 +671,9 @@ const Model = (() => {
 
   /* ---- масштаб под экран (один экран, как макет) ---- */
   function fit(){
-    const s=innerWidth/900;
+    const s=Math.min(innerWidth/900, innerHeight/1260);  // не даём контенту вылезать
     const sc=$('screen');
-    sc.style.height=(innerHeight/s)+'px';   // экран = высота вьюпорта (после scale)
+    sc.style.height=(innerHeight/s)+'px';
     sc.style.transform='scale('+s+')';
   }
   window.addEventListener('resize',()=>{fit();render();});
