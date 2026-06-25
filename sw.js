@@ -1,5 +1,5 @@
 // AlcoMarket service worker
-const CACHE = 'alcomarket-v14';
+const CACHE = 'alcomarket-v15';
 const APP_SHELL = [
   './',
   './index.html',

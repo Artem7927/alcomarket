@@ -87,7 +87,14 @@
   /* right column cards */
   .col{display:flex;flex-direction:column;gap:9px;min-height:0}
   .card{transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; cursor:pointer}
-  .card.exp{transform:scale(1.12);z-index:6;border-color:var(--gold);box-shadow:0 26px 60px rgba(0,0,0,.65)}
+  .card.exp{transform:scale(1.045)}
+  #cardZoom{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.74);backdrop-filter:blur(4px);padding:24px}
+  #cardZoom.on{display:flex}
+  #cardZoomBox{width:min(88vw,440px);animation:zin .22s ease}
+  #cardZoomBox .card{margin:0;transform:none;border-color:var(--gold);box-shadow:0 30px 90px rgba(0,0,0,.75);padding:26px}
+  #cardZoomBox .big{font-size:54px}
+  @keyframes zin{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
   .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--stroke);
     border-radius:18px;padding:14px 16px}
   .card.glow{border-color:var(--sgold)}
@@ -214,7 +221,7 @@
 </style></head><body>
 
 
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v14</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v15</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -352,6 +359,9 @@
   <div class="field"><label>Крепость, %</label><input type="number" id="cAbvIn" value="40"></div>
   <div class="mact"><button class="ghost" id="cCancel">Отмена</button><button class="gold" id="cAdd">Добавить</button></div>
 </div></div>
+
+<!-- увеличенная карточка по центру -->
+<div id="cardZoom"><div id="cardZoomBox"></div></div>
 
 <!-- bottom-sheet корзины с временами напитков -->
 <div class="ov" id="csOv"><div class="csheet">
@@ -693,12 +703,18 @@ const Model = (() => {
     $('cmod').classList.remove('on');
   };
 
-  /* ---- тап по карточке — увеличение ---- */
+  /* ---- тап по карточке — вынос в центр крупным ---- */
+  const _zoom=$('cardZoom'), _zbox=$('cardZoomBox');
+  function closeZoom(){ _zoom.classList.remove('on'); _zbox.innerHTML=''; }
+  _zoom.onclick=closeZoom;
   document.querySelectorAll('.col .card').forEach(c=>{
     c.addEventListener('click',()=>{
-      const was=c.classList.contains('exp');
-      document.querySelectorAll('.col .card.exp').forEach(x=>x.classList.remove('exp'));
-      if(!was) c.classList.add('exp');
+      const clone=c.cloneNode(true);
+      clone.classList.remove('exp');
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
+      _zbox.innerHTML=''; _zbox.appendChild(clone);
+      _zoom.classList.add('on');
     });
   });
 
