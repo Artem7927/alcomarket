@@ -85,7 +85,9 @@
   .lbl b{display:block;color:var(--txt);font-weight:600;font-size:11px;letter-spacing:.6px}
 
   /* right column cards */
-  .col{display:flex;flex-direction:column;gap:11px;min-height:0;justify-content:space-between}
+  .col{display:flex;flex-direction:column;gap:9px;min-height:0}
+  .card{transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; cursor:pointer}
+  .card.exp{transform:scale(1.045);z-index:6;border-color:var(--gold);box-shadow:0 18px 44px rgba(0,0,0,.55)}
   .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--stroke);
     border-radius:18px;padding:14px 16px}
   .card.glow{border-color:var(--sgold)}
@@ -212,7 +214,7 @@
 </style></head><body>
 
 
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v12</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v13</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -293,6 +295,14 @@
           <div><div class="big"><span id="waterL">0</span> <u>л</u></div><div class="sub">выпейте столько воды после, чтобы избежать обезвоживания</div></div>
         </div>
       </div>
+      <div class="card">
+        <div class="chead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12a9 9 0 1 0 9-9 7 7 0 0 1-9 9z"/></svg><span class="eyebrow">Восстановление</span></div>
+        <div class="sub" style="font-size:13px;line-height:1.7;color:var(--gold2)">
+          <b style="color:var(--gold)">Сон 7–9 ч</b> — главный восстановитель организма.<br>
+          <b style="color:var(--gold)">Тёплый душ</b> снимет напряжение и взбодрит.<br>
+          <b style="color:var(--gold)">Баня / сауна</b> — только когда полностью протрезвеете.
+        </div>
+      </div>
     </div>
   </div>
 
@@ -333,6 +343,14 @@
   <div class="field"><label>Рост, см</label><input type="number" id="iH" value="165"></div>
   <div class="field"><label>Возраст, лет</label><input type="number" id="iA" value="29"></div>
   <div class="mact"><button class="ghost" id="mC">Отмена</button><button class="gold" id="mS">Сохранить</button></div>
+</div></div>
+
+<!-- модалка своего напитка -->
+<div class="mbg" id="cmod"><div class="modal">
+  <h3>Свой напиток</h3>
+  <div class="field"><label>Объём, мл</label><input type="number" id="cVolIn" value="100"></div>
+  <div class="field"><label>Крепость, %</label><input type="number" id="cAbvIn" value="40"></div>
+  <div class="mact"><button class="ghost" id="cCancel">Отмена</button><button class="gold" id="cAdd">Добавить</button></div>
 </div></div>
 
 <!-- bottom-sheet корзины с временами напитков -->
@@ -563,12 +581,8 @@ const Model = (() => {
   function countOf(pid){return S.drinks.filter(d=>d.pid===pid).length;}
   function addDrink(d){
     if(S.orderMode) return; // в режиме заказа диски показывают заказ, не добавляют
-    let vol=d.vol, abv=d.abv, price=d.price;
-    if(d.custom){
-      const v=parseInt(prompt('Объём, мл:','100')); const a=parseFloat(prompt('Крепость, %:','40'));
-      if(!v||isNaN(a))return; vol=v; abv=a/100; price=Math.round(v*1.4);
-    }
-    S.drinks.push({uid:uid++,pid:d.id,vol,abv,price,tMin:S.now-ADD_OFFSET});
+    if(d.custom){ $('cVolIn').value=$('cVolIn').value||'100'; $('cmod').classList.add('on'); return; }
+    S.drinks.push({uid:uid++,pid:d.id,vol:d.vol,abv:d.abv,price:d.price,tMin:S.now-ADD_OFFSET});
     render();
   }
   function removeLast(pid){
@@ -669,6 +683,24 @@ const Model = (() => {
   $('mS').onclick=()=>{ S.sex=document.querySelector('#segSex .on').dataset.sex;
     S.weight=clamp(+$('iW').value||58,30,250); S.height=clamp(+$('iH').value||165,120,220); S.age=clamp(+$('iA').value||29,14,100);
     $('mbg').classList.remove('on'); paintStatic(snapshot()); render(); };
+
+  /* ---- модалка своего напитка ---- */
+  $('cCancel').onclick=()=>$('cmod').classList.remove('on');
+  $('cmod').onclick=e=>{if(e.target===$('cmod'))$('cmod').classList.remove('on');};
+  $('cAdd').onclick=()=>{
+    const v=clamp(+$('cVolIn').value||0,1,2000), a=clamp(+$('cAbvIn').value||0,0,96)/100;
+    if(v>0){ S.drinks.push({uid:uid++,pid:'own',vol:v,abv:a,price:Math.round(v*1.4),tMin:S.now-ADD_OFFSET}); render(); }
+    $('cmod').classList.remove('on');
+  };
+
+  /* ---- тап по карточке — увеличение ---- */
+  document.querySelectorAll('.col .card').forEach(c=>{
+    c.addEventListener('click',()=>{
+      const was=c.classList.contains('exp');
+      document.querySelectorAll('.col .card.exp').forEach(x=>x.classList.remove('exp'));
+      if(!was) c.classList.add('exp');
+    });
+  });
 
   /* ---- лист корзины с временами ---- */
   function openCart(){ renderCart(); $('csOv').classList.add('on'); }
