@@ -247,6 +247,44 @@
   select.form-input{ -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23888' d='M1 1l5 5 5-5z'/></svg>"); background-repeat:no-repeat; background-position:right 14px center; padding-right:34px; }
   select.form-input option{ background:#1A1A1A; color:#F0F0F0; }
 </style>
+<style id="cab-feed-css">
+  /* ── ВКЛАДКА ВИДЕО ── */
+  .feed-cfg { display:flex; align-items:center; gap:10px; background:rgba(242,169,0,.08); border:1px solid rgba(242,169,0,.35); border-radius:12px; padding:11px 13px; margin-bottom:14px; }
+  .feed-cfg span { font-size:12px; color:#e8c98a; line-height:1.45; }
+  .feed-cfg button { margin-left:auto; flex:none; background:var(--gold); color:#241405; border:none; border-radius:9px; padding:7px 12px; font-family:'Montserrat'; font-size:11px; font-weight:800; cursor:pointer; }
+  .feed-hint { font-size:12px; color:var(--muted); margin:-4px 0 14px; line-height:1.5; }
+  .feed-item { display:flex; gap:12px; align-items:center; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:10px; margin-bottom:10px; }
+  .feed-item.hidden-vid { opacity:.5; }
+  .feed-thumb { position:relative; width:54px; height:84px; border-radius:9px; overflow:hidden; flex:none; background:#000; border:1px solid var(--border); }
+  .feed-thumb img, .feed-thumb video { width:100%; height:100%; object-fit:cover; display:block; }
+  .feed-thumb .ft-badge { position:absolute; inset:0; display:grid; place-items:center; color:#fff; opacity:.85; }
+  .feed-thumb .ft-badge svg { width:20px; height:20px; fill:#fff; }
+  .feed-main { flex:1; min-width:0; }
+  .feed-cap { font-size:13.5px; font-weight:700; color:var(--text); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .feed-meta { font-size:11px; color:var(--muted); margin-top:4px; font-weight:600; }
+  .feed-ops { display:flex; flex-direction:column; gap:5px; flex:none; }
+  .feed-op { width:34px; height:30px; border-radius:8px; background:var(--card2); border:1px solid var(--border); color:var(--text); display:grid; place-items:center; cursor:pointer; }
+  .feed-op:active { transform:scale(.9); }
+  .feed-op svg { width:16px; height:16px; }
+  .feed-op.danger { color:var(--red); border-color:rgba(212,43,43,.4); }
+  .feed-row2 { display:flex; gap:8px; margin-top:8px; }
+  .feed-reorder { display:flex; gap:6px; }
+  /* пикер видео в модалке */
+  .vid-pick { border:1.5px dashed #444; border-radius:14px; padding:22px 14px; text-align:center; color:#888; font-size:13px; cursor:pointer; background:#161616; }
+  .vid-pick svg { width:30px; height:30px; stroke:var(--gold); fill:none; stroke-width:1.7; margin-bottom:6px; }
+  .vid-pick b { color:var(--gold); }
+  .vid-preview { position:relative; border-radius:14px; overflow:hidden; background:#000; margin-bottom:12px; }
+  .vid-preview video { width:100%; max-height:46vh; display:block; object-fit:contain; background:#000; }
+  .vid-clear { position:absolute; top:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,.6); border:none; color:#fff; font-size:18px; cursor:pointer; }
+  .vid-progress { height:8px; border-radius:6px; background:var(--card2); overflow:hidden; margin:6px 0 2px; display:none; }
+  .vid-progress.show { display:block; }
+  .vid-progress > i { display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--gold),#FFD66B); transition:width .2s; }
+  .vid-progress-txt { font-size:11px; color:var(--muted); font-weight:700; text-align:center; min-height:14px; }
+  .modal-divider { text-align:center; font-size:11px; color:var(--muted); font-weight:700; margin:14px 0; position:relative; }
+  .empty-feed { text-align:center; color:var(--muted); padding:34px 16px; }
+  .empty-feed svg { width:46px; height:46px; stroke:#3a3a3a; fill:none; stroke-width:1.6; }
+  .empty-feed p { font-size:13px; margin-top:10px; }
+</style>
 </head>
 <body>
 
@@ -276,6 +314,12 @@
     <g id="ic-settings"><path d="M19.4 13a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/><circle cx="12" cy="12" r="3"/></g>
     <g id="ic-users"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.8 5.3a3.2 3.2 0 0 1 0 6.1"/><path d="M17.4 19.5a5.5 5.5 0 0 0-3-4.9"/></g>
     <g id="ic-clock"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></g>
+    <g id="ic-video"><rect x="3" y="6" width="13" height="12" rx="2.2"/><path d="M16 10l5-3v10l-5-3"/></g>
+    <g id="ic-play2"><path d="M8 5v14l11-7z"/></g>
+    <g id="ic-arrow-up"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></g>
+    <g id="ic-arrow-down"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></g>
+    <g id="ic-eye"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></g>
+    <g id="ic-eye-off"><path d="m4 4 16 16"/><path d="M9.9 5.2A9.7 9.7 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.3 3.9M6.2 7.7A17 17 0 0 0 2.5 12S6 18.5 12 18.5a9.3 9.3 0 0 0 3.3-.6"/><path d="M9.5 9.6a3 3 0 0 0 4.2 4.2"/></g>
   </defs>
 </svg>
 
@@ -382,6 +426,17 @@
     </div>
   </div>
 
+  <!-- ВИДЕО (контент витрины) -->
+  <div class="tab" id="tab-feed">
+    <div id="feedCfgBox"></div>
+    <div class="section-hdr">
+      <div class="section-title">Видео магазина</div>
+      <button class="add-btn" onclick="openFeedModal()">+ Добавить</button>
+    </div>
+    <div class="feed-hint">Эти ролики показываются покупателям во вкладке «О магазине». Перетягивание порядка — стрелками, верхнее видео показывается первым.</div>
+    <div id="feedListCab"></div>
+  </div>
+
   <!-- КЛИЕНТЫ -->
   <div class="tab" id="tab-clients">
     <div class="clients-summary" id="clientsSummary"></div>
@@ -429,6 +484,9 @@
     </div>
     <div class="nav-item" id="nav-products" onclick="showTab('products',this)">
       <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-cart"/></svg></div><div>Товары</div>
+    </div>
+    <div class="nav-item" id="nav-feed" onclick="showTab('feed',this)">
+      <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-video"/></svg></div><div>Видео</div>
     </div>
     <div class="nav-item" id="nav-clients" onclick="showTab('clients',this)">
       <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-users"/></svg></div><div>Клиенты</div>
@@ -499,7 +557,37 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="catalogModal" onclick="if(event.target===this)closeModal('catalogModal')">
+<!-- MODAL ВИДЕО -->
+<div class="modal-overlay" id="feedModal" onclick="if(event.target===this)closeModal('feedModal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Новое видео</div>
+
+    <input type="file" id="vFile" accept="video/*" style="display:none" onchange="onFeedVideoPick(event)">
+    <div id="vPickBox" class="vid-pick" onclick="document.getElementById('vFile').click()">
+      <svg viewBox="0 0 24 24"><use href="#ic-video"/></svg><br>
+      <b>Выбрать видео</b> с телефона<br><span style="font-size:11px">вертикальное, до ~60 сек</span>
+    </div>
+    <div id="vPreviewBox" style="display:none"></div>
+
+    <div class="vid-progress" id="vProgress"><i></i></div>
+    <div class="vid-progress-txt" id="vProgressTxt"></div>
+
+    <div class="modal-divider" id="vOrDivider">— или вставьте ссылку —</div>
+    <div class="form-group" id="vUrlGroup">
+      <label class="form-label">Ссылка на видео (mp4)</label>
+      <input class="form-input" id="vUrl" placeholder="https://…/video.mp4" oninput="onFeedUrlInput()">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Подпись</label>
+      <input class="form-input" id="vCaption" placeholder="🍾 Большой выбор — заходи выбирай" maxlength="120">
+    </div>
+
+    <button class="modal-btn" id="vPublishBtn" onclick="publishFeedVideo()">Опубликовать</button>
+    <button class="modal-btn modal-btn-sec" onclick="closeModal('feedModal')">Отмена</button>
+  </div>
+</div>
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Каталог на оформление</div>
@@ -678,6 +766,19 @@
 const SERVER_URL  = 'https://alcodelivery-db-production.up.railway.app';
 const PLATFORM_WA = '+77714144534'; // номер платформы для счётов
 
+// ── ХРАНИЛИЩE ВИДЕО (Cloudinary, безсерверная загрузка) ──────────────
+// Залейте видео напрямую в облако: байты НЕ идут через ваш сервер,
+// поэтому лимит тела запроса не мешает. Заполните 1 раз (или через кнопку
+// «Настроить» во вкладке Видео — сохранится в этом браузере).
+//   1. cloudinary.com → Settings → Upload → Add upload preset → Signing Mode: Unsigned
+//   2. Cloud name и имя preset впишите ниже.
+let MEDIA_CLOUD_NAME    = localStorage.getItem('feedCloud')  || '';   // напр. 'alcomarket'
+let MEDIA_UPLOAD_PRESET = localStorage.getItem('feedPreset') || '';   // напр. 'alco_feed'
+
+let feedList = [];   // [{ id, url, poster, caption, hidden }]
+let _vFile = null;   // выбранный файл видео
+let _vPoster = '';   // base64-постер, снятый с кадра
+
 let storeId   = '';
 let storePass = '';
 let storeData = null;
@@ -815,7 +916,7 @@ function enterDashboard() {
 function applyRoleUI() {
   const isSeller = role === 'seller';
   // продавцу доступны только Заказы + Смена
-  ['products','clients','promos','commission'].forEach(n => {
+  ['products','feed','clients','promos','commission'].forEach(n => {
     const el = document.getElementById('nav-' + n);
     if (el) el.style.display = isSeller ? 'none' : '';
   });
@@ -874,7 +975,7 @@ if (savedStore) {
 
 // ── ЗАГРУЗКА ─────────────────────────────────────────
 async function loadAll() {
-  await Promise.all([loadOrders(), loadProducts(), loadPromos()]);
+  await Promise.all([loadOrders(), loadProducts(), loadPromos(), loadFeedCab()]);
 }
 
 async function loadOrders() {
@@ -914,6 +1015,271 @@ async function loadPromos() {
     promos = data.promos || [];
     renderPromos();
   } catch(e) {}
+}
+
+// ── ВИДЕО ВИТРИНЫ ────────────────────────────────────
+// Хранение метаданных как у товаров: GET/PUT /feed/:storeId  { feed:[...], password }.
+// Витрина (index.html) уже читает GET /feed/:storeId, так что загруженные ролики
+// сразу появляются у покупателей. Байты видео лежат в облаке (Cloudinary).
+async function loadFeedCab() {
+  try {
+    const res = await fetch(`${SERVER_URL}/feed/${storeId}`, { signal: AbortSignal.timeout(8000) });
+    if (res.ok) {
+      const txt = await res.text();
+      if (txt && !txt.startsWith('<')) {
+        const data = JSON.parse(txt);
+        feedList = (data.feed || data || []).filter(v => v && (v.url || v.poster));
+      }
+    }
+  } catch(e) { /* нет связи — оставляем что есть */ }
+  feedList.forEach((v,i)=>{ if(!v.id) v.id = 'v'+Date.now()+i; });
+  renderFeedCab();
+}
+
+function feedConfigured() { return MEDIA_CLOUD_NAME && MEDIA_UPLOAD_PRESET; }
+
+function renderFeedCab() {
+  // плашка настройки хранилища
+  const cfg = document.getElementById('feedCfgBox');
+  if (cfg) {
+    cfg.innerHTML = feedConfigured()
+      ? ''
+      : `<div class="feed-cfg"><span>Загрузка файлом — после подключения облака. Сейчас доступно добавление видео по ссылке.</span>
+           <button onclick="setupFeedStorage()">Настроить</button></div>`;
+  }
+  const box = document.getElementById('feedListCab');
+  if (!box) return;
+  if (!feedList.length) {
+    box.innerHTML = `<div class="empty-feed"><svg viewBox="0 0 24 24"><use href="#ic-video"/></svg><p>Пока нет видео.<br>Нажмите «+ Добавить», чтобы загрузить первый ролик.</p></div>`;
+    return;
+  }
+  box.innerHTML = feedList.map((v, i) => `
+    <div class="feed-item ${v.hidden ? 'hidden-vid' : ''}">
+      <div class="feed-thumb">
+        ${v.poster
+          ? `<img src="${v.poster}" alt="">`
+          : `<video src="${(v.url||'')}#t=0.1" muted playsinline preload="metadata"></video>`}
+        <div class="ft-badge"><svg viewBox="0 0 24 24"><use href="#ic-play2"/></svg></div>
+      </div>
+      <div class="feed-main">
+        <div class="feed-cap">${v.caption ? escHtml(v.caption) : '<span style="color:#666">Без подписи</span>'}</div>
+        <div class="feed-meta">#${i+1}${v.hidden ? ' · скрыто' : ''}</div>
+        <div class="feed-row2">
+          <div class="feed-reorder">
+            <button class="feed-op" onclick="moveFeed(${i},-1)" ${i===0?'disabled style=opacity:.35':''} aria-label="Вверх"><svg viewBox="0 0 24 24"><use href="#ic-arrow-up"/></svg></button>
+            <button class="feed-op" onclick="moveFeed(${i},1)" ${i===feedList.length-1?'disabled style=opacity:.35':''} aria-label="Вниз"><svg viewBox="0 0 24 24"><use href="#ic-arrow-down"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="feed-ops">
+        <button class="feed-op" onclick="toggleFeedHidden(${i})" aria-label="Показать/скрыть"><svg viewBox="0 0 24 24"><use href="#ic-${v.hidden?'eye-off':'eye'}"/></svg></button>
+        <button class="feed-op danger" onclick="deleteFeed(${i})" aria-label="Удалить"><svg viewBox="0 0 24 24"><use href="#ic-trash"/></svg></button>
+      </div>
+    </div>`).join('');
+}
+
+function escHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ⚙ настройка облака
+function setupFeedStorage() {
+  const cloud = prompt('Cloud name (Cloudinary):', MEDIA_CLOUD_NAME || '');
+  if (cloud === null) return;
+  const preset = prompt('Upload preset (unsigned):', MEDIA_UPLOAD_PRESET || '');
+  if (preset === null) return;
+  MEDIA_CLOUD_NAME = cloud.trim();
+  MEDIA_UPLOAD_PRESET = preset.trim();
+  localStorage.setItem('feedCloud', MEDIA_CLOUD_NAME);
+  localStorage.setItem('feedPreset', MEDIA_UPLOAD_PRESET);
+  renderFeedCab();
+  alert('Хранилище сохранено в этом браузере.');
+}
+
+// ── модалка добавления ──
+function openFeedModal() {
+  _vFile = null; _vPoster = '';
+  document.getElementById('vFile').value = '';
+  document.getElementById('vUrl').value = '';
+  document.getElementById('vCaption').value = '';
+  document.getElementById('vPreviewBox').style.display = 'none';
+  document.getElementById('vPreviewBox').innerHTML = '';
+  document.getElementById('vPickBox').style.display = 'block';
+  document.getElementById('vUrlGroup').style.display = 'block';
+  document.getElementById('vOrDivider').style.display = 'block';
+  setVidProgress(-1);
+  document.getElementById('feedModal').classList.add('open');
+}
+
+function onFeedVideoPick(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  if (!f.type.startsWith('video/')) { alert('Это не видеофайл'); return; }
+  if (f.size > 100*1024*1024) { alert('Файл больше 100 МБ — снимите/сожмите короче.'); return; }
+  _vFile = f;
+  // спрятать поле ссылки, показать превью
+  document.getElementById('vUrl').value = '';
+  document.getElementById('vUrlGroup').style.display = 'none';
+  document.getElementById('vOrDivider').style.display = 'none';
+  document.getElementById('vPickBox').style.display = 'none';
+  const url = URL.createObjectURL(f);
+  const box = document.getElementById('vPreviewBox');
+  box.style.display = 'block';
+  box.innerHTML = `<div class="vid-preview"><video src="${url}" muted playsinline controls preload="metadata"></video>
+      <button class="vid-clear" onclick="resetFeedPick()" aria-label="Убрать">×</button></div>`;
+  capturePoster(f, p => { _vPoster = p || ''; });
+}
+
+function resetFeedPick() {
+  _vFile = null; _vPoster = '';
+  document.getElementById('vFile').value = '';
+  document.getElementById('vPreviewBox').style.display = 'none';
+  document.getElementById('vPreviewBox').innerHTML = '';
+  document.getElementById('vPickBox').style.display = 'block';
+  document.getElementById('vUrlGroup').style.display = 'block';
+  document.getElementById('vOrDivider').style.display = 'block';
+}
+
+function onFeedUrlInput() {
+  // если начали вводить ссылку — прячем файловый пикер
+  const has = document.getElementById('vUrl').value.trim().length > 0;
+  document.getElementById('vPickBox').style.display = has ? 'none' : 'block';
+}
+
+// снять кадр-постер с видео (локально, до загрузки)
+function capturePoster(file, cb) {
+  try {
+    const v = document.createElement('video');
+    v.preload = 'metadata'; v.muted = true; v.playsInline = true;
+    v.src = URL.createObjectURL(file);
+    v.onloadeddata = () => { try { v.currentTime = Math.min(1, (v.duration||1)*0.1) || 0.1; } catch(e){ cb(''); } };
+    v.onseeked = () => {
+      try {
+        const W = 540, r = (v.videoHeight/v.videoWidth) || 1.6;
+        const c = document.createElement('canvas'); c.width = W; c.height = Math.round(W*r);
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        const url = c.toDataURL('image/jpeg', 0.6);
+        URL.revokeObjectURL(v.src); cb(url);
+      } catch(e){ cb(''); }
+    };
+    v.onerror = () => cb('');
+  } catch(e){ cb(''); }
+}
+
+function setVidProgress(pct, text) {
+  const bar = document.getElementById('vProgress');
+  const txt = document.getElementById('vProgressTxt');
+  if (pct < 0) { bar.classList.remove('show'); bar.querySelector('i').style.width='0%'; txt.textContent=''; return; }
+  bar.classList.add('show');
+  bar.querySelector('i').style.width = Math.round(pct*100) + '%';
+  txt.textContent = text || (Math.round(pct*100) + '%');
+}
+
+// загрузка файла в Cloudinary (с прогрессом)
+function uploadToCloud(file, onProg) {
+  return new Promise((resolve, reject) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', MEDIA_UPLOAD_PRESET);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${MEDIA_CLOUD_NAME}/video/upload`);
+    xhr.upload.onprogress = e => { if (e.lengthComputable && onProg) onProg(e.loaded/e.total); };
+    xhr.onload = () => {
+      try {
+        const d = JSON.parse(xhr.responseText);
+        if (d.secure_url) resolve(d.secure_url);
+        else reject(new Error(d.error && d.error.message ? d.error.message : 'Облако отклонило файл'));
+      } catch(e){ reject(new Error('Ошибка ответа хранилища')); }
+    };
+    xhr.onerror = () => reject(new Error('Сеть: не удалось связаться с хранилищем'));
+    xhr.send(fd);
+  });
+}
+
+async function publishFeedVideo() {
+  const caption = document.getElementById('vCaption').value.trim();
+  const pastedUrl = document.getElementById('vUrl').value.trim();
+  const btn = document.getElementById('vPublishBtn');
+
+  let url = '';
+  let poster = _vPoster || '';
+
+  if (_vFile) {
+    if (!feedConfigured()) {
+      alert('Чтобы грузить видео файлом, сначала нажмите «Настроить» и подключите облако. Либо вставьте ссылку на готовое видео.');
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Загрузка…';
+    setVidProgress(0, 'Загрузка 0%');
+    try {
+      url = await uploadToCloud(_vFile, p => setVidProgress(p*0.95, 'Загрузка ' + Math.round(p*100) + '%'));
+    } catch(e) {
+      setVidProgress(-1); btn.disabled = false; btn.textContent = 'Опубликовать';
+      alert('Не удалось загрузить видео: ' + e.message); return;
+    }
+  } else if (pastedUrl) {
+    if (!/^https?:\/\//i.test(pastedUrl)) { alert('Ссылка должна начинаться с http(s)://'); return; }
+    url = pastedUrl;
+  } else {
+    alert('Выберите видео или вставьте ссылку'); return;
+  }
+
+  setVidProgress(0.97, 'Сохранение…');
+  const item = { id: 'v' + Date.now(), url, poster, caption, hidden: false };
+  feedList.push(item);
+
+  try {
+    await putFeed();
+    setVidProgress(1, 'Готово');
+    closeModal('feedModal');
+    renderFeedCab();
+  } catch(e) {
+    feedList.pop(); // откат
+    setVidProgress(-1);
+    alert(e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Опубликовать';
+  }
+}
+
+async function putFeed() {
+  const res = await fetch(`${SERVER_URL}/feed/${storeId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ feed: feedList, password: storePass }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) {
+    if (res.status === 404 || res.status === 405)
+      throw new Error('Сервер пока не принимает видео. Нужно добавить на сервере GET/PUT /feed/:storeId (как для /products). Спецификация — у разработчика.');
+    if (res.status === 401 || res.status === 403)
+      throw new Error('Нет доступа: проверьте пароль магазина.');
+    if (res.status === 413)
+      throw new Error('Слишком большой постер. Видео грузим в облако — в /feed должны идти только ссылки и маленькие постеры.');
+    throw new Error('Сервер отклонил сохранение (код ' + res.status + ').');
+  }
+  return res;
+}
+
+function moveFeed(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= feedList.length) return;
+  [feedList[i], feedList[j]] = [feedList[j], feedList[i]];
+  renderFeedCab();
+  putFeed().catch(e => alert(e.message));
+}
+
+function toggleFeedHidden(i) {
+  feedList[i].hidden = !feedList[i].hidden;
+  renderFeedCab();
+  putFeed().catch(e => { feedList[i].hidden = !feedList[i].hidden; renderFeedCab(); alert(e.message); });
+}
+
+function deleteFeed(i) {
+  const v = feedList[i];
+  if (!confirm('Удалить это видео из витрины?')) return;
+  const backup = feedList.slice();
+  feedList.splice(i, 1);
+  renderFeedCab();
+  putFeed().catch(e => { feedList = backup; renderFeedCab(); alert(e.message); });
 }
 
 // ── ЗАКАЗЫ ───────────────────────────────────────────
@@ -1987,6 +2353,7 @@ function showTab(name, el) {
   if (nav) nav.classList.add('active');
   if (name === 'clients') renderClients();
   if (name === 'shift')   renderShift();
+  if (name === 'feed')    renderFeedCab();
   window.scrollTo(0,0);
 }
 
