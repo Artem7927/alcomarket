@@ -313,10 +313,46 @@
   #companyView .cv-cstate .cv-csl{display:block;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#9a917d}
   #companyView .cv-cstate b{font-family:'Oswald',sans-serif;font-size:23px;letter-spacing:1px;text-transform:uppercase}
   #companyView .cv-cstate .cv-css{display:block;font-size:12px;color:#9a917d;margin-top:1px}
+
+  /* ===== экран компании = копия дашборда ===== */
+  #companyView{position:fixed;inset:0;z-index:200;display:none;background:#0b0b0d;overflow:hidden;padding:0}
+  #companyView.on{display:block}
+  #companyView .fit{height:100%}
+  #companyView .cparams{padding:8px 24px 2px}
+  #companyView .cguests{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none}
+  #companyView .cguests::-webkit-scrollbar{display:none}
+  #companyView .cgst{flex:0 0 auto;display:flex;flex-direction:column;gap:2px;align-items:flex-start;background:var(--panel,#161616);border:1px solid var(--stroke,#2a2a2e);border-radius:14px;padding:9px 16px;cursor:pointer;color:#c7bfa9}
+  #companyView .cgst.on{border-color:#E8B964;background:#1d1a12}
+  #companyView .cgst b{font-family:'Oswald';font-size:18px;color:#f3ede0;font-weight:500}
+  #companyView .cgst i{font-style:normal;font-size:14px;color:#9a917d}
+  #companyView .cadd{flex:0 0 auto;background:#121110;border:1px dashed rgba(232,185,100,.45);color:#E8B964;border-radius:14px;padding:9px 18px;font-family:'Oswald';font-size:18px;cursor:pointer}
+  #companyView .cbody{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:6px 24px 4px}
+  #companyView .cbody-h{font-family:'Oswald';font-weight:500;font-size:21px;color:#f6f1e6}
+  #companyView .cbody-b{display:flex;gap:8px}
+  #companyView .cmini{background:#1d1a12;border:1px solid rgba(232,185,100,.3);color:#E8B964;border-radius:11px;padding:8px 16px;font-size:16px;font-family:'Manrope';cursor:pointer}
+  #companyView .cmini.del{border-color:rgba(220,82,56,.45);color:#e08066}
+  #companyView .cstate{text-align:center;margin-top:6px}
+  #companyView .cstate-l{font-family:'Oswald';font-size:23px;letter-spacing:1px;text-transform:uppercase}
+  #companyView .cstate-s{font-size:15px;color:#9a917d;margin-top:2px}
+  #companyView .cprog{display:flex;flex-direction:column;gap:7px;margin-top:2px}
+  #companyView .cprog>div{display:flex;align-items:baseline;justify-content:space-between;gap:10px;border-top:1px solid rgba(232,185,100,.08);padding-top:6px}
+  #companyView .cprog>div:first-child{border-top:none;padding-top:0}
+  #companyView .cprog i{font-style:normal;font-size:13px;color:#9a917d}
+  #companyView .cprog b{font-family:'Oswald';font-size:20px;color:#f3ede0}
+  #companyView #cStrip{display:flex}
+  #companyView #cStrip .st{flex:1;text-align:center}
+  #companyView #cStrip .st b{font-family:'Oswald';font-size:26px;color:#f3ede0;display:block}
+  #companyView #cStrip .st u{font-size:.55em;color:#9a917d;text-decoration:none}
+  #companyView #cStrip .st span{font-size:13px;color:#8a8270}
+  #companyView .cfoot{padding:10px 24px 16px}
+  #companyView .cfoot label{font-family:'Oswald';font-size:14px;letter-spacing:2px;text-transform:uppercase;color:#9a917d}
+  #companyView .cfoot label b{color:#E8B964}
+  #companyView .cfoot input[type=range]{width:100%;accent-color:#E8B964;height:30px}
+  #companyView .cfn{font-size:13px;color:#7d7561;margin-top:2px}
 </style></head><body>
 
 
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v17</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v19</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -461,35 +497,44 @@
 
 <!-- ЭКРАН «НА КОМПАНИЮ» -->
 <div id="companyView">
-  <div class="cv-top">
-    <button class="cv-back" data-act="close">‹ Назад</button>
-    <span class="cv-ttl">На компанию</span><span style="width:64px"></span>
-  </div>
-  <div class="cv-strip" id="cvStrip"></div>
-  <div class="cv-stage">
-    <div class="cv-gauge">
-      <svg viewBox="0 0 200 118" width="100%">
-        <defs><linearGradient id="cvgarc" x1="0" x2="1"><stop offset="0" stop-color="#56B86A"/><stop offset=".5" stop-color="#E6A23C"/><stop offset="1" stop-color="#DC5238"/></linearGradient></defs>
-        <path d="M14 108 A86 86 0 0 1 186 108" fill="none" stroke="#1d1d20" stroke-width="9" stroke-linecap="round"/>
-        <path id="cvGfill" d="M14 108 A86 86 0 0 1 186 108" fill="none" stroke="url(#cvgarc)" stroke-width="9" stroke-linecap="round"/>
-        <circle id="cvGknob" cx="14" cy="108" r="7" fill="#FFDC92" stroke="#1a1305" stroke-width="2"/>
-      </svg>
-      <div class="cv-gval"><b id="cvBac">0.00</b><span>‰</span></div>
+  <div class="fit"><div class="screen" id="cScreen">
+    <div class="top">
+      <button class="ibtn" data-act="close" title="Назад"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 6l-7 6 7 6"/></svg></button>
+      <div class="ttl">На компанию</div>
+      <button class="ibtn"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5M15 14c2.5 0 5 1.6 5 4.5"/></svg></button>
     </div>
-    <div class="cv-aline" id="cvAline"></div>
-    <div class="cv-figrow">
-      <div class="cv-dcol" id="cvDcolL"></div>
-      <img src="group.png" class="cv-fig" id="cvFig" alt="компания">
-      <div class="cv-dcol" id="cvDcolR"></div>
+
+    <div class="cparams">
+      <div class="cguests" id="cGuests"></div>
     </div>
-    <div class="cv-cstate" id="cvCState"></div>
-  </div>
-  <div class="cv-dur">
-    <label>Длительность застолья: <b id="cvDurL">4 ч</b></label>
-    <input type="range" id="cvDur" min="1" max="12" value="4">
-    <div class="cv-speed" id="cvSpeed"></div>
-  </div>
-  <div class="cv-cards" id="cvCards"></div>
+    <div class="cbody" id="cBody"></div>
+
+    <div class="main">
+      <div class="stage">
+        <div class="gauge">
+          <svg viewBox="0 0 200 118" width="100%">
+            <defs><linearGradient id="cgarc" x1="0" x2="1"><stop offset="0" stop-color="#56B86A"/><stop offset=".5" stop-color="#E6A23C"/><stop offset="1" stop-color="#DC5238"/></linearGradient></defs>
+            <path d="M14 108 A86 86 0 0 1 186 108" fill="none" stroke="#1d1d20" stroke-width="9" stroke-linecap="round"/>
+            <path id="cGfill" d="M14 108 A86 86 0 0 1 186 108" fill="none" stroke="url(#cgarc)" stroke-width="9" stroke-linecap="round"/>
+            <circle id="cGknob" cx="14" cy="108" r="7" fill="#FFDC92" stroke="#1a1305" stroke-width="2"/>
+          </svg>
+          <div class="gread"><div class="gval"><span id="cGv">0.00</span><small>‰</small></div><div class="gcap" id="cGcap">состояние компании</div></div>
+        </div>
+        <div class="body">
+          <div class="figure" id="cFigure"><img class="outline" id="cGroupImg" src="group.png" alt=""></div>
+          <div id="cDrinks"></div>
+        </div>
+        <div class="cstate" id="cState"></div>
+      </div>
+      <div class="col" id="cCol"></div>
+    </div>
+
+    <div class="strip" id="cStrip"></div>
+    <div class="cfoot">
+      <div class="cfd"><label>Длительность застолья: <b id="cDurL">4 ч</b></label><input type="range" id="cDur" min="1" max="12" value="4"></div>
+      <div class="cfn" id="cSpeed"></div>
+    </div>
+  </div></div>
 
   <!-- модалка тела гостя -->
   <div class="mbg" id="cbmod"><div class="modal">
@@ -922,200 +967,175 @@ const Model = (() => {
   fit(); render();
 })();
 
-/* company.js — режим «На компанию»: ростер гостей, у каждого своё тело и свои напитки.
-   Переиспользует Model (расчёт ‰) и DRINKS (пресеты посуды). Свой экран поверх барометра. */
+/* company.js — режим «На компанию». Копия дашборда барометра: шкала + групповая фигура с дисками,
+   правый столбец карточек, нижняя строка. На каждого гостя считаем тем же Model. */
 const Company = (() => {
-  const NOW = 12 * 60;                 // опорная «текущая» минута
-  const DEF = {
-    m: { sex:'m', weight:80, height:178, age:30 },
-    f: { sex:'f', weight:65, height:165, age:30 }
-  };
-  const DNAME = { shot:'Рюмка', glass:'Бокал', mug:'Кружка', wine:'Вино', beer:'Пиво', own:'Своё' };
-  const DISCS = ['shot','glass','mug','wine','beer','own'];
-
-  let guests = [];   // {id,sex,weight,height,age,counts:{...},own:[{vol,abv}]}
-  let active = -1;
-  let durH = 4;
-  let gid = 1;
-
+  const NOW = 12 * 60;
+  const DEF = { m:{sex:'m',weight:80,height:178,age:30}, f:{sex:'f',weight:65,height:165,age:30} };
+  let guests = [], active = -1, durH = 4, gid = 1, built = false;
   const $ = id => document.getElementById(id);
-  const round2 = b => Math.round(b * 100) / 100;
+  const r2 = b => (Math.round(b*100)/100);
 
-  function newGuest(sex){
-    const b = DEF[sex] || DEF.m;
-    return { id:gid++, sex:b.sex, weight:b.weight, height:b.height, age:b.age,
-             counts:{shot:0,glass:0,mug:0,wine:0,beer:0}, own:[] };
-  }
+  function newGuest(sex){ const b=DEF[sex]||DEF.m;
+    return { id:gid++, sex:b.sex, weight:b.weight, height:b.height, age:b.age, counts:{shot:0,glass:0,mug:0,wine:0,beer:0}, own:[] }; }
 
-  /* напитки гостя → формат модели, раскиданные по времени застолья */
   function guestDrinks(g){
-    const list = [];
-    ['shot','glass','mug','wine','beer'].forEach(id=>{
-      const d = drinkById(id);
-      for (let i=0;i<g.counts[id];i++) list.push({ vol:d.vol, abv:d.abv });
-    });
-    g.own.forEach(o => list.push({ vol:o.vol, abv:o.abv }));
-    const n = list.length, span = durH*60;
+    const list=[];
+    ['shot','glass','mug','wine','beer'].forEach(id=>{ const d=drinkById(id); for(let i=0;i<g.counts[id];i++) list.push({vol:d.vol,abv:d.abv}); });
+    g.own.forEach(o=>list.push({vol:o.vol,abv:o.abv}));
+    const n=list.length, span=durH*60;
     return list.map((d,i)=>({ vol:d.vol, abv:d.abv, tMin: NOW - span + Math.round((i+0.5)*span/Math.max(1,n)) }));
   }
-
   function stats(g){
-    const drinks = guestDrinks(g);
-    let grams=0, vol=0;
-    drinks.forEach(d=>{ grams += Model.ethanolGrams(d.vol,d.abv); vol += d.vol; });
-    if (!drinks.length) return { bac:0, grams:0, vol:0, toZero:0, toDrive:0, n:0 };
-    const p = { sex:g.sex, weight:g.weight, height:g.height, age:g.age };
-    const bac = Model.totalBAC(drinks, p, NOW);
-    const tz = Model.timeToLevel(drinks, p, 0.0, NOW);
-    const td = Model.timeToLevel(drinks, p, 0.3, NOW);
-    return { bac, grams, vol, toZero: tz?tz-NOW:0, toDrive: td?td-NOW:0, n:drinks.length };
+    const drinks=guestDrinks(g); let grams=0, vol=0;
+    drinks.forEach(d=>{ grams+=Model.ethanolGrams(d.vol,d.abv); vol+=d.vol; });
+    if(!drinks.length) return {bac:0,peak:0,grams:0,vol:0,toZero:0,toDrive:0,n:0};
+    const p={sex:g.sex,weight:g.weight,height:g.height,age:g.age};
+    const bac=Model.totalBAC(drinks,p,NOW), peak=Model.peakInfo(drinks,p).peak;
+    const tz=Model.timeToLevel(drinks,p,0.0,NOW), td=Model.timeToLevel(drinks,p,0.3,NOW);
+    return {bac,peak,grams,vol,toZero:tz?tz-NOW:0,toDrive:td?td-NOW:0,n:drinks.length};
   }
-
   function stateOf(b){
-    if (b<0.05) return ['Трезвость','var(--green)'];
-    if (b<0.3)  return ['Лёгкое','var(--green)'];
-    if (b<0.5)  return ['Начальное','var(--amber)'];
-    if (b<1.5)  return ['Среднее','var(--amber)'];
-    if (b<2.5)  return ['Сильное','var(--red)'];
-    return ['Тяжёлое','var(--red)'];
+    if(b<0.05)return['Трезвость','Алкоголь не обнаружен','var(--green)'];
+    if(b<0.3)return['Лёгкое опьянение','Расслабление, лёгкая эйфория','var(--green)'];
+    if(b<0.5)return['Начальное опьянение','Реакция начинает снижаться','var(--amber)'];
+    if(b<1.5)return['Среднее опьянение','Внимание и реакция снижены','var(--amber)'];
+    if(b<2.5)return['Сильное опьянение','Нарушены координация и речь','var(--red)'];
+    return['Тяжёлое опьянение','Опасно для здоровья','var(--red)'];
   }
-
-  function fmtMin(min){
-    if (min<=0) return '—';
-    const h=Math.floor(min/60), m=Math.round(min%60);
-    return h ? (h+' ч'+(m?' '+m+' мин':'')) : (m+' мин');
-  }
+  function glowOf(b){ if(b<0.3)return 'rgba(86,184,106,.4)'; if(b<1.5)return 'rgba(230,162,60,.45)'; return 'rgba(220,82,56,.5)'; }
+  function fmt(min){ if(min<=0)return '—'; const h=Math.floor(min/60),m=Math.round(min%60); return h?(h+' ч'+(m?' '+m+' мин':'')):(m+' мин'); }
 
   function company(){
-    let maxB=0, maxG=null, grams=0, vol=0, cant=0;
-    guests.forEach(g=>{ const s=stats(g); grams+=s.grams; vol+=s.vol;
-      if (s.bac>maxB){ maxB=s.bac; maxG=g; } if (s.bac>0.3) cant++; });
-    return { maxB, maxG, grams, vol, cant, n:guests.length };
+    let maxB=0,maxG=null,grams=0,vol=0,cant=0,peak=0,wZero=0,wDrive=0,cm=0,cf=0;
+    guests.forEach(g=>{ const s=stats(g); grams+=s.grams; vol+=s.vol; if(g.sex==='m')cm++;else cf++;
+      if(s.bac>0.3)cant++; if(s.peak>peak)peak=s.peak; if(s.toZero>wZero)wZero=s.toZero; if(s.toDrive>wDrive)wDrive=s.toDrive;
+      if(s.bac>maxB){maxB=s.bac;maxG=g;} });
+    return {maxB,maxG,grams,vol,cant,n:guests.length,peak,wZero,wDrive,cm,cf};
   }
 
-  /* ---------- иконка диска ---------- */
-  const ICO = { shot:ICONS.shot, glass:ICONS.wineG, mug:ICONS.mug, wine:ICONS.wineB, beer:ICONS.beerB, own:ICONS.cup };
-  const LCOL = ['shot','glass','mug'], RCOL = ['wine','beer','own'];
-  function discBtn(g,id){
-    const cnt = id==='own' ? g.own.length : g.counts[id];
-    return `<button class="cv-disc" data-disc="${id}">
-      <span class="cv-dcirc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${ICO[id]}</svg>${cnt?`<span class="cv-dc">${cnt}</span>`:''}</span>
-      <span class="cv-dn">${DNAME[id]}</span></button>`;
+  /* ---- диски в сцене (как у барометра) ---- */
+  function buildDiscs(){
+    const dr=$('cDrinks'); if(!dr||dr.children.length) return;
+    DRINKS.forEach(d=>{
+      const el=document.createElement('div'); el.className='drink'; el.dataset.id=d.id;
+      el.style.left=d.x+'px'; el.style.top=d.y+'px';
+      el.innerHTML=`<div class="disc"><span class="cnt">0</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">${d.icon}</svg>
+        <span class="add">+</span></div><div class="lbl">${d.ml}<b>${d.name.toUpperCase()}</b></div>`;
+      el.querySelector('.disc').onclick=()=>addToActive(d);
+      el.querySelector('.cnt').onclick=e=>{ e.stopPropagation(); removeFromActive(d.id); };
+      dr.appendChild(el);
+    });
   }
+  function addToActive(d){ const g=guests[active]; if(!g)return; if(d.id==='own'){ openOwn(); return; } g.counts[d.id]++; render(); }
+  function removeFromActive(id){ const g=guests[active]; if(!g)return; if(id==='own'){ if(g.own.length)g.own.pop(); } else if(g.counts[id]>0)g.counts[id]--; render(); }
+
   function gauge(b){
-    const f=Math.min(1,b/3), p=$('cvGfill'), L=p.getTotalLength();
+    const f=Math.min(1,b/3), p=$('cGfill'), L=p.getTotalLength();
     p.style.strokeDasharray=L; p.style.strokeDashoffset=L*(1-f);
-    const a=Math.PI*(1-f); $('cvGknob').setAttribute('cx',100+86*Math.cos(a)); $('cvGknob').setAttribute('cy',108-86*Math.sin(a));
+    const a=Math.PI*(1-f); $('cGknob').setAttribute('cx',100+86*Math.cos(a)); $('cGknob').setAttribute('cy',108-86*Math.sin(a));
   }
-  function glowOf(b){ if(b<0.3) return 'rgba(86,184,106,.4)'; if(b<1.5) return 'rgba(230,162,60,.45)'; return 'rgba(220,82,56,.5)'; }
 
-  /* ---------- рендер динамических блоков ---------- */
+  function card(eyebrow,bigHtml,sub,glow){
+    return `<div class="card${glow?' glow':''}"><div class="chead"><span class="eyebrow">${eyebrow}</span></div>${bigHtml}${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+  }
+
   function render(){
-    const c = company();
+    const c=company();
     // лента гостей
-    $('cvStrip').innerHTML = guests.map((g,i)=>{
-      const s = stats(g); const [,col]=stateOf(s.bac);
-      return `<button class="cv-chip${i===active?' on':''}" data-g="${i}">
-        <b>Гость ${i+1}</b><small>${g.sex==='m'?'М':'Ж'} · <span style="color:${col}">${round2(s.bac)}‰</span></small></button>`;
-    }).join('') +
-      `<button class="cv-add" data-add="m">+ М</button><button class="cv-add" data-add="f">+ Ж</button>`;
+    $('cGuests').innerHTML = guests.map((g,i)=>{ const s=stats(g); const[,,col]=stateOf(s.bac);
+      return `<button class="cgst${i===active?' on':''}" data-g="${i}"><b>Гость ${i+1}</b><i>${g.sex==='m'?'М':'Ж'} · <span style="color:${col}">${r2(s.bac).toFixed(2)}‰</span></i></button>`; }).join('')
+      + `<button class="cadd" data-add="m">+ М</button><button class="cadd" data-add="f">+ Ж</button>`;
 
-    // активный гость -> шкала + строка + диски
-    const g = guests[active], s = g ? stats(g) : { bac:0, n:0 };
-    gauge(s.bac);
-    $('cvBac').textContent = round2(s.bac).toFixed(2);
-    if (!g){
-      $('cvAline').innerHTML = `<div class="cv-empty">Добавьте гостя — кнопки «+ М» / «+ Ж»</div>`;
-      $('cvDcolL').innerHTML=''; $('cvDcolR').innerHTML='';
+    // активный гость
+    const g=guests[active], s=g?stats(g):{bac:0,n:0};
+    gauge(s.bac); $('cGv').textContent=r2(s.bac).toFixed(2);
+    if(!g){
+      $('cGcap').textContent='добавьте гостя';
+      $('cBody').innerHTML=`<div class="cbody-h">Добавьте гостя — кнопки «+ М» / «+ Ж»</div>`;
     } else {
-      const undo = s.n ? `<button class="cv-mini" data-act="undo" title="убрать последнее">⟲</button>` : '';
-      $('cvAline').innerHTML = `
-        <div class="cv-aname">Гость ${active+1} · ${g.sex==='m'?'М':'Ж'} · ${g.weight} кг · ${g.height} см · ${g.age} л</div>
-        <div class="cv-abtns"><button class="cv-mini" data-act="body">Тело</button>${undo}<button class="cv-mini del" data-act="del">Удалить</button></div>`;
-      $('cvDcolL').innerHTML = LCOL.map(id=>discBtn(g,id)).join('');
-      $('cvDcolR').innerHTML = RCOL.map(id=>discBtn(g,id)).join('');
+      $('cGcap').textContent=`Гость ${active+1} · ${g.sex==='m'?'М':'Ж'}`;
+      const undo=s.n?`<button class="cmini" data-act="undo" title="убрать последнее">⟲</button>`:'';
+      $('cBody').innerHTML=`<div class="cbody-h">Гость ${active+1} · ${g.sex==='m'?'М':'Ж'} · ${g.weight} кг · ${g.height} см · ${g.age} л</div>
+        <div class="cbody-b"><button class="cmini" data-act="body">Тело</button>${undo}<button class="cmini del" data-act="del">Удалить</button></div>`;
     }
+    // счётчики на дисках = активный гость
+    $('cDrinks').querySelectorAll('.drink').forEach(el=>{
+      const id=el.dataset.id, cnt=!g?0:(id==='own'?g.own.length:g.counts[id]);
+      const c1=el.querySelector('.cnt'); c1.textContent=cnt; c1.style.display=cnt?'flex':'none';
+    });
 
-    // фигура-компания + состояние компании
-    const [clbl,ccol] = stateOf(c.maxB);
-    $('cvFig').style.filter = guests.length
-      ? `drop-shadow(0 8px 30px ${glowOf(c.maxB)})`
-      : 'drop-shadow(0 8px 24px rgba(232,185,100,.16))';
-    $('cvCState').innerHTML = guests.length
-      ? `<span class="cv-csl">Состояние компании</span><b style="color:${ccol}">${clbl}</b><span class="cv-css">макс ${round2(c.maxB)}‰ · гостей ${c.n}</span>`
-      : '';
+    // фигура-компания + состояние
+    const [clbl,csub,ccol]=stateOf(c.maxB);
+    $('cGroupImg').style.filter = guests.length?`drop-shadow(0 8px 30px ${glowOf(c.maxB)})`:'drop-shadow(0 8px 22px rgba(232,185,100,.16))';
+    $('cState').innerHTML = guests.length
+      ? `<div class="cstate-l" style="color:${ccol}">Состояние компании: ${clbl}</div><div class="cstate-s">макс ${r2(c.maxB).toFixed(2)}‰ · гостей ${c.n}</div>`
+      : `<div class="cstate-s">пока никого нет</div>`;
 
-    // подпись скорости
-    $('cvSpeed').textContent = guests.length ? 'дольше застолье — ниже пик: организм успевает выводить' : '';
+    // правый столбец карточек (про компанию)
+    $('cCol').innerHTML =
+      card('Самый пьяный', `<div class="big"><span style="color:${ccol}">${r2(c.maxB).toFixed(2)}</span><small>‰</small></div>`, c.maxG?('Гость '+(guests.indexOf(c.maxG)+1)+' · '+(c.maxG.sex==='m'?'М':'Ж')):'добавьте напитки', true)
+    + card('Состояние компании', `<div class="big" style="font-size:26px;color:${ccol}">${guests.length?clbl:'—'}</div>`, guests.length?csub:'')
+    + card('Прогноз', `<div class="cprog"><div><i>пик</i><b>${r2(c.peak).toFixed(2)}‰</b></div><div><i>до 0.3‰ (за руль)</i><b>${fmt(c.wDrive)}</b></div><div><i>до 0.0‰</i><b>${fmt(c.wZero)}</b></div></div>`, '')
+    + card('За руль нельзя', `<div class="big">${c.cant}<small>из ${c.n}</small></div>`, c.cant?'вызовите такси':'все ок')
+    + card('Количество людей', `<div class="big">${c.n}</div>`, `мужчин ${c.cm} · женщин ${c.cf}`)
+    + card('Общий объём', `<div class="big">${(c.vol/1000).toFixed(1)}<small>л</small></div>`, 'напитков на компанию')
+    + card('Чистый спирт', `<div class="big">${Math.round(c.grams)}<small>г</small></div>`, 'всего по компании')
+    + card('Калории от алкоголя', `<div class="big">${Math.round(c.grams*7)}<small>ккал</small></div>`, '«пустые» калории спирта');
 
-    // карточки-агрегат
-    if (!guests.length){ $('cvCards').innerHTML=''; }
-    else {
-      $('cvCards').innerHTML = `
-        <div class="cv-card"><span class="eyebrow">Самый пьяный</span><div class="cv-cv" style="color:${ccol}">${round2(c.maxB)}‰</div><div class="cv-cs">${c.maxG?('Гость '+(guests.indexOf(c.maxG)+1)):'—'}</div></div>
-        <div class="cv-card"><span class="eyebrow">За руль нельзя</span><div class="cv-cv">${c.cant} <u>из ${c.n}</u></div><div class="cv-cs">${c.cant?'вызовите такси':'все ок'}</div></div>
-        <div class="cv-card"><span class="eyebrow">Общий объём</span><div class="cv-cv">${(c.vol/1000).toFixed(1)} <u>л</u></div><div class="cv-cs">напитков на компанию</div></div>
-        <div class="cv-card"><span class="eyebrow">Чистый спирт</span><div class="cv-cv">${Math.round(c.grams)} <u>г</u></div><div class="cv-cs">всего по компании</div></div>`;
-    }
+    // нижняя строка
+    $('cStrip').innerHTML = guests.length ? `
+      <div class="st"><b>${c.n}</b><span>гостей в компании</span></div>
+      <div class="st"><b>${(c.vol/1000).toFixed(1)} <u>л</u></b><span>общий объём</span></div>
+      <div class="st"><b>${fmt(c.wZero)}</b><span>до вывода (худший)</span></div>` : '';
+
+    $('cSpeed').textContent = guests.length ? 'дольше застолье — ниже пик: организм успевает выводить' : '';
   }
 
-  /* ---------- модалки гостя ---------- */
-  function openBody(){
-    const g = guests[active]; if(!g) return;
-    $('cbSexF').classList.toggle('on', g.sex==='f');
-    $('cbSexM').classList.toggle('on', g.sex==='m');
-    $('cbW').value=g.weight; $('cbH').value=g.height; $('cbA').value=g.age;
-    $('cbmod').dataset.sex=g.sex;
-    $('cbmod').classList.add('on');
-  }
+  /* ---- модалки ---- */
+  function openBody(){ const g=guests[active]; if(!g)return;
+    $('cbSexF').classList.toggle('on',g.sex==='f'); $('cbSexM').classList.toggle('on',g.sex==='m');
+    $('cbW').value=g.weight; $('cbH').value=g.height; $('cbA').value=g.age; $('cbmod').dataset.sex=g.sex; $('cbmod').classList.add('on'); }
   function openOwn(){ $('ccVol').value='100'; $('ccAbv').value='40'; $('ccmod').classList.add('on'); }
+  function undoLast(){ const g=guests[active]; if(!g)return; if(g.own.length){g.own.pop();return;}
+    const ord=['beer','wine','mug','glass','shot']; for(const id of ord){ if(g.counts[id]>0){g.counts[id]--;return;} } }
 
-  function undoLast(){
-    const g=guests[active]; if(!g) return;
-    if (g.own.length){ g.own.pop(); return; }
-    for (let i=DISCS.length-1;i>=0;i--){ const id=DISCS[i]; if(id!=='own' && g.counts[id]>0){ g.counts[id]--; return; } }
-  }
+  function cfit(){ const sc=$('cScreen'); if(!sc)return; const s=Math.min(innerWidth/900, innerHeight/1260);
+    sc.style.height=(innerHeight/s)+'px'; sc.style.transform='scale('+s+')'; }
 
   function bind(){
-    const view = $('companyView');
+    buildDiscs();
+    const view=$('companyView');
     view.addEventListener('click', e=>{
-      const b = e.target.closest('[data-add],[data-g],[data-disc],[data-act]');
-      if(!b) return;
-      if (b.dataset.add){ guests.push(newGuest(b.dataset.add)); active=guests.length-1; render(); return; }
-      if (b.dataset.g!=null){ active=+b.dataset.g; render(); return; }
-      if (b.dataset.disc){ const g=guests[active]; if(!g) return;
-        if (b.dataset.disc==='own') openOwn(); else { g.counts[b.dataset.disc]++; render(); } return; }
+      const b=e.target.closest('[data-add],[data-g],[data-act]'); if(!b)return;
+      if(b.dataset.add){ guests.push(newGuest(b.dataset.add)); active=guests.length-1; render(); return; }
+      if(b.dataset.g!=null){ active=+b.dataset.g; render(); return; }
       const a=b.dataset.act;
-      if (a==='close'){ view.classList.remove('on'); }
-      else if (a==='body'){ openBody(); }
-      else if (a==='del'){ guests.splice(active,1); active=Math.min(active,guests.length-1); render(); }
-      else if (a==='undo'){ undoLast(); render(); }
+      if(a==='close') view.classList.remove('on');
+      else if(a==='body') openBody();
+      else if(a==='del'){ guests.splice(active,1); active=Math.min(active,guests.length-1); render(); }
+      else if(a==='undo'){ undoLast(); render(); }
     });
-    // длительность
-    $('cvDur').addEventListener('input', e=>{ durH=+e.target.value; $('cvDurL').textContent=durH+' ч'; render(); });
+    $('cDur').addEventListener('input', e=>{ durH=+e.target.value; $('cDurL').textContent=durH+' ч'; render(); });
     // модалка тела
     $('cbSexM').onclick=()=>{ $('cbmod').dataset.sex='m'; $('cbSexM').classList.add('on'); $('cbSexF').classList.remove('on'); };
     $('cbSexF').onclick=()=>{ $('cbmod').dataset.sex='f'; $('cbSexF').classList.add('on'); $('cbSexM').classList.remove('on'); };
     $('cbCancel').onclick=()=>$('cbmod').classList.remove('on');
-    $('cbmod').addEventListener('click', e=>{ if(e.target===$('cbmod')) $('cbmod').classList.remove('on'); });
-    $('cbSave').onclick=()=>{ const g=guests[active]; if(g){
-      g.sex=$('cbmod').dataset.sex||'m';
-      g.weight=Math.max(30,Math.min(250,+$('cbW').value||g.weight));
-      g.height=Math.max(120,Math.min(220,+$('cbH').value||g.height));
-      g.age=Math.max(14,Math.min(100,+$('cbA').value||g.age)); }
+    $('cbmod').addEventListener('click',e=>{ if(e.target===$('cbmod'))$('cbmod').classList.remove('on'); });
+    $('cbSave').onclick=()=>{ const g=guests[active]; if(g){ g.sex=$('cbmod').dataset.sex||'m';
+      g.weight=Math.max(30,Math.min(250,+$('cbW').value||g.weight)); g.height=Math.max(120,Math.min(220,+$('cbH').value||g.height)); g.age=Math.max(14,Math.min(100,+$('cbA').value||g.age)); }
       $('cbmod').classList.remove('on'); render(); };
     // модалка своего напитка
     $('ccCancel').onclick=()=>$('ccmod').classList.remove('on');
-    $('ccmod').addEventListener('click', e=>{ if(e.target===$('ccmod')) $('ccmod').classList.remove('on'); });
-    $('ccAdd').onclick=()=>{ const g=guests[active];
-      const v=Math.max(1,Math.min(2000,+$('ccVol').value||0)), a=Math.max(0,Math.min(96,+$('ccAbv').value||0))/100;
-      if (g && v>0) g.own.push({vol:v,abv:a});
-      $('ccmod').classList.remove('on'); render(); };
+    $('ccmod').addEventListener('click',e=>{ if(e.target===$('ccmod'))$('ccmod').classList.remove('on'); });
+    $('ccAdd').onclick=()=>{ const g=guests[active]; const v=Math.max(1,Math.min(2000,+$('ccVol').value||0)), a=Math.max(0,Math.min(96,+$('ccAbv').value||0))/100;
+      if(g&&v>0)g.own.push({vol:v,abv:a}); $('ccmod').classList.remove('on'); render(); };
+    window.addEventListener('resize',()=>{ if($('companyView').classList.contains('on')){ cfit(); } });
   }
 
-  function open(){ $('companyView').classList.add('on'); render(); }
-
-  if (document.readyState!=='loading') bind(); else document.addEventListener('DOMContentLoaded', bind);
+  function open(){ $('companyView').classList.add('on'); cfit(); render(); }
+  if(document.readyState!=='loading') bind(); else document.addEventListener('DOMContentLoaded', bind);
   return { open };
 })();
 window.openCompany = () => Company.open();
