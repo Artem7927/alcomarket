@@ -2235,7 +2235,7 @@ async function loadFeed() {
       const text = await res.text();
       if (text && !text.startsWith('<')) {
         const data = JSON.parse(text);
-        FEED = (data.feed || data || []).filter(v => v && v.url);
+        FEED = (data.feed || data || []).filter(v => v && v.url && !v.hidden);
       }
     }
   } catch(e) { /* нет сервера — покажем демо */ }
