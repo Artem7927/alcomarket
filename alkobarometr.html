@@ -290,10 +290,33 @@
   #companyView .cv-cs{font-size:11.5px;color:#8a8270;margin-top:3px}
 
   #companyView .mbg.on{position:fixed;z-index:300}
+
+  /* ===== режим компании: раскладка как у одиночного барометра ===== */
+  #companyView .cv-stage{padding:2px 14px 4px}
+  #companyView .cv-gauge{position:relative;max-width:300px;margin:0 auto}
+  #companyView .cv-gval{position:absolute;left:0;right:0;bottom:4px;text-align:center;line-height:1}
+  #companyView .cv-gval b{font-family:'Oswald',sans-serif;font-size:42px;font-weight:600;color:#f3ede0}
+  #companyView .cv-gval span{color:#9a917d;font-size:18px;margin-left:2px}
+  #companyView .cv-aline{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 8px}
+  #companyView .cv-aname{font-weight:700;font-size:13.5px;color:#f6f1e6}
+  #companyView .cv-abtns{display:flex;gap:6px}
+  #companyView .cv-figrow{display:flex;align-items:center;justify-content:center;gap:6px}
+  #companyView .cv-dcol{display:flex;flex-direction:column;gap:18px}
+  #companyView .cv-fig{height:300px;max-width:44%;object-fit:contain;transition:filter .25s}
+  #companyView .cv-disc{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:0;width:64px}
+  #companyView .cv-dcirc{position:relative;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 35%,rgba(232,185,100,.13),#121110);border:1px solid rgba(232,185,100,.3);color:#E8B964}
+  #companyView .cv-disc:active .cv-dcirc{transform:scale(.94)}
+  #companyView .cv-dcirc svg{width:24px;height:24px}
+  #companyView .cv-dn{font-size:11px;color:#c7bfa9;letter-spacing:.3px}
+  #companyView .cv-cstate{text-align:center;margin-top:4px}
+  #companyView .cv-cstate .cv-csl{display:block;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#9a917d}
+  #companyView .cv-cstate b{font-family:'Oswald',sans-serif;font-size:23px;letter-spacing:1px;text-transform:uppercase}
+  #companyView .cv-cstate .cv-css{display:block;font-size:12px;color:#9a917d;margin-top:1px}
 </style></head><body>
 
 
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v16</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v17</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -442,12 +465,25 @@
     <button class="cv-back" data-act="close">‹ Назад</button>
     <span class="cv-ttl">На компанию</span><span style="width:64px"></span>
   </div>
-  <div class="cv-hero">
-    <img src="group.png" class="cv-img" alt="компания">
-    <div class="cv-sum" id="cvSum"></div>
-  </div>
   <div class="cv-strip" id="cvStrip"></div>
-  <div class="cv-active" id="cvActive"></div>
+  <div class="cv-stage">
+    <div class="cv-gauge">
+      <svg viewBox="0 0 200 118" width="100%">
+        <defs><linearGradient id="cvgarc" x1="0" x2="1"><stop offset="0" stop-color="#56B86A"/><stop offset=".5" stop-color="#E6A23C"/><stop offset="1" stop-color="#DC5238"/></linearGradient></defs>
+        <path d="M14 108 A86 86 0 0 1 186 108" fill="none" stroke="#1d1d20" stroke-width="9" stroke-linecap="round"/>
+        <path id="cvGfill" d="M14 108 A86 86 0 0 1 186 108" fill="none" stroke="url(#cvgarc)" stroke-width="9" stroke-linecap="round"/>
+        <circle id="cvGknob" cx="14" cy="108" r="7" fill="#FFDC92" stroke="#1a1305" stroke-width="2"/>
+      </svg>
+      <div class="cv-gval"><b id="cvBac">0.00</b><span>‰</span></div>
+    </div>
+    <div class="cv-aline" id="cvAline"></div>
+    <div class="cv-figrow">
+      <div class="cv-dcol" id="cvDcolL"></div>
+      <img src="group.png" class="cv-fig" id="cvFig" alt="компания">
+      <div class="cv-dcol" id="cvDcolR"></div>
+    </div>
+    <div class="cv-cstate" id="cvCState"></div>
+  </div>
   <div class="cv-dur">
     <label>Длительность застолья: <b id="cvDurL">4 ч</b></label>
     <input type="range" id="cvDur" min="1" max="12" value="4">
@@ -959,57 +995,64 @@ const Company = (() => {
 
   /* ---------- иконка диска ---------- */
   const ICO = { shot:ICONS.shot, glass:ICONS.wineG, mug:ICONS.mug, wine:ICONS.wineB, beer:ICONS.beerB, own:ICONS.cup };
+  const LCOL = ['shot','glass','mug'], RCOL = ['wine','beer','own'];
   function discBtn(g,id){
     const cnt = id==='own' ? g.own.length : g.counts[id];
     return `<button class="cv-disc" data-disc="${id}">
-      <span class="cv-di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${ICO[id]}</svg></span>
-      <span class="cv-dn">${DNAME[id]}</span>${cnt?`<span class="cv-dc">${cnt}</span>`:''}</button>`;
+      <span class="cv-dcirc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${ICO[id]}</svg>${cnt?`<span class="cv-dc">${cnt}</span>`:''}</span>
+      <span class="cv-dn">${DNAME[id]}</span></button>`;
   }
+  function gauge(b){
+    const f=Math.min(1,b/3), p=$('cvGfill'), L=p.getTotalLength();
+    p.style.strokeDasharray=L; p.style.strokeDashoffset=L*(1-f);
+    const a=Math.PI*(1-f); $('cvGknob').setAttribute('cx',100+86*Math.cos(a)); $('cvGknob').setAttribute('cy',108-86*Math.sin(a));
+  }
+  function glowOf(b){ if(b<0.3) return 'rgba(86,184,106,.4)'; if(b<1.5) return 'rgba(230,162,60,.45)'; return 'rgba(220,82,56,.5)'; }
 
   /* ---------- рендер динамических блоков ---------- */
   function render(){
     const c = company();
-    // hero summary
-    if (!guests.length){
-      $('cvSum').innerHTML = `<div class="cv-sumbig">Добавьте гостей</div><div class="cv-sumsub">кнопки «+ Мужчина» / «+ Женщина» ниже</div>`;
-    } else {
-      const [lbl,col] = stateOf(c.maxB);
-      $('cvSum').innerHTML = `<div class="cv-sumsub">Состояние компании</div>
-        <div class="cv-sumbig" style="color:${col}">${lbl}</div>
-        <div class="cv-sumsub">макс <b style="color:${col}">${round2(c.maxB)}‰</b> · гостей ${c.n}</div>`;
-    }
-    // strip
+    // лента гостей
     $('cvStrip').innerHTML = guests.map((g,i)=>{
       const s = stats(g); const [,col]=stateOf(s.bac);
       return `<button class="cv-chip${i===active?' on':''}" data-g="${i}">
         <b>Гость ${i+1}</b><small>${g.sex==='m'?'М':'Ж'} · <span style="color:${col}">${round2(s.bac)}‰</span></small></button>`;
     }).join('') +
-      `<button class="cv-add" data-add="m">+ Мужчина</button><button class="cv-add" data-add="f">+ Женщина</button>`;
-    // active panel
-    if (active<0 || !guests[active]){
-      $('cvActive').innerHTML = `<div class="cv-empty">Выберите или добавьте гостя</div>`;
+      `<button class="cv-add" data-add="m">+ М</button><button class="cv-add" data-add="f">+ Ж</button>`;
+
+    // активный гость -> шкала + строка + диски
+    const g = guests[active], s = g ? stats(g) : { bac:0, n:0 };
+    gauge(s.bac);
+    $('cvBac').textContent = round2(s.bac).toFixed(2);
+    if (!g){
+      $('cvAline').innerHTML = `<div class="cv-empty">Добавьте гостя — кнопки «+ М» / «+ Ж»</div>`;
+      $('cvDcolL').innerHTML=''; $('cvDcolR').innerHTML='';
     } else {
-      const g = guests[active], s = stats(g), [lbl,col]=stateOf(s.bac);
-      const interval = s.n ? Math.round(durH*60/s.n) : 0;
-      $('cvActive').innerHTML = `
-        <div class="cv-ahead">
-          <div class="cv-aname">Гость ${active+1} · ${g.sex==='m'?'М':'Ж'} · ${g.weight} кг · ${g.height} см · ${g.age} л</div>
-          <div class="cv-abtns"><button class="cv-mini" data-act="body">Тело</button><button class="cv-mini del" data-act="del">Удалить</button></div>
-        </div>
-        <div class="cv-discs">${DISCS.map(id=>discBtn(g,id)).join('')}</div>
-        <div class="cv-aread">${ s.n
-            ? `Этот гость ≈ <b style="color:${col}">${round2(s.bac)}‰</b> · ${lbl} · ≈ порция раз в <b>${interval} мин</b>`
-            : 'Гость пока ничего не пьёт — добавьте посуду выше' }
-          ${ s.n ? `<button class="cv-undo" data-act="undo">убрать последнее</button>` : '' }</div>`;
+      const undo = s.n ? `<button class="cv-mini" data-act="undo" title="убрать последнее">⟲</button>` : '';
+      $('cvAline').innerHTML = `
+        <div class="cv-aname">Гость ${active+1} · ${g.sex==='m'?'М':'Ж'} · ${g.weight} кг · ${g.height} см · ${g.age} л</div>
+        <div class="cv-abtns"><button class="cv-mini" data-act="body">Тело</button>${undo}<button class="cv-mini del" data-act="del">Удалить</button></div>`;
+      $('cvDcolL').innerHTML = LCOL.map(id=>discBtn(g,id)).join('');
+      $('cvDcolR').innerHTML = RCOL.map(id=>discBtn(g,id)).join('');
     }
-    // speed note
+
+    // фигура-компания + состояние компании
+    const [clbl,ccol] = stateOf(c.maxB);
+    $('cvFig').style.filter = guests.length
+      ? `drop-shadow(0 8px 30px ${glowOf(c.maxB)})`
+      : 'drop-shadow(0 8px 24px rgba(232,185,100,.16))';
+    $('cvCState').innerHTML = guests.length
+      ? `<span class="cv-csl">Состояние компании</span><b style="color:${ccol}">${clbl}</b><span class="cv-css">макс ${round2(c.maxB)}‰ · гостей ${c.n}</span>`
+      : '';
+
+    // подпись скорости
     $('cvSpeed').textContent = guests.length ? 'дольше застолье — ниже пик: организм успевает выводить' : '';
-    // company cards
+
+    // карточки-агрегат
     if (!guests.length){ $('cvCards').innerHTML=''; }
     else {
-      const [,mcol] = stateOf(c.maxB);
       $('cvCards').innerHTML = `
-        <div class="cv-card"><span class="eyebrow">Самый пьяный</span><div class="cv-cv" style="color:${mcol}">${round2(c.maxB)}‰</div><div class="cv-cs">${c.maxG?('Гость '+(guests.indexOf(c.maxG)+1)):'—'}</div></div>
+        <div class="cv-card"><span class="eyebrow">Самый пьяный</span><div class="cv-cv" style="color:${ccol}">${round2(c.maxB)}‰</div><div class="cv-cs">${c.maxG?('Гость '+(guests.indexOf(c.maxG)+1)):'—'}</div></div>
         <div class="cv-card"><span class="eyebrow">За руль нельзя</span><div class="cv-cv">${c.cant} <u>из ${c.n}</u></div><div class="cv-cs">${c.cant?'вызовите такси':'все ок'}</div></div>
         <div class="cv-card"><span class="eyebrow">Общий объём</span><div class="cv-cv">${(c.vol/1000).toFixed(1)} <u>л</u></div><div class="cv-cs">напитков на компанию</div></div>
         <div class="cv-card"><span class="eyebrow">Чистый спирт</span><div class="cv-cv">${Math.round(c.grams)} <u>г</u></div><div class="cv-cs">всего по компании</div></div>`;
