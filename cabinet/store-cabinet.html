@@ -772,8 +772,8 @@ const PLATFORM_WA = '+77714144534'; // номер платформы для сч
 // «Настроить» во вкладке Видео — сохранится в этом браузере).
 //   1. cloudinary.com → Settings → Upload → Add upload preset → Signing Mode: Unsigned
 //   2. Cloud name и имя preset впишите ниже.
-let MEDIA_CLOUD_NAME    = localStorage.getItem('feedCloud')  || '';   // напр. 'alcomarket'
-let MEDIA_UPLOAD_PRESET = localStorage.getItem('feedPreset') || '';   // напр. 'alco_feed'
+let MEDIA_CLOUD_NAME    = localStorage.getItem('feedCloud')  || 'dhux9lip6';   // Cloudinary cloud name
+let MEDIA_UPLOAD_PRESET = localStorage.getItem('feedPreset') || 'ml_default';  // Cloudinary unsigned preset
 
 let feedList = [];   // [{ id, url, poster, caption, hidden }]
 let _vFile = null;   // выбранный файл видео
@@ -1044,7 +1044,7 @@ function renderFeedCab() {
   if (cfg) {
     cfg.innerHTML = feedConfigured()
       ? ''
-      : `<div class="feed-cfg"><span>Загрузка файлом — после подключения облака. Сейчас доступно добавление видео по ссылке.</span>
+      : `<div class="feed-cfg"><span>Загружайте видео прямо с телефона. Если при первой загрузке попросит — один раз подключите бесплатное хранилище.</span>
            <button onclick="setupFeedStorage()">Настроить</button></div>`;
   }
   const box = document.getElementById('feedListCab');
@@ -1082,16 +1082,20 @@ function escHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&
 
 // ⚙ настройка облака
 function setupFeedStorage() {
-  const cloud = prompt('Cloud name (Cloudinary):', MEDIA_CLOUD_NAME || '');
+  alert('Разовая настройка хранилища (бесплатно, ~5 минут):\n\n'
+      + '1. Откройте cloudinary.com и зарегистрируйтесь.\n'
+      + '2. Settings → Upload → Add upload preset → Signing Mode: Unsigned → Save.\n'
+      + '3. Скопируйте «Cloud name» (вверху Dashboard) и имя созданного preset.\n\n'
+      + 'Впишите их в следующих двух окнах. Больше настраивать не нужно — видео будет грузиться сразу.');
+  const cloud = prompt('Cloud name (из Cloudinary Dashboard):', MEDIA_CLOUD_NAME || '');
   if (cloud === null) return;
-  const preset = prompt('Upload preset (unsigned):', MEDIA_UPLOAD_PRESET || '');
+  const preset = prompt('Имя upload preset (Unsigned):', MEDIA_UPLOAD_PRESET || '');
   if (preset === null) return;
   MEDIA_CLOUD_NAME = cloud.trim();
   MEDIA_UPLOAD_PRESET = preset.trim();
   localStorage.setItem('feedCloud', MEDIA_CLOUD_NAME);
   localStorage.setItem('feedPreset', MEDIA_UPLOAD_PRESET);
   renderFeedCab();
-  alert('Хранилище сохранено в этом браузере.');
 }
 
 // ── модалка добавления ──
@@ -1173,6 +1177,33 @@ function setVidProgress(pct, text) {
   txt.textContent = text || (Math.round(pct*100) + '%');
 }
 
+// загрузка файла на ВАШ сервер (если он умеет принимать файлы — без сторонних аккаунтов).
+// Ошибка с флагом .absent === true означает «сервер не поддерживает» → уходим в облако.
+function uploadToOwnServer(file, onProg) {
+  return new Promise((resolve, reject) => {
+    const fd = new FormData();
+    fd.append('video', file);
+    fd.append('password', storePass);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${SERVER_URL}/feed-upload/${storeId}`);
+    xhr.timeout = 180000;
+    xhr.upload.onprogress = e => { if (e.lengthComputable && onProg) onProg(e.loaded/e.total); };
+    const absent = () => { const er = new Error('no-endpoint'); er.absent = true; reject(er); };
+    xhr.onload = () => {
+      if (xhr.status === 404 || xhr.status === 405) return absent();
+      if (xhr.status < 200 || xhr.status >= 300) return reject(new Error('Сервер отклонил загрузку (код ' + xhr.status + ')'));
+      try {
+        const d = JSON.parse(xhr.responseText || '{}');
+        const u = d.url || d.secure_url || (d.video && d.video.url);
+        if (u) resolve(u); else absent();
+      } catch(e) { absent(); }
+    };
+    xhr.onerror   = () => absent();   // нет маршрута/CORS → считаем, что сервер не умеет
+    xhr.ontimeout = () => reject(new Error('Загрузка слишком долгая — проверьте интернет'));
+    xhr.send(fd);
+  });
+}
+
 // загрузка файла в Cloudinary (с прогрессом)
 function uploadToCloud(file, onProg) {
   return new Promise((resolve, reject) => {
@@ -1203,17 +1234,33 @@ async function publishFeedVideo() {
   let poster = _vPoster || '';
 
   if (_vFile) {
-    if (!feedConfigured()) {
-      alert('Чтобы грузить видео файлом, сначала нажмите «Настроить» и подключите облако. Либо вставьте ссылку на готовое видео.');
-      return;
-    }
     btn.disabled = true; btn.textContent = 'Загрузка…';
     setVidProgress(0, 'Загрузка 0%');
+    const onProg = p => setVidProgress(p*0.95, 'Загрузка ' + Math.round(p*100) + '%');
+
+    // 1) пробуем загрузить на ВАШ сервер (без сторонних аккаунтов)
     try {
-      url = await uploadToCloud(_vFile, p => setVidProgress(p*0.95, 'Загрузка ' + Math.round(p*100) + '%'));
-    } catch(e) {
-      setVidProgress(-1); btn.disabled = false; btn.textContent = 'Опубликовать';
-      alert('Не удалось загрузить видео: ' + e.message); return;
+      url = await uploadToOwnServer(_vFile, onProg);
+    } catch(e1) {
+      if (!e1.absent) {   // сервер есть, но загрузка не удалась
+        setVidProgress(-1); btn.disabled = false; btn.textContent = 'Опубликовать';
+        alert('Не удалось загрузить: ' + e1.message); return;
+      }
+      // 2) сервер не принимает файлы → одноразовое облако
+      if (!feedConfigured()) {
+        setVidProgress(-1);
+        const ok = confirm('Чтобы загружать видео с телефона, нужно один раз подключить бесплатное хранилище. Сделать это сейчас? (≈5 минут)');
+        if (!ok) { btn.disabled = false; btn.textContent = 'Опубликовать'; return; }
+        setupFeedStorage();
+        if (!feedConfigured()) { btn.disabled = false; btn.textContent = 'Опубликовать'; return; }
+      }
+      setVidProgress(0, 'Загрузка 0%');
+      try {
+        url = await uploadToCloud(_vFile, onProg);
+      } catch(e2) {
+        setVidProgress(-1); btn.disabled = false; btn.textContent = 'Опубликовать';
+        alert('Не удалось загрузить видео: ' + e2.message); return;
+      }
     }
   } else if (pastedUrl) {
     if (!/^https?:\/\//i.test(pastedUrl)) { alert('Ссылка должна начинаться с http(s)://'); return; }
