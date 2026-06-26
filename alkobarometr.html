@@ -218,10 +218,82 @@
     background:rgba(0,0,0,.28);border-radius:12px;padding:8px 15px;cursor:pointer;transition:.15s}
   .reset:hover{color:var(--gold2);border-color:var(--sgold)}
   .reset:active{transform:scale(.96)}
+
+  /* кнопка входа в режим компании (слева сверху сцены) */
+  .cmode{position:absolute;top:16px;left:16px;z-index:6;font-family:'Manrope';font-weight:600;
+    font-size:13px;letter-spacing:1px;color:#1c1406;border:none;
+    background:linear-gradient(180deg,#F6D58A,#E8B964 60%,#cda255);border-radius:12px;padding:8px 14px;cursor:pointer;transition:.15s;
+    box-shadow:0 6px 16px rgba(232,185,100,.3)}
+  .cmode:active{transform:scale(.96)}
+
+  /* ===== ЭКРАН «НА КОМПАНИЮ» ===== */
+  #companyView{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;
+    background:radial-gradient(120% 70% at 50% 0%,#1a1813,#0b0b0d);overflow-y:auto;
+    font-family:'Manrope',sans-serif;color:#f3ede0;padding:0 0 30px}
+  #companyView.on{display:flex}
+  #companyView .cv-top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
+    padding:14px 16px;background:linear-gradient(180deg,#0b0b0d 70%,transparent);backdrop-filter:blur(6px)}
+  #companyView .cv-back{background:#16140f;border:1px solid rgba(232,185,100,.22);color:#E8B964;
+    border-radius:11px;padding:9px 14px;font-size:14px;cursor:pointer}
+  #companyView .cv-ttl{font-family:'Oswald',sans-serif;font-weight:600;font-size:20px;letter-spacing:3px;
+    text-transform:uppercase;background:linear-gradient(180deg,#F6D58A,#E8B964 60%,#b88f44);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #companyView .cv-hero{position:relative;display:flex;justify-content:center;padding:4px 16px 6px}
+  #companyView .cv-img{width:auto;height:230px;max-width:90%;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(232,185,100,.18))}
+  #companyView .cv-sum{position:absolute;left:0;right:0;bottom:0;text-align:center;padding:0 16px}
+  #companyView .cv-sumbig{font-family:'Oswald',sans-serif;font-weight:600;font-size:24px;letter-spacing:1px;text-transform:uppercase}
+  #companyView .cv-sumsub{font-size:12.5px;color:#9a917d;letter-spacing:.3px;margin-top:2px}
+  #companyView .cv-sumsub b{color:#F3CE86}
+
+  #companyView .cv-strip{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;scrollbar-width:none}
+  #companyView .cv-strip::-webkit-scrollbar{display:none}
+  #companyView .cv-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+    background:#141310;border:1px solid rgba(232,185,100,.16);border-radius:12px;padding:8px 13px;cursor:pointer;color:#c7bfa9}
+  #companyView .cv-chip.on{border-color:#E8B964;background:#1d1a12}
+  #companyView .cv-chip b{font-size:13px;color:#f3ede0}
+  #companyView .cv-chip small{font-size:11px;color:#9a917d}
+  #companyView .cv-add{flex-shrink:0;background:#121110;border:1px dashed rgba(232,185,100,.4);color:#E8B964;
+    border-radius:12px;padding:8px 13px;font-size:12.5px;font-weight:600;cursor:pointer}
+
+  #companyView .cv-active{margin:6px 16px;background:linear-gradient(165deg,#16140f,#0f0e11);
+    border:1px solid rgba(232,185,100,.18);border-radius:16px;padding:14px}
+  #companyView .cv-empty,#companyView .cv-aread{color:#9a917d;font-size:13px}
+  #companyView .cv-empty{text-align:center;padding:14px}
+  #companyView .cv-ahead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  #companyView .cv-aname{font-weight:700;font-size:14px;color:#f6f1e6}
+  #companyView .cv-abtns{display:flex;gap:7px}
+  #companyView .cv-mini{background:#1d1a12;border:1px solid rgba(232,185,100,.25);color:#E8B964;border-radius:9px;padding:6px 12px;font-size:12px;cursor:pointer}
+  #companyView .cv-mini.del{border-color:rgba(220,82,56,.4);color:#e08066}
+  #companyView .cv-discs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  #companyView .cv-discs::-webkit-scrollbar{display:none}
+  #companyView .cv-disc{flex:0 0 auto;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;
+    width:64px;background:#121110;border:1px solid rgba(232,185,100,.16);border-radius:13px;padding:10px 4px;cursor:pointer;color:#c7bfa9}
+  #companyView .cv-disc:active{transform:scale(.95)}
+  #companyView .cv-di svg{width:24px;height:24px;color:#E8B964}
+  #companyView .cv-dn{font-size:11px;letter-spacing:.3px}
+  #companyView .cv-dc{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:50%;
+    background:linear-gradient(180deg,#F6D58A,#cda255);color:#1c1406;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px}
+  #companyView .cv-aread{margin-top:12px;line-height:1.5}
+  #companyView .cv-aread b{color:#f3ede0}
+  #companyView .cv-undo{display:block;margin-top:8px;background:none;border:none;color:#7d7561;font-size:12px;text-decoration:underline;cursor:pointer}
+
+  #companyView .cv-dur{margin:8px 16px}
+  #companyView .cv-dur label{display:block;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#9a917d;margin-bottom:8px}
+  #companyView .cv-dur label b{color:#E8B964}
+  #companyView .cv-dur input[type=range]{width:100%;accent-color:#E8B964;height:26px}
+  #companyView .cv-speed{font-size:12px;color:#7d7561;margin-top:2px}
+
+  #companyView .cv-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 16px}
+  #companyView .cv-card{background:linear-gradient(165deg,#15140f,#0f0e11);border:1px solid rgba(232,185,100,.16);border-radius:14px;padding:13px}
+  #companyView .cv-card .eyebrow{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#9a917d}
+  #companyView .cv-cv{font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;color:#F3CE86;margin-top:4px;line-height:1}
+  #companyView .cv-cv u{font-size:.5em;text-decoration:none;color:#9a917d}
+  #companyView .cv-cs{font-size:11.5px;color:#8a8270;margin-top:3px}
+
+  #companyView .mbg.on{position:fixed;z-index:300}
 </style></head><body>
 
 
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v15</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#6a6a72;z-index:50;font-family:monospace;letter-spacing:1px">v16</div>
 <div class="fit"><div class="screen" id="screen">
 
   <div class="top">
@@ -241,6 +313,7 @@
   <div class="main">
     <div class="stage">
       <button class="reset" id="resetBtn">СБРОС</button>
+      <button class="cmode" id="cmodeBtn" onclick="openCompany()">👥 Компания</button>
       <div class="gauge">
         <svg viewBox="0 0 200 118" width="100%">
           <defs><linearGradient id="garc" x1="0" x2="1"><stop offset="0" stop-color="#56B86A"/><stop offset=".5" stop-color="#E6A23C"/><stop offset="1" stop-color="#DC5238"/></linearGradient></defs>
@@ -362,6 +435,43 @@
 
 <!-- увеличенная карточка по центру -->
 <div id="cardZoom"><div id="cardZoomBox"></div></div>
+
+<!-- ЭКРАН «НА КОМПАНИЮ» -->
+<div id="companyView">
+  <div class="cv-top">
+    <button class="cv-back" data-act="close">‹ Назад</button>
+    <span class="cv-ttl">На компанию</span><span style="width:64px"></span>
+  </div>
+  <div class="cv-hero">
+    <img src="group.png" class="cv-img" alt="компания">
+    <div class="cv-sum" id="cvSum"></div>
+  </div>
+  <div class="cv-strip" id="cvStrip"></div>
+  <div class="cv-active" id="cvActive"></div>
+  <div class="cv-dur">
+    <label>Длительность застолья: <b id="cvDurL">4 ч</b></label>
+    <input type="range" id="cvDur" min="1" max="12" value="4">
+    <div class="cv-speed" id="cvSpeed"></div>
+  </div>
+  <div class="cv-cards" id="cvCards"></div>
+
+  <!-- модалка тела гостя -->
+  <div class="mbg" id="cbmod"><div class="modal">
+    <h3>Тело гостя</h3>
+    <div class="field"><label>Пол</label><div class="seg"><button id="cbSexF">Женский</button><button id="cbSexM">Мужской</button></div></div>
+    <div class="field"><label>Вес, кг</label><input type="number" id="cbW" value="80"></div>
+    <div class="field"><label>Рост, см</label><input type="number" id="cbH" value="178"></div>
+    <div class="field"><label>Возраст, лет</label><input type="number" id="cbA" value="30"></div>
+    <div class="mact"><button class="ghost" id="cbCancel">Отмена</button><button class="gold" id="cbSave">Сохранить</button></div>
+  </div></div>
+  <!-- модалка своего напитка гостя -->
+  <div class="mbg" id="ccmod"><div class="modal">
+    <h3>Свой напиток</h3>
+    <div class="field"><label>Объём, мл</label><input type="number" id="ccVol" value="100"></div>
+    <div class="field"><label>Крепость, %</label><input type="number" id="ccAbv" value="40"></div>
+    <div class="mact"><button class="ghost" id="ccCancel">Отмена</button><button class="gold" id="ccAdd">Добавить</button></div>
+  </div></div>
+</div>
 
 <!-- bottom-sheet корзины с временами напитков -->
 <div class="ov" id="csOv"><div class="csheet">
@@ -775,5 +885,196 @@ const Model = (() => {
 
   fit(); render();
 })();
+
+/* company.js — режим «На компанию»: ростер гостей, у каждого своё тело и свои напитки.
+   Переиспользует Model (расчёт ‰) и DRINKS (пресеты посуды). Свой экран поверх барометра. */
+const Company = (() => {
+  const NOW = 12 * 60;                 // опорная «текущая» минута
+  const DEF = {
+    m: { sex:'m', weight:80, height:178, age:30 },
+    f: { sex:'f', weight:65, height:165, age:30 }
+  };
+  const DNAME = { shot:'Рюмка', glass:'Бокал', mug:'Кружка', wine:'Вино', beer:'Пиво', own:'Своё' };
+  const DISCS = ['shot','glass','mug','wine','beer','own'];
+
+  let guests = [];   // {id,sex,weight,height,age,counts:{...},own:[{vol,abv}]}
+  let active = -1;
+  let durH = 4;
+  let gid = 1;
+
+  const $ = id => document.getElementById(id);
+  const round2 = b => Math.round(b * 100) / 100;
+
+  function newGuest(sex){
+    const b = DEF[sex] || DEF.m;
+    return { id:gid++, sex:b.sex, weight:b.weight, height:b.height, age:b.age,
+             counts:{shot:0,glass:0,mug:0,wine:0,beer:0}, own:[] };
+  }
+
+  /* напитки гостя → формат модели, раскиданные по времени застолья */
+  function guestDrinks(g){
+    const list = [];
+    ['shot','glass','mug','wine','beer'].forEach(id=>{
+      const d = drinkById(id);
+      for (let i=0;i<g.counts[id];i++) list.push({ vol:d.vol, abv:d.abv });
+    });
+    g.own.forEach(o => list.push({ vol:o.vol, abv:o.abv }));
+    const n = list.length, span = durH*60;
+    return list.map((d,i)=>({ vol:d.vol, abv:d.abv, tMin: NOW - span + Math.round((i+0.5)*span/Math.max(1,n)) }));
+  }
+
+  function stats(g){
+    const drinks = guestDrinks(g);
+    let grams=0, vol=0;
+    drinks.forEach(d=>{ grams += Model.ethanolGrams(d.vol,d.abv); vol += d.vol; });
+    if (!drinks.length) return { bac:0, grams:0, vol:0, toZero:0, toDrive:0, n:0 };
+    const p = { sex:g.sex, weight:g.weight, height:g.height, age:g.age };
+    const bac = Model.totalBAC(drinks, p, NOW);
+    const tz = Model.timeToLevel(drinks, p, 0.0, NOW);
+    const td = Model.timeToLevel(drinks, p, 0.3, NOW);
+    return { bac, grams, vol, toZero: tz?tz-NOW:0, toDrive: td?td-NOW:0, n:drinks.length };
+  }
+
+  function stateOf(b){
+    if (b<0.05) return ['Трезвость','var(--green)'];
+    if (b<0.3)  return ['Лёгкое','var(--green)'];
+    if (b<0.5)  return ['Начальное','var(--amber)'];
+    if (b<1.5)  return ['Среднее','var(--amber)'];
+    if (b<2.5)  return ['Сильное','var(--red)'];
+    return ['Тяжёлое','var(--red)'];
+  }
+
+  function fmtMin(min){
+    if (min<=0) return '—';
+    const h=Math.floor(min/60), m=Math.round(min%60);
+    return h ? (h+' ч'+(m?' '+m+' мин':'')) : (m+' мин');
+  }
+
+  function company(){
+    let maxB=0, maxG=null, grams=0, vol=0, cant=0;
+    guests.forEach(g=>{ const s=stats(g); grams+=s.grams; vol+=s.vol;
+      if (s.bac>maxB){ maxB=s.bac; maxG=g; } if (s.bac>0.3) cant++; });
+    return { maxB, maxG, grams, vol, cant, n:guests.length };
+  }
+
+  /* ---------- иконка диска ---------- */
+  const ICO = { shot:ICONS.shot, glass:ICONS.wineG, mug:ICONS.mug, wine:ICONS.wineB, beer:ICONS.beerB, own:ICONS.cup };
+  function discBtn(g,id){
+    const cnt = id==='own' ? g.own.length : g.counts[id];
+    return `<button class="cv-disc" data-disc="${id}">
+      <span class="cv-di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${ICO[id]}</svg></span>
+      <span class="cv-dn">${DNAME[id]}</span>${cnt?`<span class="cv-dc">${cnt}</span>`:''}</button>`;
+  }
+
+  /* ---------- рендер динамических блоков ---------- */
+  function render(){
+    const c = company();
+    // hero summary
+    if (!guests.length){
+      $('cvSum').innerHTML = `<div class="cv-sumbig">Добавьте гостей</div><div class="cv-sumsub">кнопки «+ Мужчина» / «+ Женщина» ниже</div>`;
+    } else {
+      const [lbl,col] = stateOf(c.maxB);
+      $('cvSum').innerHTML = `<div class="cv-sumsub">Состояние компании</div>
+        <div class="cv-sumbig" style="color:${col}">${lbl}</div>
+        <div class="cv-sumsub">макс <b style="color:${col}">${round2(c.maxB)}‰</b> · гостей ${c.n}</div>`;
+    }
+    // strip
+    $('cvStrip').innerHTML = guests.map((g,i)=>{
+      const s = stats(g); const [,col]=stateOf(s.bac);
+      return `<button class="cv-chip${i===active?' on':''}" data-g="${i}">
+        <b>Гость ${i+1}</b><small>${g.sex==='m'?'М':'Ж'} · <span style="color:${col}">${round2(s.bac)}‰</span></small></button>`;
+    }).join('') +
+      `<button class="cv-add" data-add="m">+ Мужчина</button><button class="cv-add" data-add="f">+ Женщина</button>`;
+    // active panel
+    if (active<0 || !guests[active]){
+      $('cvActive').innerHTML = `<div class="cv-empty">Выберите или добавьте гостя</div>`;
+    } else {
+      const g = guests[active], s = stats(g), [lbl,col]=stateOf(s.bac);
+      const interval = s.n ? Math.round(durH*60/s.n) : 0;
+      $('cvActive').innerHTML = `
+        <div class="cv-ahead">
+          <div class="cv-aname">Гость ${active+1} · ${g.sex==='m'?'М':'Ж'} · ${g.weight} кг · ${g.height} см · ${g.age} л</div>
+          <div class="cv-abtns"><button class="cv-mini" data-act="body">Тело</button><button class="cv-mini del" data-act="del">Удалить</button></div>
+        </div>
+        <div class="cv-discs">${DISCS.map(id=>discBtn(g,id)).join('')}</div>
+        <div class="cv-aread">${ s.n
+            ? `Этот гость ≈ <b style="color:${col}">${round2(s.bac)}‰</b> · ${lbl} · ≈ порция раз в <b>${interval} мин</b>`
+            : 'Гость пока ничего не пьёт — добавьте посуду выше' }
+          ${ s.n ? `<button class="cv-undo" data-act="undo">убрать последнее</button>` : '' }</div>`;
+    }
+    // speed note
+    $('cvSpeed').textContent = guests.length ? 'дольше застолье — ниже пик: организм успевает выводить' : '';
+    // company cards
+    if (!guests.length){ $('cvCards').innerHTML=''; }
+    else {
+      const [,mcol] = stateOf(c.maxB);
+      $('cvCards').innerHTML = `
+        <div class="cv-card"><span class="eyebrow">Самый пьяный</span><div class="cv-cv" style="color:${mcol}">${round2(c.maxB)}‰</div><div class="cv-cs">${c.maxG?('Гость '+(guests.indexOf(c.maxG)+1)):'—'}</div></div>
+        <div class="cv-card"><span class="eyebrow">За руль нельзя</span><div class="cv-cv">${c.cant} <u>из ${c.n}</u></div><div class="cv-cs">${c.cant?'вызовите такси':'все ок'}</div></div>
+        <div class="cv-card"><span class="eyebrow">Общий объём</span><div class="cv-cv">${(c.vol/1000).toFixed(1)} <u>л</u></div><div class="cv-cs">напитков на компанию</div></div>
+        <div class="cv-card"><span class="eyebrow">Чистый спирт</span><div class="cv-cv">${Math.round(c.grams)} <u>г</u></div><div class="cv-cs">всего по компании</div></div>`;
+    }
+  }
+
+  /* ---------- модалки гостя ---------- */
+  function openBody(){
+    const g = guests[active]; if(!g) return;
+    $('cbSexF').classList.toggle('on', g.sex==='f');
+    $('cbSexM').classList.toggle('on', g.sex==='m');
+    $('cbW').value=g.weight; $('cbH').value=g.height; $('cbA').value=g.age;
+    $('cbmod').dataset.sex=g.sex;
+    $('cbmod').classList.add('on');
+  }
+  function openOwn(){ $('ccVol').value='100'; $('ccAbv').value='40'; $('ccmod').classList.add('on'); }
+
+  function undoLast(){
+    const g=guests[active]; if(!g) return;
+    if (g.own.length){ g.own.pop(); return; }
+    for (let i=DISCS.length-1;i>=0;i--){ const id=DISCS[i]; if(id!=='own' && g.counts[id]>0){ g.counts[id]--; return; } }
+  }
+
+  function bind(){
+    const view = $('companyView');
+    view.addEventListener('click', e=>{
+      const b = e.target.closest('[data-add],[data-g],[data-disc],[data-act]');
+      if(!b) return;
+      if (b.dataset.add){ guests.push(newGuest(b.dataset.add)); active=guests.length-1; render(); return; }
+      if (b.dataset.g!=null){ active=+b.dataset.g; render(); return; }
+      if (b.dataset.disc){ const g=guests[active]; if(!g) return;
+        if (b.dataset.disc==='own') openOwn(); else { g.counts[b.dataset.disc]++; render(); } return; }
+      const a=b.dataset.act;
+      if (a==='close'){ view.classList.remove('on'); }
+      else if (a==='body'){ openBody(); }
+      else if (a==='del'){ guests.splice(active,1); active=Math.min(active,guests.length-1); render(); }
+      else if (a==='undo'){ undoLast(); render(); }
+    });
+    // длительность
+    $('cvDur').addEventListener('input', e=>{ durH=+e.target.value; $('cvDurL').textContent=durH+' ч'; render(); });
+    // модалка тела
+    $('cbSexM').onclick=()=>{ $('cbmod').dataset.sex='m'; $('cbSexM').classList.add('on'); $('cbSexF').classList.remove('on'); };
+    $('cbSexF').onclick=()=>{ $('cbmod').dataset.sex='f'; $('cbSexF').classList.add('on'); $('cbSexM').classList.remove('on'); };
+    $('cbCancel').onclick=()=>$('cbmod').classList.remove('on');
+    $('cbmod').addEventListener('click', e=>{ if(e.target===$('cbmod')) $('cbmod').classList.remove('on'); });
+    $('cbSave').onclick=()=>{ const g=guests[active]; if(g){
+      g.sex=$('cbmod').dataset.sex||'m';
+      g.weight=Math.max(30,Math.min(250,+$('cbW').value||g.weight));
+      g.height=Math.max(120,Math.min(220,+$('cbH').value||g.height));
+      g.age=Math.max(14,Math.min(100,+$('cbA').value||g.age)); }
+      $('cbmod').classList.remove('on'); render(); };
+    // модалка своего напитка
+    $('ccCancel').onclick=()=>$('ccmod').classList.remove('on');
+    $('ccmod').addEventListener('click', e=>{ if(e.target===$('ccmod')) $('ccmod').classList.remove('on'); });
+    $('ccAdd').onclick=()=>{ const g=guests[active];
+      const v=Math.max(1,Math.min(2000,+$('ccVol').value||0)), a=Math.max(0,Math.min(96,+$('ccAbv').value||0))/100;
+      if (g && v>0) g.own.push({vol:v,abv:a});
+      $('ccmod').classList.remove('on'); render(); };
+  }
+
+  function open(){ $('companyView').classList.add('on'); render(); }
+
+  if (document.readyState!=='loading') bind(); else document.addEventListener('DOMContentLoaded', bind);
+  return { open };
+})();
+window.openCompany = () => Company.open();
 </script>
 </body></html>
