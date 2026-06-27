@@ -624,7 +624,21 @@
     <div class="form-group">
       <label class="form-label">Товар в видео (необязательно)</label>
       <select class="form-input" id="vProduct"></select>
-      <div class="vhint">Развлекательное видео — оставьте «без товара». С товаром — на видео появится кнопка «В корзину».</div>
+      <button class="vsmall-btn" type="button" id="vNewProdBtn" onclick="toggleNewProduct()" style="margin-top:8px;width:100%">+ Нет в списке? Создать товар</button>
+      <div id="vNewProdBox" style="display:none;margin-top:10px;background:#161616;border:1px solid var(--border);border-radius:12px;padding:12px">
+        <input class="form-input" id="vNpName" placeholder="Название товара" style="margin-bottom:8px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input class="form-input" id="vNpPrice" inputmode="numeric" placeholder="Цена ₸" style="flex:1">
+          <select class="form-input" id="vNpUnit" style="flex:1">
+            <option>шт</option><option>бут</option><option>л</option><option>уп</option><option>кг</option>
+          </select>
+        </div>
+        <select class="form-input" id="vNpCat" style="margin-bottom:10px">
+          <option>Крепкие</option><option>Пиво</option><option>Вино</option><option>Коктейли</option><option>Разливное</option><option>Безалкогольное</option><option>Закуски</option><option>Рыба</option>
+        </select>
+        <button class="modal-btn" type="button" id="vNpSave" onclick="createProductInline()" style="margin:0">Создать и прикрепить</button>
+      </div>
+      <div class="vhint">Развлекательное видео — оставьте «без товара». С товаром — на видео появится кнопка «В корзину». Новый товар попадёт и в каталог.</div>
     </div>
 
     <div class="form-group">
@@ -1216,12 +1230,10 @@ function openFeedModal(editId) {
   setVidProgress(-1);
 
   // список товаров
-  const sel = document.getElementById('vProduct');
-  sel.innerHTML = '<option value="">— без товара (развлекательное) —</option>' +
-    (products || []).map(p => `<option value="${p.id}">${escHtml(p.name||('Товар '+p.id))}${p.price?(' · '+Number(p.price).toLocaleString('ru-RU')+' ₸'):''}</option>`).join('');
+  fillProductSelect((v && v.productId != null) ? String(v.productId) : '');
+  const box = document.getElementById('vNewProdBox'); if (box) box.style.display = 'none';
 
   document.getElementById('vCaption').value = v ? (v.caption || '') : '';
-  sel.value = (v && v.productId != null) ? String(v.productId) : '';
   document.getElementById('vCtaType').value = (v && v.ctaType === 'none') ? 'none' : 'cart';
   document.getElementById('vFrom').value = (v && v.showFrom) ? v.showFrom : '';
   document.getElementById('vUntil').value = (v && v.showUntil) ? v.showUntil : '';
@@ -1295,6 +1307,48 @@ function cloudinaryPoster(url, sec) {
   return url.replace('/upload/', `/upload/${t}/`).replace(/\.(mp4|mov|webm|m4v|avi)(\?.*)?$/i, '.jpg');
 }
 function onCtaTypeChange() { /* зарезервировано под подсказки */ }
+
+// заполнить выпадающий список товаров
+function fillProductSelect(selectedId) {
+  const sel = document.getElementById('vProduct');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— без товара (развлекательное) —</option>' +
+    (products || []).map(p => `<option value="${p.id}">${escHtml(p.name || ('Товар ' + p.id))}${p.price ? (' · ' + Number(p.price).toLocaleString('ru-RU') + ' ₸') : ''}</option>`).join('');
+  sel.value = selectedId || '';
+}
+
+// быстрое создание товара прямо в окне видео
+function toggleNewProduct() {
+  const box = document.getElementById('vNewProdBox');
+  const show = box.style.display === 'none';
+  box.style.display = show ? 'block' : 'none';
+  if (show) { document.getElementById('vNpName').value = ''; document.getElementById('vNpPrice').value = ''; }
+}
+async function createProductInline() {
+  const name  = document.getElementById('vNpName').value.trim();
+  const price = parseInt(document.getElementById('vNpPrice').value, 10);
+  const unit  = document.getElementById('vNpUnit').value;
+  const cat   = document.getElementById('vNpCat').value;
+  if (!name || !price) { alert('Впишите название и цену товара'); return; }
+  const btn = document.getElementById('vNpSave');
+  const product = {
+    id: Date.now(), name, cat, price, unit,
+    emoji: (typeof emojiForCat === 'function' ? emojiForCat(cat) : '📦'),
+    desc: '', photo: _vPoster || '', available: true
+  };
+  products.push(product);
+  btn.disabled = true; btn.textContent = 'Сохранение…';
+  try {
+    await putProducts();
+    fillProductSelect(String(product.id));     // обновить список и выбрать новый
+    document.getElementById('vNewProdBox').style.display = 'none';
+  } catch(e) {
+    products.pop();
+    alert(e.message || 'Не удалось сохранить товар');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Создать и прикрепить';
+  }
+}
 
 function onFeedUrlInput() {
   // если начали вводить ссылку — прячем файловый пикер
