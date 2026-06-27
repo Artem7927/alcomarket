@@ -587,7 +587,7 @@
     pointer-events: auto; display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
     background: var(--gold); color: #1a1410; border: none; border-radius: 999px;
     padding: 12px 22px; font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer;
-    box-shadow: 0 6px 20px rgba(0,0,0,.45);
+    box-shadow: 0 6px 20px rgba(0,0,0,.45); text-decoration: none;
   }
   .fp-buy:active { transform: scale(.96); }
   .fp-buy svg { width: 18px; height: 18px; }
@@ -2007,15 +2007,35 @@ function selectPay(v) {
 const SERVER_URL = 'https://alcodelivery-db-production.up.railway.app';
 const PLATFORM_COMMISSION = 0.10;
 const STORE_ID = 'alcomarket';
-const STORE_WA = '77786723500';
+let STORE_WA = '77786723500';
 // Ссылка на живой сайт (Vercel) — для кнопки "Поделиться" и QR-кода.
 const STORE_SHARE_URL = 'https://alcomarket-steel.vercel.app/';
-const STORE_IG_URL = 'https://instagram.com/alkomarket_1ekb';
+const STORE_IG_URL_DEFAULT = 'https://instagram.com/alkomarket_1ekb';
+let STORE_IG_URL = STORE_IG_URL_DEFAULT;
 const STORE_TG_URL = '';                 // Telegram магазина, напр. https://t.me/alcomarket1. Пусто — кнопка скрыта.
-const STORE_FOLLOWERS = 3499;            // Аудитория магазина (показывается в шапке). Меняй вручную.
-const STORE_DESC = 'Алкомаркет №1 в Экибастузе · доставка по городу 🚚';
-const STORE_HOURS = 'Ежедневно 10:00–23:00';
-const STORE_ADDRESS = 'ул. Машхур Жусупа 71, Экибастуз';
+let STORE_FOLLOWERS = 3499;              // Аудитория магазина (показывается в шапке)
+let STORE_DESC = 'Алкомаркет №1 в Экибастузе · доставка по городу 🚚';
+let STORE_HOURS = 'Ежедневно 10:00–23:00';
+let STORE_ADDRESS = 'ул. Машхур Жусупа 71, Экибастуз';
+let STORE_MAP_URL = '';                  // ссылка 2ГИС/карты (из кабинета). Пусто — откроется поиск по адресу.
+
+// Профиль из кабинета (db/profile) переопределяет значения выше
+async function loadStoreProfile() {
+  try {
+    const res = await fetch(`${SERVER_URL}/profile/${STORE_ID}`, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return;
+    const d = await res.json();
+    const p = d.profile || d;
+    if (!p || typeof p !== 'object') return;
+    if (p.desc)      STORE_DESC = p.desc;
+    if (p.address)   STORE_ADDRESS = p.address;
+    if (p.hours)     STORE_HOURS = p.hours;
+    if (p.igUrl)     STORE_IG_URL = p.igUrl;
+    if (p.waNumber)  STORE_WA = String(p.waNumber).replace(/[^\d]/g, '');
+    if (p.mapUrl)    STORE_MAP_URL = p.mapUrl;
+    if (p.followers != null && !isNaN(+p.followers)) STORE_FOLLOWERS = +p.followers;
+  } catch(e) { /* нет связи — оставляем значения по умолчанию */ }
+}
 
 // ── Статус магазина (приём заказов) ──────────────────
 let storeAccepting = true;
@@ -2228,21 +2248,26 @@ const DEMO_FEED = [
 ];
 
 async function loadFeed() {
+  await loadStoreProfile();
   try {
     const res = await fetch(`${SERVER_URL}/feed/${STORE_ID}`, { signal: AbortSignal.timeout(8000) });
     if (res.ok) {
       const text = await res.text();
       if (text && !text.startsWith('<')) {
         const data = JSON.parse(text);
-        FEED = (data.feed || data || []).filter(v => v && v.url && !v.hidden);
+        FEED = (data.feed || data || []).filter(v => v && v.url && !v.hidden && feedVisibleNow(v));
       }
     }
   } catch(e) { /* нет сервера — покажем демо */ }
   if (!FEED.length) FEED = DEMO_FEED;  // образец, пока нет реального контента
-  // стабильный id у каждого видео + состояние лайков/комментов (пока в памяти)
+  // стабильный id + лайки/просмотры (реальные с сервера, лайк/просмотр — раз с устройства)
+  const likedSet = fpLikedSet();
   FEED.forEach((v, idx) => {
     if (!v.id) v.id = 'v' + idx;
-    if (!feedState[v.id]) feedState[v.id] = { likes: Math.floor(Math.random()*120)+20, liked: false, comments: [] };
+    if (!feedState[v.id]) {
+      const baseLikes = (typeof v.likes === 'number') ? v.likes : (Math.floor(Math.random()*120)+20);
+      feedState[v.id] = { likes: baseLikes, liked: likedSet.has(v.id), views: v.views || 0, comments: [] };
+    }
   });
   renderFeedGrid();
   renderChannelHeader();
@@ -2252,6 +2277,22 @@ async function loadFeed() {
     const i = FEED.findIndex(v => v.id === m[1]);
     if (i >= 0) setTimeout(() => openFeed(i), 200);
   }
+}
+
+// расписание показа: видео видно, если сейчас в пределах showFrom..showUntil
+function feedVisibleNow(v) {
+  const now = Date.now();
+  if (v.showFrom) { const t = Date.parse(v.showFrom); if (!isNaN(t) && now < t) return false; }
+  if (v.showUntil) { const t = Date.parse(v.showUntil + 'T23:59:59'); if (!isNaN(t) && now > t) return false; }
+  return true;
+}
+
+// какие видео это устройство уже лайкнуло (чтобы не накручивать)
+function fpLikedSet() {
+  try { return new Set(JSON.parse(localStorage.getItem('fpLiked') || '[]')); } catch(e) { return new Set(); }
+}
+function fpSaveLiked(set) {
+  try { localStorage.setItem('fpLiked', JSON.stringify([...set])); } catch(e) {}
 }
 
 function renderFeedGrid() {
@@ -2318,12 +2359,7 @@ function openFeed(startIdx) {
       <div class="fp-overlay">
         <div class="fp-brand"><img src="logo-red.png" onerror="this.style.display='none'"><span>AlcoMarket</span></div>
         ${v.caption ? `<div class="fp-cap">${v.caption}</div>` : ''}
-        ${(() => {
-          if (v.productId == null) return '';
-          const p = PRODUCTS.find(x => x.id == v.productId);
-          if (!p) return '';
-          return `<div><button class="fp-buy" onclick="event.stopPropagation(); fpAddToCart(${p.id})">${FP_ICONS.cart} В корзину · ${p.price.toLocaleString()} ₸</button></div>`;
-        })()}
+        ${fpCtaHtml(v)}
       </div>
     </div>`;
   }).join('');
@@ -2351,6 +2387,7 @@ function openFeed(startIdx) {
         vid.muted = fpMuted;
         vid.play().catch(() => { vid.muted = true; vid.play().catch(()=>{}); });
         en.target.classList.remove('paused');
+        fpCountView(en.target.dataset.id);
       } else {
         vid.pause();
         vid.muted = true;
@@ -2398,17 +2435,47 @@ function closeFeed() {
   document.getElementById('fpTrack').innerHTML = '';
 }
 
+// ---- КНОПКА-ДЕЙСТВИЕ НА ВИДЕО ----
+// По умолчанию — «В корзину» (если к видео прикреплён товар). «none» — без кнопки.
+// Заказ оформляется внутри приложения и попадает в кабинет. WhatsApp — отдельная кнопка-контакт.
+function fpCtaHtml(v) {
+  if (v.ctaType === 'none') return '';
+  if (v.productId == null) return '';
+  const p = PRODUCTS.find(x => x.id == v.productId);
+  if (!p) return '';
+  return `<div><button class="fp-buy" onclick="event.stopPropagation(); fpAddToCart(${p.id})">${FP_ICONS.cart} В корзину · ${p.price.toLocaleString()} ₸</button></div>`;
+}
+
+// ---- ПРОСМОТР (раз с устройства на видео) ----
+function fpCountView(id) {
+  let viewed;
+  try { viewed = new Set(JSON.parse(localStorage.getItem('fpViewed') || '[]')); } catch(e) { viewed = new Set(); }
+  if (viewed.has(id)) return;
+  viewed.add(id);
+  try { localStorage.setItem('fpViewed', JSON.stringify([...viewed])); } catch(e) {}
+  fetch(`${SERVER_URL}/feed/${STORE_ID}/${encodeURIComponent(id)}/view`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+  }).catch(()=>{});
+}
+
 // ---- ЛАЙК ----
 function fpLike(btn, id) {
   const st = feedState[id]; if (!st) return;
+  const likedSet = fpLikedSet();
   btn.classList.add('bump');
   setTimeout(() => btn.classList.remove('bump'), 350);
   st.liked = !st.liked;
-  st.likes += st.liked ? 1 : -1;
+  st.likes = Math.max(0, st.likes + (st.liked ? 1 : -1));
   const cnt = btn.querySelector('[data-cnt]');
   if (cnt) cnt.textContent = st.likes;
   btn.classList.toggle('is-liked', st.liked);
-  if (st.liked) fpHearts(btn);
+  if (st.liked) { fpHearts(btn); likedSet.add(id); } else { likedSet.delete(id); }
+  fpSaveLiked(likedSet);
+  // отправляем на сервер (без пароля); ошибка не критична
+  fetch(`${SERVER_URL}/feed/${STORE_ID}/${encodeURIComponent(id)}/like`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ delta: st.liked ? 1 : -1 })
+  }).catch(()=>{});
 }
 function fpHearts(btn) {
   const n = 6 + Math.floor(Math.random() * 4);
