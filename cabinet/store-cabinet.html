@@ -141,6 +141,74 @@
   .ccol-track { height:110px; width:100%; display:flex; align-items:flex-end; justify-content:center; }
   .ccol-bar { width:100%; max-width:18px; background:linear-gradient(180deg,var(--green),#1e7e44); border-radius:4px 4px 0 0; min-height:2px; }
   .ccol-lbl { font-size:8px; color:var(--muted); margin-top:4px; }
+
+  /* ===== ПРЕМИУМ ДАШБОРД ===== */
+  .st-periods { display:flex; gap:7px; margin-bottom:14px; }
+  .st-per { flex:1; padding:11px 4px; border:1px solid var(--border); background:var(--card); color:var(--muted); border-radius:11px; font-family:'Montserrat'; font-size:12.5px; font-weight:800; cursor:pointer; }
+  .st-per.active { background:var(--red); color:#fff; border-color:var(--red); }
+  .st-kpis { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:13px; }
+  .kpi { background:linear-gradient(180deg,var(--card),#1c1c1c); border:1px solid var(--border); border-radius:16px; padding:13px 14px; cursor:pointer; overflow:hidden; transition:transform .12s; }
+  .kpi:active { transform:scale(.98); }
+  .kpi-l { font-size:11px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.5px; }
+  .kpi-v { font-size:22px; font-weight:800; color:#fff; margin:6px 0 4px; letter-spacing:.2px; }
+  .kpi-g { font-size:12px; font-weight:800; display:flex; align-items:center; gap:4px; }
+  .kpi-g.up { color:var(--green); } .kpi-g.down { color:var(--red); } .kpi-g.flat { color:var(--muted); }
+  .kpi-g em { color:var(--muted); font-weight:600; font-style:normal; }
+  .kpi-spark { margin-top:9px; height:32px; }
+  .kpi-spark svg { width:100%; height:32px; display:block; }
+
+  .st-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:15px; margin-bottom:13px; cursor:pointer; transition:transform .12s; }
+  .st-card:active { transform:scale(.99); }
+  .st-hd { font-size:12px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.5px; margin-bottom:13px; display:flex; align-items:center; justify-content:space-between; gap:7px; }
+  .st-hd .r { color:var(--text); font-weight:800; text-transform:none; letter-spacing:0; font-size:12px; }
+
+  .rev-wrap { display:flex; gap:8px; }
+  .rev-axis { display:flex; flex-direction:column; justify-content:space-between; height:150px; padding-bottom:16px; }
+  .rev-axis span { font-size:9px; color:var(--muted); font-weight:700; }
+  .rev-cols { flex:1; display:flex; align-items:flex-end; gap:3px; height:150px; }
+  .rev-col { flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; }
+  .rev-bar { width:100%; max-width:20px; background:linear-gradient(180deg,#2ecc71,#1e7e44); border-radius:4px 4px 0 0; min-height:2px; }
+  .rev-lbl { font-size:9px; color:var(--muted); margin-top:5px; }
+
+  .tp-row { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+  .tp-num { flex:none; width:22px; height:22px; border-radius:50%; border:1.5px solid var(--gold); color:var(--gold); font-size:11px; font-weight:800; display:grid; place-items:center; }
+  .tp-name { flex:0 0 36%; font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tp-track { flex:1; height:13px; background:var(--card2); border-radius:7px; overflow:hidden; }
+  .tp-fill { height:100%; background:linear-gradient(90deg,var(--gold),#d4920a); border-radius:7px; }
+  .tp-val { flex:none; font-size:12.5px; font-weight:800; color:var(--gold); min-width:34px; text-align:right; }
+
+  .donut-wrap { display:flex; align-items:center; gap:14px; }
+  .donut { flex:none; position:relative; width:130px; height:130px; }
+  .donut-c { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .donut-c b { font-size:14px; font-weight:800; color:#fff; }
+  .donut-c span { font-size:10px; color:var(--muted); }
+  .lg { flex:1; min-width:0; }
+  .lg-row { display:flex; align-items:center; gap:7px; font-size:12px; margin-bottom:7px; }
+  .lg-dot { width:10px; height:10px; border-radius:3px; flex:none; }
+  .lg-name { flex:1; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lg-pct { font-weight:800; color:#fff; min-width:34px; text-align:right; }
+  .lg-sum { color:var(--muted); font-size:11px; min-width:64px; text-align:right; }
+
+  .st-mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:13px; }
+  .st-mini { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:13px; cursor:pointer; transition:transform .12s; }
+  .st-mini:active { transform:scale(.98); }
+  .st-mini .l { font-size:10.5px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.4px; line-height:1.3; display:flex; align-items:center; gap:6px; }
+  .st-mini .l svg { width:14px; height:14px; fill:none; stroke:var(--muted); stroke-width:1.9; }
+  .st-mini .v { font-size:19px; font-weight:800; color:#fff; margin-top:7px; }
+  .st-mini .s { font-size:11px; color:var(--muted); margin-top:3px; }
+  .st-mini .v.green { color:var(--green); } .st-mini .v.red { color:var(--red); } .st-mini .v.gold { color:var(--gold); } .st-mini .v.blue { color:#4a9eff; }
+
+  .stat-modal { position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:200; display:none; align-items:center; justify-content:center; padding:18px; }
+  .stat-modal.open { display:flex; }
+  .stat-modal-card { background:var(--dark); border:1px solid var(--border); border-radius:20px; padding:20px; width:100%; max-width:410px; max-height:86vh; overflow-y:auto; animation:stPop .25s ease; }
+  @keyframes stPop { from{opacity:0; transform:scale(.92)} to{opacity:1; transform:none} }
+  .stm-x { float:right; background:var(--card2); border:none; color:#fff; width:34px; height:34px; border-radius:50%; font-size:18px; cursor:pointer; line-height:1; }
+  .stm-title { font-size:18px; font-weight:800; color:#fff; margin-bottom:4px; }
+  .stm-sub { font-size:12px; color:var(--muted); margin-bottom:16px; }
+  .stm-big { font-size:30px; font-weight:800; color:#fff; margin:4px 0; }
+  .stm-list { margin-top:8px; }
+  .stm-li { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:13px; }
+  .stm-li span:last-child { font-weight:800; color:var(--gold); }
   .client-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:13px 14px; margin-bottom:10px; cursor:pointer; }
   .client-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
   .client-name { font-weight:800; font-size:15px; }
@@ -686,6 +754,11 @@
     <button class="modal-btn" id="pfSaveBtn" onclick="saveProfileCab()">Сохранить</button>
     <button class="modal-btn modal-btn-sec" onclick="closeModal('profileModal')">Отмена</button>
   </div>
+</div>
+
+<!-- УВЕЛИЧЕНИЕ КАРТОЧКИ СТАТИСТИКИ -->
+<div class="stat-modal" id="statModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="stat-modal-card" id="statModalCard"></div>
 </div>
   <div class="modal">
     <div class="modal-handle"></div>
@@ -2129,50 +2202,262 @@ function showSub(name, el) {
 }
 
 // ── СТАТИСТИКА (диаграммы) ───────────────────────────
+const STAT_COLORS = ['#D42B2B','#F2A900','#27AE60','#8B5CF6','#4A9EFF','#2DD4BF','#888'];
+let statPeriod = 'today';
+let _stat = null;
+
+const stFmt = n => Math.round(n||0).toLocaleString('ru-RU');
+const stStartOfDay = d => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+const stAddDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+
+function setStatPeriod(p) { statPeriod = p; renderStats(); }
+
+function statRange() {
+  const now = new Date();
+  if (statPeriod === 'today') { const s = stStartOfDay(now); return { start:s, end:now, pStart:stAddDays(s,-1), pEnd:s }; }
+  if (statPeriod === '7d')    { const s = stAddDays(stStartOfDay(now),-6); return { start:s, end:now, pStart:stAddDays(s,-7), pEnd:s }; }
+  if (statPeriod === '30d')   { const s = stAddDays(stStartOfDay(now),-29); return { start:s, end:now, pStart:stAddDays(s,-30), pEnd:s }; }
+  return { start:new Date(0), end:now, pStart:null, pEnd:null };
+}
+function stMetrics(set) {
+  let revenue=0, commission=0, qty=0;
+  set.forEach(o => { revenue += o.orderTotal||0; commission += o.commission||0; (o.items||[]).forEach(i => qty += i.qty||0); });
+  return { revenue, net:revenue-commission, commission, qty, count:set.length, avg: set.length?Math.round(revenue/set.length):0 };
+}
+function stGrowth(cur, prev) { if (prev==null) return null; if (!prev) return cur>0?100:0; return Math.round((cur-prev)/prev*100); }
+function stGrowthHtml(g) {
+  if (g==null) return '<div class="kpi-g flat">за период</div>';
+  const cls = g>0?'up':(g<0?'down':'flat'), ar = g>0?'↑':(g<0?'↓':'•');
+  return `<div class="kpi-g ${cls}">${ar} ${Math.abs(g)}% <em>к пред.</em></div>`;
+}
+function stSpark(vals, color) {
+  if (!vals || vals.length<2) vals = [0,0];
+  const w=100,h=32, max=Math.max(...vals), min=Math.min(...vals,0), rng=(max-min)||1;
+  const pts = vals.map((v,i) => [ i/(vals.length-1)*w, h-3-((v-min)/rng)*(h-7) ]);
+  const line = pts.map((p,i) => (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const id = 'sg'+Math.random().toString(36).slice(2,7);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".4"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${line} L ${w} ${h} L 0 ${h} Z" fill="url(#${id})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+function stDailySeries(field, n) {
+  n = n || 14;
+  const done = (allOrders||[]).filter(o => o.status==='done');
+  const t0 = stStartOfDay(new Date());
+  const out = [];
+  for (let k=n-1; k>=0; k--) {
+    const d = stAddDays(t0,-k), nx = stAddDays(d,1);
+    const set = done.filter(o => { const t=new Date(o.createdAt); return t>=d && t<nx; });
+    const m = stMetrics(set);
+    out.push(field==='qty'?m.qty : field==='net'?m.net : field==='avg'?m.avg : m.revenue);
+  }
+  return out;
+}
+function stDonut(segs, total, top, bot) {
+  const r=52, C=2*Math.PI*r, cx=65, cy=65, sw=20; let off=0;
+  const circles = segs.map(s => {
+    const len = total ? (s.val/total)*C : 0;
+    const c = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${sw}" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}"/>`;
+    off += len; return c;
+  }).join('');
+  return `<div class="donut"><svg width="130" height="130" viewBox="0 0 130 130" style="transform:rotate(-90deg)">${circles}</svg><div class="donut-c"><b>${top}</b><span>${bot}</span></div></div>`;
+}
+function stCats(set) {
+  const nameCat = {}; (products||[]).forEach(p => { if (p && p.name) nameCat[p.name] = p.cat || 'Прочее'; });
+  const sum = {}; set.forEach(o => (o.items||[]).forEach(i => { const c = nameCat[i.name] || 'Прочее'; sum[c] = (sum[c]||0) + (i.sum||0); }));
+  let arr = Object.entries(sum).map(([name,val]) => ({ name, val })).sort((a,b) => b.val-a.val);
+  if (arr.length > 6) { const head = arr.slice(0,5); const tail = arr.slice(5).reduce((s,x)=>s+x.val,0); head.push({ name:'Прочее', val:tail }); arr = head; }
+  arr.forEach((x,i) => x.color = STAT_COLORS[i % STAT_COLORS.length]);
+  return arr;
+}
+
 function renderStats() {
   const el = document.getElementById('statsView');
-  const done = (allOrders || []).filter(o => o.status === 'done');
-  if (!done.length) {
+  const allDone = (allOrders||[]).filter(o => o.status==='done');
+  if (!allDone.length) {
     el.innerHTML = `<div class="empty"><div class="empty-icon"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-chart"/></svg></div><div class="empty-text">Пока нет данных</div></div>`;
     return;
   }
+  const R = statRange();
+  const inR = (o,s,e) => { const t = new Date(o.createdAt); return t>=s && t<e; };
+  const cur  = allDone.filter(o => inR(o,R.start,R.end));
+  const prev = R.pStart ? allDone.filter(o => inR(o,R.pStart,R.pEnd)) : [];
+  const m = stMetrics(cur), pm = stMetrics(prev);
+  const cancCur = (allOrders||[]).filter(o => o.status==='cancel' && inR(o,R.start,R.end));
 
-  // Топ товаров по количеству (горизонтальные полосы)
-  const qmap = {};
-  done.forEach(o => (o.items || []).forEach(i => { qmap[i.name] = (qmap[i.name] || 0) + (i.qty || 0); }));
-  const top = Object.entries(qmap).sort((a,b) => b[1] - a[1]).slice(0, 7);
-  const maxQ = Math.max(...top.map(t => t[1]), 1);
-  const topHtml = top.map(([name, qty]) => `
-    <div class="bar-row">
-      <div class="bar-name">${name}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(qty/maxQ*100)}%"></div></div>
-      <div class="bar-val">${qty}</div>
-    </div>`).join('');
+  const per = [['today','Сегодня'],['7d','7 дней'],['30d','30 дней'],['all','Всё']];
+  const periodsHtml = `<div class="st-periods">${per.map(([k,l]) => `<button class="st-per ${statPeriod===k?'active':''}" onclick="setStatPeriod('${k}')">${l}</button>`).join('')}</div>`;
 
-  // Выручка по дням (последние 14 дней, вертикальные столбцы)
-  const today = new Date();
-  const days = [];
-  for (let k = 13; k >= 0; k--) { const d = new Date(today); d.setDate(d.getDate() - k); days.push(d); }
-  const rmap = {};
-  done.forEach(o => { const key = new Date(o.createdAt).toLocaleDateString('ru'); rmap[key] = (rmap[key] || 0) + o.orderTotal; });
-  const dayVals = days.map(d => ({ day: d.getDate(), v: rmap[d.toLocaleDateString('ru')] || 0 }));
-  const maxV = Math.max(...dayVals.map(x => x.v), 1);
-  const colsHtml = dayVals.map(x => `
-    <div class="ccol">
-      <div class="ccol-track"><div class="ccol-bar" style="height:${Math.max(2, Math.round(x.v/maxV*100))}%"></div></div>
-      <div class="ccol-lbl">${x.day}</div>
-    </div>`).join('');
-  const totalRev = done.reduce((s,o) => s + o.orderTotal, 0);
+  const hasPrev = !!R.pStart;
+  const kpis = [
+    { key:'revenue', l:'Выручка',     v:stFmt(m.revenue)+' ₸', g:hasPrev?stGrowth(m.revenue,pm.revenue):null, s:stDailySeries('revenue'), c:'#27AE60' },
+    { key:'net',     l:'Чистыми',     v:stFmt(m.net)+' ₸',     g:hasPrev?stGrowth(m.net,pm.net):null,         s:stDailySeries('net'),     c:'#27AE60' },
+    { key:'avg',     l:'Средний чек', v:stFmt(m.avg)+' ₸',     g:hasPrev?stGrowth(m.avg,pm.avg):null,         s:stDailySeries('avg'),     c:'#F2A900' },
+    { key:'qty',     l:'Продано',     v:stFmt(m.qty)+' шт',    g:hasPrev?stGrowth(m.qty,pm.qty):null,         s:stDailySeries('qty'),     c:'#4A9EFF' },
+  ];
+  const kpisHtml = `<div class="st-kpis">${kpis.map(k => `
+    <div class="kpi" onclick="openStat('kpi','${k.key}')">
+      <div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div>${stGrowthHtml(k.g)}
+      <div class="kpi-spark">${stSpark(k.s, k.c)}</div>
+    </div>`).join('')}</div>`;
 
-  el.innerHTML = `
-    <div class="stat-block">
-      <div class="stat-block-title"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-chart"/></svg> Топ продаж (шт)</div>
-      ${topHtml}
-    </div>
-    <div class="stat-block">
-      <div class="stat-block-title"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg> Выручка по дням · всего ${totalRev.toLocaleString()} ₸</div>
-      <div class="chart-cols">${colsHtml}</div>
+  const series14 = stDailySeries('revenue', 14);
+  const labels14 = []; { const t0 = stStartOfDay(new Date()); for (let k=13;k>=0;k--) labels14.push(stAddDays(t0,-k).getDate()); }
+  const maxV = Math.max(...series14, 1);
+  const yMax = Math.ceil(maxV/30000)*30000 || 30000;
+  const axis = []; for (let y=yMax; y>=0; y-=yMax/5) axis.push(y>=1000?(Math.round(y/1000)+'K'):y);
+  const revCols = series14.map((v,i) => `<div class="rev-col"><div class="rev-bar" style="height:${Math.max(1, Math.round(v/yMax*100))}%"></div><div class="rev-lbl">${labels14[i]}</div></div>`).join('');
+  const revHtml = `
+    <div class="st-card" onclick="openStat('revenue')">
+      <div class="st-hd">Выручка по дням <span class="r">${stFmt(series14.reduce((s,x)=>s+x,0))} ₸</span></div>
+      <div class="rev-wrap"><div class="rev-axis">${axis.map(a=>`<span>${a}</span>`).join('')}</div><div class="rev-cols">${revCols}</div></div>
     </div>`;
+
+  const qmap = {}; cur.forEach(o => (o.items||[]).forEach(i => qmap[i.name] = (qmap[i.name]||0) + (i.qty||0)));
+  const top = Object.entries(qmap).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const maxQ = Math.max(...top.map(t=>t[1]), 1);
+  const topHtml = `
+    <div class="st-card" onclick="openStat('top')">
+      <div class="st-hd">Топ продаж (шт)</div>
+      ${top.length ? top.map(([name,qty],i) => `
+        <div class="tp-row">
+          <div class="tp-num">${i+1}</div>
+          <div class="tp-name">${name}</div>
+          <div class="tp-track"><div class="tp-fill" style="width:${Math.round(qty/maxQ*100)}%"></div></div>
+          <div class="tp-val">${qty}</div>
+        </div>`).join('') : '<div style="color:var(--muted);font-size:12px">Нет продаж за период</div>'}
+    </div>`;
+
+  const cats = stCats(cur);
+  const catTotal = cats.reduce((s,x)=>s+x.val,0);
+  const catHtml = `
+    <div class="st-card" onclick="openStat('cats')">
+      <div class="st-hd">Категории продаж</div>
+      <div class="donut-wrap">
+        ${stDonut(cats, catTotal, stFmt(catTotal)+' ₸', 'всего')}
+        <div class="lg">${cats.map(c => `<div class="lg-row"><span class="lg-dot" style="background:${c.color}"></span><span class="lg-name">${c.name}</span><span class="lg-pct">${catTotal?Math.round(c.val/catTotal*100):0}%</span><span class="lg-sum">${stFmt(c.val)} ₸</span></div>`).join('')}</div>
+      </div>
+    </div>`;
+
+  const hourRev = {}; cur.forEach(o => { const h = new Date(o.createdAt).getHours(); hourRev[h] = (hourRev[h]||0) + (o.orderTotal||0); });
+  const bestHour = Object.entries(hourRev).sort((a,b)=>b[1]-a[1])[0];
+  const cancRate = (cur.length+cancCur.length) ? Math.round(cancCur.length/(cur.length+cancCur.length)*100) : 0;
+  const firstByPhone = {};
+  (allOrders||[]).forEach(o => { const k = (o.phone||'').replace(/\D/g,'').slice(-10) || ('n:'+(o.client||'')); const t = new Date(o.createdAt).getTime(); if (!firstByPhone[k] || t < firstByPhone[k]) firstByPhone[k] = t; });
+  const curPhones = new Set(cur.map(o => (o.phone||'').replace(/\D/g,'').slice(-10) || ('n:'+(o.client||''))));
+  let newClients = 0; curPhones.forEach(k => { const f = firstByPhone[k]; if (f!=null && f>=R.start.getTime() && f<R.end.getTime()) newClients++; });
+  const repeatClients = curPhones.size ? curPhones.size - newClients : 0;
+  const repeatPct = curPhones.size ? Math.round(repeatClients/curPhones.size*100) : 0;
+
+  const miniHtml = `
+    <div class="st-mini-grid">
+      <div class="st-mini" onclick="openStat('hours')">
+        <div class="l"><svg viewBox="0 0 24 24"><use href="#ic-clock"/></svg> Активный час</div>
+        <div class="v gold">${bestHour ? (String(bestHour[0]).padStart(2,'0')+':00–'+String((+bestHour[0]+1)%24).padStart(2,'0')+':00') : '—'}</div>
+        <div class="s">${bestHour ? ('выручка '+stFmt(bestHour[1])+' ₸') : 'нет данных'}</div>
+      </div>
+      <div class="st-mini" onclick="openStat('cancel')">
+        <div class="l">Отмены</div>
+        <div class="v red">${cancCur.length} шт</div>
+        <div class="s">${cancRate}% от заказов</div>
+      </div>
+      <div class="st-mini" onclick="openStat('clients')">
+        <div class="l">Клиенты</div>
+        <div class="v">${curPhones.size}</div>
+        <div class="s">новых ${newClients} · повторных ${repeatClients}</div>
+      </div>
+      <div class="st-mini" onclick="openStat('repeat')">
+        <div class="l">Повторных</div>
+        <div class="v green">${repeatPct}%</div>
+        <div class="s">вернулись за покупкой</div>
+      </div>
+    </div>`;
+
+  let videoHtml = '';
+  if ((feedList||[]).length) {
+    const totV = feedList.reduce((s,v)=>s+(v.views||0),0);
+    const totL = feedList.reduce((s,v)=>s+(v.likes||0),0);
+    videoHtml = `
+      <div class="st-mini-grid">
+        <div class="st-mini" onclick="openStat('video')">
+          <div class="l"><svg viewBox="0 0 24 24"><use href="#ic-video"/></svg> Просмотры видео</div>
+          <div class="v blue">${stFmt(totV)}</div>
+          <div class="s">${feedList.length} ролик(ов)</div>
+        </div>
+        <div class="st-mini" onclick="openStat('video')">
+          <div class="l">Лайки видео</div>
+          <div class="v red">${stFmt(totL)}</div>
+          <div class="s">всего по ленте</div>
+        </div>
+      </div>`;
+  }
+
+  _stat = { cur, prev, m, pm, R, top, cats, catTotal, hourRev, series14, labels14, cancCur, cancRate, newClients, repeatClients, repeatPct, clientsTotal: curPhones.size };
+  el.innerHTML = periodsHtml + kpisHtml + revHtml + topHtml + catHtml + miniHtml + videoHtml;
+}
+
+const STAT_PERIOD_LABEL = () => ({ today:'сегодня', '7d':'за 7 дней', '30d':'за 30 дней', all:'за всё время' }[statPeriod]);
+function openStat(type, key) {
+  if (!_stat) return;
+  const card = document.getElementById('statModalCard');
+  const S = _stat;
+  let html = `<button class="stm-x" onclick="document.getElementById('statModal').classList.remove('open')">×</button>`;
+
+  if (type === 'kpi') {
+    const map = {
+      revenue:{t:'Выручка', v:stFmt(S.m.revenue)+' ₸', c:'#27AE60', f:'revenue', note:'Сумма всех выполненных заказов.'},
+      net:{t:'Чистыми', v:stFmt(S.m.net)+' ₸', c:'#27AE60', f:'net', note:'Выручка за вычетом комиссии 10%.'},
+      avg:{t:'Средний чек', v:stFmt(S.m.avg)+' ₸', c:'#F2A900', f:'avg', note:'Выручка ÷ число заказов.'},
+      qty:{t:'Продано', v:stFmt(S.m.qty)+' шт', c:'#4A9EFF', f:'qty', note:'Сколько единиц товара продано.'},
+    }[key];
+    const ser = stDailySeries(map.f, 14);
+    html += `<div class="stm-title">${map.t}</div><div class="stm-sub">${STAT_PERIOD_LABEL()} · ${map.note}</div>
+      <div class="stm-big" style="color:${map.c}">${map.v}</div>
+      <div style="height:90px;margin-top:14px">${stSpark(ser, map.c).replace('height:32px','height:90px')}</div>
+      <div class="stm-sub" style="margin-top:8px">Динамика по дням (14 дней)</div>`;
+  }
+  else if (type === 'revenue') {
+    const rows = S.series14.map((v,i) => `<div class="stm-li"><span>${S.labels14[i]} число</span><span>${stFmt(v)} ₸</span></div>`).reverse();
+    html += `<div class="stm-title">Выручка по дням</div><div class="stm-sub">Последние 14 дней · всего ${stFmt(S.series14.reduce((s,x)=>s+x,0))} ₸</div><div class="stm-list">${rows.join('')}</div>`;
+  }
+  else if (type === 'top') {
+    const sumMap = {}; S.cur.forEach(o => (o.items||[]).forEach(i => sumMap[i.name] = (sumMap[i.name]||0) + (i.sum||0)));
+    const byRev = Object.entries(sumMap).sort((a,b)=>b[1]-a[1]).slice(0,12);
+    html += `<div class="stm-title">Топ товаров</div><div class="stm-sub">${STAT_PERIOD_LABEL()} · по выручке</div><div class="stm-list">${byRev.map(([n,s],i)=>`<div class="stm-li"><span>${i+1}. ${n}</span><span>${stFmt(s)} ₸</span></div>`).join('')||'<div class="stm-sub">Нет продаж</div>'}</div>`;
+  }
+  else if (type === 'cats') {
+    html += `<div class="stm-title">Категории продаж</div><div class="stm-sub">${STAT_PERIOD_LABEL()} · всего ${stFmt(S.catTotal)} ₸</div>
+      <div style="display:flex;justify-content:center;margin:10px 0">${stDonut(S.cats, S.catTotal, stFmt(S.catTotal)+' ₸','всего')}</div>
+      <div class="stm-list">${S.cats.map(c=>`<div class="stm-li"><span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${c.color};margin-right:8px"></span>${c.name} · ${S.catTotal?Math.round(c.val/S.catTotal*100):0}%</span><span>${stFmt(c.val)} ₸</span></div>`).join('')}</div>`;
+  }
+  else if (type === 'hours') {
+    const hrs = []; for (let h=0;h<24;h++) hrs.push(S.hourRev[h]||0);
+    const mx = Math.max(...hrs,1);
+    const bars = hrs.map((v,h)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;max-width:9px;height:${Math.max(2,Math.round(v/mx*100))}px;background:linear-gradient(180deg,var(--gold),#d4920a);border-radius:3px 3px 0 0"></div></div>`).join('');
+    html += `<div class="stm-title">Заказы по часам</div><div class="stm-sub">${STAT_PERIOD_LABEL()} · когда покупают</div>
+      <div style="display:flex;align-items:flex-end;gap:2px;height:130px;margin-top:10px">${bars}</div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:5px"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>`;
+  }
+  else if (type === 'cancel') {
+    html += `<div class="stm-title">Отмены</div><div class="stm-sub">${STAT_PERIOD_LABEL()}</div>
+      <div class="stm-big" style="color:var(--red)">${S.cancCur.length} шт · ${S.cancRate}%</div>
+      <div class="stm-list">${S.cancCur.slice(0,15).map(o=>{const lg=(o.statusLog||[]).slice(-1)[0]; return `<div class="stm-li"><span>${o.client||'Клиент'}</span><span style="color:var(--muted);font-weight:600">${lg&&lg.reason?lg.reason:'без причины'}</span></div>`;}).join('')||'<div class="stm-sub">Отмен нет 👍</div>'}</div>`;
+  }
+  else if (type === 'clients' || type === 'repeat') {
+    html += `<div class="stm-title">Клиенты ${STAT_PERIOD_LABEL()}</div><div class="stm-sub">по уникальным телефонам</div>
+      <div class="stm-list">
+        <div class="stm-li"><span>Всего покупателей</span><span>${S.clientsTotal}</span></div>
+        <div class="stm-li"><span>Новых</span><span>${S.newClients}</span></div>
+        <div class="stm-li"><span>Повторных</span><span>${S.repeatClients}</span></div>
+        <div class="stm-li"><span>Доля повторных</span><span>${S.repeatPct}%</span></div>
+      </div>`;
+  }
+  else if (type === 'video') {
+    const vids = (feedList||[]).slice().sort((a,b)=>(b.views||0)-(a.views||0));
+    html += `<div class="stm-title">Видео в «О магазине»</div><div class="stm-sub">просмотры и лайки по роликам</div>
+      <div class="stm-list">${vids.map(v=>`<div class="stm-li"><span>${(v.caption||'Без подписи').slice(0,28)}</span><span>👁 ${stFmt(v.views||0)} · ♡ ${stFmt(v.likes||0)}</span></div>`).join('')||'<div class="stm-sub">Нет видео</div>'}</div>`;
+  }
+
+  card.innerHTML = html;
+  document.getElementById('statModal').classList.add('open');
 }
 
 // ── КЛИЕНТЫ (дедуп по телефону + полный отчёт) ───────
