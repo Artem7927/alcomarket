@@ -420,7 +420,7 @@
   .feed-head { padding: 4px 2px 14px; }
   .feed-title { display:block; font-family:'Bebas Neue'; font-size: 26px; letter-spacing: 2px; }
   .feed-sub { font-size: 12px; color: var(--muted); }
-  .feed-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 24px; }
+  .feed-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 18px 0 24px; }
   .feed-tile {
     position: relative; aspect-ratio: 9/16; border-radius: 12px; overflow: hidden;
     background: var(--card); cursor: pointer; border: 1px solid var(--border);
@@ -1143,7 +1143,6 @@
     <div class="ch-head" id="chHead"></div>
 
     <!-- ЛЕНТА ВИДЕО (TikTok-стиль) -->
-    <div class="ch-section" id="feedSection"><span class="ch-section__ey">Витрина <b>·</b> Видео</span><span class="ch-section__line"></span></div>
     <div id="feedGrid" class="feed-grid"></div>
     <div id="feedEmpty" class="feed-empty" style="display:none">
       <svg class="ic" viewBox="0 0 24 24" style="font-size:46px;color:var(--muted)"><use href="#ic-play"/></svg>
@@ -2603,17 +2602,6 @@ function renderChannelHeader() {
   soc.push(`<a class="ch-soc ch-soc--wa" href="https://wa.me/${STORE_WA}" target="_blank" rel="noopener" aria-label="WhatsApp">${FP_ICONS.wa}</a>`);
   soc.push(`<button class="ch-soc ch-soc--geo" onclick="fpOpenMap()" aria-label="Локация">${FP_ICONS.geo}</button>`);
 
-  // живой статус «Открыто/Закрыто» по часам работы магазина
-  let isOpen = true;
-  const hm = String(STORE_HOURS).match(/(\d{1,2}):(\d{2})\D+(\d{1,2}):(\d{2})/);
-  if (hm) {
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
-    const o = (+hm[1]) * 60 + (+hm[2]);
-    const c = (+hm[3]) * 60 + (+hm[4]);
-    isOpen = c > o ? (cur >= o && cur < c) : (cur >= o || cur < c);
-  }
-
   el.innerHTML = `
     <div class="ch-hero">
       <div class="ch-hero__lamp"></div>
@@ -2628,21 +2616,6 @@ function renderChannelHeader() {
       <div><b>${fmt(STORE_FOLLOWERS)}</b><span>подписчиков</span></div>
     </div>
     <div class="ch-desc">${STORE_DESC}</div>
-    <div class="ch-info">
-      <div class="ch-info__row">
-        <span class="ch-info__ic"><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg></span>
-        <div class="ch-info__txt"><div class="ch-info__t">Адрес</div><div class="ch-info__v">${STORE_ADDRESS}</div></div>
-      </div>
-      <div class="ch-info__row">
-        <span class="ch-info__ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-        <div class="ch-info__txt"><div class="ch-info__t">Часы работы</div><div class="ch-info__v">${STORE_HOURS}</div></div>
-        <span class="ch-status ${isOpen ? 'open' : 'closed'}"><span class="pulse"></span>${isOpen ? 'Открыто' : 'Закрыто'}</span>
-      </div>
-      <div class="ch-info__row">
-        <span class="ch-info__ic"><svg viewBox="0 0 24 24"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg></span>
-        <div class="ch-info__txt"><div class="ch-info__t">Доставка</div><div class="ch-info__v">По всему городу</div></div>
-      </div>
-    </div>
     <button class="ch-share" onclick="openQR()">${FP_ICONS.share} Поделиться магазином</button>
     <div class="ch-social">${soc.join('')}</div>
   `;
