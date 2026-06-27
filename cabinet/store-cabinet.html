@@ -284,6 +284,28 @@
   .empty-feed { text-align:center; color:var(--muted); padding:34px 16px; }
   .empty-feed svg { width:46px; height:46px; stroke:#3a3a3a; fill:none; stroke-width:1.6; }
   .empty-feed p { font-size:13px; margin-top:10px; }
+  /* инструменты видео */
+  .feed-stats { display:flex; gap:10px; margin-top:5px; }
+  .feed-stat { font-size:11px; color:var(--muted); font-weight:700; display:inline-flex; align-items:center; gap:4px; }
+  .feed-stat svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.9; }
+  .feed-tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+  .feed-tag { font-size:10px; font-weight:800; padding:3px 7px; border-radius:6px; letter-spacing:.2px; }
+  .feed-tag.prod { background:rgba(242,169,0,.14); color:var(--gold); }
+  .feed-tag.sched { background:rgba(80,140,255,.15); color:#7fa8ff; }
+  .feed-tag.soon { background:rgba(150,150,150,.15); color:#aaa; }
+  .feed-drag { cursor:grab; touch-action:none; color:var(--muted); }
+  .feed-item.dragging { opacity:.6; border-color:var(--gold); }
+  .vcover-row { display:flex; gap:12px; align-items:center; }
+  .vcover-thumb { width:52px; height:80px; border-radius:9px; background:#000; border:1px solid var(--border); overflow:hidden; flex:none; }
+  .vcover-thumb img { width:100%; height:100%; object-fit:cover; }
+  .vcover-acts { display:flex; flex-direction:column; gap:8px; }
+  .vsmall-btn { background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:9px; padding:9px 12px; font-family:'Montserrat'; font-size:12px; font-weight:700; cursor:pointer; }
+  .vsmall-btn:active { transform:scale(.97); }
+  .vhint { font-size:11px; color:var(--muted); margin-top:6px; line-height:1.45; }
+  .vsched-row { display:flex; gap:10px; }
+  .vsched-row > div { flex:1; }
+  .vsched-lbl { font-size:11px; color:var(--muted); font-weight:700; display:block; margin-bottom:4px; }
+  input[type=date].form-input { -webkit-appearance:none; }
 </style>
 </head>
 <body>
@@ -431,9 +453,12 @@
     <div id="feedCfgBox"></div>
     <div class="section-hdr">
       <div class="section-title">Видео магазина</div>
-      <button class="add-btn" onclick="openFeedModal()">+ Добавить</button>
+      <div style="display:flex;gap:8px">
+        <button class="add-btn" style="background:var(--card2);color:var(--gold);border:1px solid rgba(242,169,0,.3)" onclick="openProfileModal()">Профиль</button>
+        <button class="add-btn" onclick="openFeedModal()">+ Видео</button>
+      </div>
     </div>
-    <div class="feed-hint">Эти ролики показываются покупателям во вкладке «О магазине». Перетягивание порядка — стрелками, верхнее видео показывается первым.</div>
+    <div class="feed-hint">Показываются покупателям во вкладке «О магазине». Перетаскивайте за ≡ для порядка, ✎ — редактировать (товар, обложка, расписание), 👁 — скрыть.</div>
     <div id="feedListCab"></div>
   </div>
 
@@ -561,22 +586,34 @@
 <div class="modal-overlay" id="feedModal" onclick="if(event.target===this)closeModal('feedModal')">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Новое видео</div>
+    <div class="modal-title" id="vModalTitle">Новое видео</div>
 
-    <input type="file" id="vFile" accept="video/*" style="display:none" onchange="onFeedVideoPick(event)">
-    <div id="vPickBox" class="vid-pick" onclick="document.getElementById('vFile').click()">
-      <svg viewBox="0 0 24 24"><use href="#ic-video"/></svg><br>
-      <b>Выбрать видео</b> с телефона<br><span style="font-size:11px">вертикальное, до ~60 сек</span>
+    <div id="vSourceWrap">
+      <input type="file" id="vFile" accept="video/*" style="display:none" onchange="onFeedVideoPick(event)">
+      <div id="vPickBox" class="vid-pick" onclick="document.getElementById('vFile').click()">
+        <svg viewBox="0 0 24 24"><use href="#ic-video"/></svg><br>
+        <b>Выбрать видео</b> с телефона<br><span style="font-size:11px">вертикальное, до ~60 сек</span>
+      </div>
+      <div id="vPreviewBox" style="display:none"></div>
+      <div class="vid-progress" id="vProgress"><i></i></div>
+      <div class="vid-progress-txt" id="vProgressTxt"></div>
+      <div class="modal-divider" id="vOrDivider">— или вставьте ссылку —</div>
+      <div class="form-group" id="vUrlGroup">
+        <label class="form-label">Ссылка на видео (mp4)</label>
+        <input class="form-input" id="vUrl" placeholder="https://…/video.mp4" oninput="onFeedUrlInput()">
+      </div>
     </div>
-    <div id="vPreviewBox" style="display:none"></div>
 
-    <div class="vid-progress" id="vProgress"><i></i></div>
-    <div class="vid-progress-txt" id="vProgressTxt"></div>
-
-    <div class="modal-divider" id="vOrDivider">— или вставьте ссылку —</div>
-    <div class="form-group" id="vUrlGroup">
-      <label class="form-label">Ссылка на видео (mp4)</label>
-      <input class="form-input" id="vUrl" placeholder="https://…/video.mp4" oninput="onFeedUrlInput()">
+    <div class="form-group">
+      <label class="form-label">Обложка</label>
+      <div class="vcover-row">
+        <div class="vcover-thumb" id="vCoverThumb"></div>
+        <div class="vcover-acts">
+          <input type="file" id="vCoverFile" accept="image/*" style="display:none" onchange="onCoverPick(event)">
+          <button class="vsmall-btn" type="button" onclick="document.getElementById('vCoverFile').click()">Своя картинка</button>
+          <button class="vsmall-btn" type="button" id="vFrameBtn" onclick="recapturePoster()">Кадр из видео</button>
+        </div>
+      </div>
     </div>
 
     <div class="form-group">
@@ -584,8 +621,56 @@
       <input class="form-input" id="vCaption" placeholder="🍾 Большой выбор — заходи выбирай" maxlength="120">
     </div>
 
+    <div class="form-group">
+      <label class="form-label">Товар в видео (необязательно)</label>
+      <select class="form-input" id="vProduct"></select>
+      <div class="vhint">Развлекательное видео — оставьте «без товара». С товаром — на видео появится кнопка «В корзину».</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Кнопка на видео</label>
+      <select class="form-input" id="vCtaType">
+        <option value="cart">Кнопка «В корзину» (по умолчанию)</option>
+        <option value="none">Без кнопки</option>
+      </select>
+      <div class="vhint">«В корзину» появляется, только если выше выбран товар. Заказ оформляется внутри приложения и попадает в «Заказы». WhatsApp остаётся отдельной кнопкой-контактом.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Период показа (необязательно)</label>
+      <div class="vsched-row">
+        <div><span class="vsched-lbl">с</span><input type="date" class="form-input" id="vFrom"></div>
+        <div><span class="vsched-lbl">по</span><input type="date" class="form-input" id="vUntil"></div>
+      </div>
+      <div class="vhint">Вне периода видео скрыто от покупателей — удобно для розыгрышей и акций.</div>
+    </div>
+
     <button class="modal-btn" id="vPublishBtn" onclick="publishFeedVideo()">Опубликовать</button>
     <button class="modal-btn modal-btn-sec" onclick="closeModal('feedModal')">Отмена</button>
+  </div>
+</div>
+
+<!-- MODAL ПРОФИЛЬ МАГАЗИНА -->
+<div class="modal-overlay" id="profileModal" onclick="if(event.target===this)closeModal('profileModal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Профиль «О магазине»</div>
+    <div class="form-group"><label class="form-label">Описание</label>
+      <input class="form-input" id="pfDesc" maxlength="160" placeholder="Алкомаркет №1 в Экибастузе · доставка по городу"></div>
+    <div class="form-group"><label class="form-label">Адрес</label>
+      <input class="form-input" id="pfAddr" placeholder="ул. Машхур Жусупа 71, Экибастуз"></div>
+    <div class="form-group"><label class="form-label">Часы работы</label>
+      <input class="form-input" id="pfHours" placeholder="Ежедневно 10:00–23:00"></div>
+    <div class="form-group"><label class="form-label">Instagram (ссылка)</label>
+      <input class="form-input" id="pfIg" placeholder="https://instagram.com/…"></div>
+    <div class="form-group"><label class="form-label">WhatsApp (номер)</label>
+      <input class="form-input" id="pfWa" placeholder="77786723500"></div>
+    <div class="form-group"><label class="form-label">2ГИС / карта (ссылка, необязательно)</label>
+      <input class="form-input" id="pfMap" placeholder="https://2gis.kz/…"></div>
+    <div class="form-group"><label class="form-label">Подписчиков (число в шапке)</label>
+      <input class="form-input" id="pfFollowers" inputmode="numeric" placeholder="3499"></div>
+    <button class="modal-btn" id="pfSaveBtn" onclick="saveProfileCab()">Сохранить</button>
+    <button class="modal-btn modal-btn-sec" onclick="closeModal('profileModal')">Отмена</button>
   </div>
 </div>
   <div class="modal">
@@ -975,7 +1060,7 @@ if (savedStore) {
 
 // ── ЗАГРУЗКА ─────────────────────────────────────────
 async function loadAll() {
-  await Promise.all([loadOrders(), loadProducts(), loadPromos(), loadFeedCab()]);
+  await Promise.all([loadOrders(), loadProducts(), loadPromos(), loadFeedCab(), loadProfileCab()]);
 }
 
 async function loadOrders() {
@@ -1050,12 +1135,14 @@ function renderFeedCab() {
   const box = document.getElementById('feedListCab');
   if (!box) return;
   if (!feedList.length) {
-    box.innerHTML = `<div class="empty-feed"><svg viewBox="0 0 24 24"><use href="#ic-video"/></svg><p>Пока нет видео.<br>Нажмите «+ Добавить», чтобы загрузить первый ролик.</p></div>`;
+    box.innerHTML = `<div class="empty-feed"><svg viewBox="0 0 24 24"><use href="#ic-video"/></svg><p>Пока нет видео.<br>Нажмите «+ Видео», чтобы загрузить первый ролик.</p></div>`;
     return;
   }
-  box.innerHTML = feedList.map((v, i) => `
-    <div class="feed-item ${v.hidden ? 'hidden-vid' : ''}">
-      <div class="feed-thumb">
+  box.innerHTML = feedList.map((v, i) => {
+    const sched = feedSchedState(v);
+    return `
+    <div class="feed-item ${v.hidden ? 'hidden-vid' : ''}" data-i="${i}">
+      <div class="feed-thumb" ondblclick="openFeedModal('${v.id}')">
         ${v.poster
           ? `<img src="${v.poster}" alt="">`
           : `<video src="${(v.url||'')}#t=0.1" muted playsinline preload="metadata"></video>`}
@@ -1063,19 +1150,32 @@ function renderFeedCab() {
       </div>
       <div class="feed-main">
         <div class="feed-cap">${v.caption ? escHtml(v.caption) : '<span style="color:#666">Без подписи</span>'}</div>
-        <div class="feed-meta">#${i+1}${v.hidden ? ' · скрыто' : ''}</div>
-        <div class="feed-row2">
-          <div class="feed-reorder">
-            <button class="feed-op" onclick="moveFeed(${i},-1)" ${i===0?'disabled style=opacity:.35':''} aria-label="Вверх"><svg viewBox="0 0 24 24"><use href="#ic-arrow-up"/></svg></button>
-            <button class="feed-op" onclick="moveFeed(${i},1)" ${i===feedList.length-1?'disabled style=opacity:.35':''} aria-label="Вниз"><svg viewBox="0 0 24 24"><use href="#ic-arrow-down"/></svg></button>
-          </div>
+        <div class="feed-stats">
+          <span class="feed-stat"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>${v.views||0}</span>
+          <span class="feed-stat"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-7-9.3A3.8 3.8 0 0 1 12 7a3.8 3.8 0 0 1 7 3.7C19 15.7 12 20 12 20Z"/></svg>${v.likes||0}</span>
+        </div>
+        <div class="feed-tags">
+          ${v.productId != null ? `<span class="feed-tag prod">товар</span>` : ''}
+          ${(v.showFrom||v.showUntil) ? `<span class="feed-tag ${sched==='upcoming'?'soon':'sched'}">${sched==='upcoming'?'скоро':(sched==='expired'?'завершено':'по расписанию')}</span>` : ''}
+          ${v.hidden ? `<span class="feed-tag soon">скрыто</span>` : ''}
         </div>
       </div>
       <div class="feed-ops">
+        <button class="feed-op feed-drag" aria-label="Перетащить" onpointerdown="feedDragStart(event,${i})"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        <button class="feed-op" onclick="openFeedModal('${v.id}')" aria-label="Редактировать"><svg viewBox="0 0 24 24"><use href="#ic-edit"/></svg></button>
         <button class="feed-op" onclick="toggleFeedHidden(${i})" aria-label="Показать/скрыть"><svg viewBox="0 0 24 24"><use href="#ic-${v.hidden?'eye-off':'eye'}"/></svg></button>
         <button class="feed-op danger" onclick="deleteFeed(${i})" aria-label="Удалить"><svg viewBox="0 0 24 24"><use href="#ic-trash"/></svg></button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+
+// статус расписания видео: 'active' | 'upcoming' | 'expired'
+function feedSchedState(v) {
+  const now = Date.now();
+  if (v.showFrom) { const t = Date.parse(v.showFrom); if (!isNaN(t) && now < t) return 'upcoming'; }
+  if (v.showUntil) { const t = Date.parse(v.showUntil + 'T23:59:59'); if (!isNaN(t) && now > t) return 'expired'; }
+  return 'active';
 }
 
 function escHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -1098,18 +1198,39 @@ function setupFeedStorage() {
   renderFeedCab();
 }
 
-// ── модалка добавления ──
-function openFeedModal() {
-  _vFile = null; _vPoster = '';
+// ── модалка добавления/редактирования ──
+let _editId = null, _editUrl = '';
+function openFeedModal(editId) {
+  _editId = editId || null;
+  _vFile = null; _vPoster = ''; _editUrl = '';
+  const v = _editId ? feedList.find(x => String(x.id) === String(_editId)) : null;
+
+  document.getElementById('vSourceWrap').style.display = _editId ? 'none' : 'block';
   document.getElementById('vFile').value = '';
   document.getElementById('vUrl').value = '';
-  document.getElementById('vCaption').value = '';
   document.getElementById('vPreviewBox').style.display = 'none';
   document.getElementById('vPreviewBox').innerHTML = '';
   document.getElementById('vPickBox').style.display = 'block';
   document.getElementById('vUrlGroup').style.display = 'block';
   document.getElementById('vOrDivider').style.display = 'block';
   setVidProgress(-1);
+
+  // список товаров
+  const sel = document.getElementById('vProduct');
+  sel.innerHTML = '<option value="">— без товара (развлекательное) —</option>' +
+    (products || []).map(p => `<option value="${p.id}">${escHtml(p.name||('Товар '+p.id))}${p.price?(' · '+Number(p.price).toLocaleString('ru-RU')+' ₸'):''}</option>`).join('');
+
+  document.getElementById('vCaption').value = v ? (v.caption || '') : '';
+  sel.value = (v && v.productId != null) ? String(v.productId) : '';
+  document.getElementById('vCtaType').value = (v && v.ctaType === 'none') ? 'none' : 'cart';
+  document.getElementById('vFrom').value = (v && v.showFrom) ? v.showFrom : '';
+  document.getElementById('vUntil').value = (v && v.showUntil) ? v.showUntil : '';
+  _vPoster = (v && v.poster) ? v.poster : '';
+  _editUrl = v ? (v.url || '') : '';
+  updateCoverThumb();
+
+  document.getElementById('vModalTitle').textContent = _editId ? 'Редактировать видео' : 'Новое видео';
+  document.getElementById('vPublishBtn').textContent = _editId ? 'Сохранить' : 'Опубликовать';
   document.getElementById('feedModal').classList.add('open');
 }
 
@@ -1119,7 +1240,6 @@ function onFeedVideoPick(e) {
   if (!f.type.startsWith('video/')) { alert('Это не видеофайл'); return; }
   if (f.size > 100*1024*1024) { alert('Файл больше 100 МБ — снимите/сожмите короче.'); return; }
   _vFile = f;
-  // спрятать поле ссылки, показать превью
   document.getElementById('vUrl').value = '';
   document.getElementById('vUrlGroup').style.display = 'none';
   document.getElementById('vOrDivider').style.display = 'none';
@@ -1129,7 +1249,7 @@ function onFeedVideoPick(e) {
   box.style.display = 'block';
   box.innerHTML = `<div class="vid-preview"><video src="${url}" muted playsinline controls preload="metadata"></video>
       <button class="vid-clear" onclick="resetFeedPick()" aria-label="Убрать">×</button></div>`;
-  capturePoster(f, p => { _vPoster = p || ''; });
+  capturePoster(f, p => { _vPoster = p || ''; updateCoverThumb(); });
 }
 
 function resetFeedPick() {
@@ -1140,7 +1260,41 @@ function resetFeedPick() {
   document.getElementById('vPickBox').style.display = 'block';
   document.getElementById('vUrlGroup').style.display = 'block';
   document.getElementById('vOrDivider').style.display = 'block';
+  updateCoverThumb();
 }
+
+// ── обложка ──
+function updateCoverThumb() {
+  const t = document.getElementById('vCoverThumb');
+  if (t) t.innerHTML = _vPoster ? `<img src="${_vPoster}" alt="">` : '';
+}
+function onCoverPick(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  if (!f.type.startsWith('image/')) { alert('Нужна картинка'); return; }
+  const img = new Image();
+  img.onload = () => {
+    const W = 540, r = (img.height/img.width) || 1.6;
+    const c = document.createElement('canvas'); c.width = W; c.height = Math.round(W*r);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    try { _vPoster = c.toDataURL('image/jpeg', 0.7); updateCoverThumb(); } catch(err) { alert('Не удалось обработать картинку'); }
+    URL.revokeObjectURL(img.src);
+  };
+  img.onerror = () => alert('Не удалось открыть картинку');
+  img.src = URL.createObjectURL(f);
+}
+function recapturePoster() {
+  if (_vFile) { capturePoster(_vFile, p => { if (p) { _vPoster = p; updateCoverThumb(); } }); return; }
+  const cp = cloudinaryPoster(_editUrl, 1 + Math.floor(Math.random()*3));
+  if (cp) { _vPoster = cp; updateCoverThumb(); }
+  else alert('Кадр можно взять из только что загруженного файла. Для готовой ссылки используйте «Своя картинка».');
+}
+function cloudinaryPoster(url, sec) {
+  if (!url || !/res\.cloudinary\.com/.test(url)) return '';
+  const t = `so_${sec||1},c_fill,h_960,w_540`;
+  return url.replace('/upload/', `/upload/${t}/`).replace(/\.(mp4|mov|webm|m4v|avi)(\?.*)?$/i, '.jpg');
+}
+function onCtaTypeChange() { /* зарезервировано под подсказки */ }
 
 function onFeedUrlInput() {
   // если начали вводить ссылку — прячем файловый пикер
@@ -1226,10 +1380,34 @@ function uploadToCloud(file, onProg) {
 }
 
 async function publishFeedVideo() {
-  const caption = document.getElementById('vCaption').value.trim();
-  const pastedUrl = document.getElementById('vUrl').value.trim();
   const btn = document.getElementById('vPublishBtn');
+  const caption  = document.getElementById('vCaption').value.trim();
+  const prodVal  = document.getElementById('vProduct').value;
+  const productId = prodVal === '' ? null : (isNaN(+prodVal) ? prodVal : +prodVal);
+  const ctaType  = document.getElementById('vCtaType').value;
+  const showFrom = document.getElementById('vFrom').value || '';
+  const showUntil= document.getElementById('vUntil').value || '';
+  const meta = { caption, productId, ctaType, showFrom, showUntil };
 
+  // ── РЕДАКТИРОВАНИЕ существующего видео ──
+  if (_editId) {
+    const item = feedList.find(x => String(x.id) === String(_editId));
+    if (!item) { closeModal('feedModal'); return; }
+    const backup = JSON.stringify(item);
+    Object.assign(item, meta, { poster: _vPoster || item.poster });
+    btn.disabled = true; btn.textContent = 'Сохранение…';
+    try {
+      await putFeed();
+      closeModal('feedModal'); renderFeedCab();
+    } catch(e) {
+      Object.assign(item, JSON.parse(backup));
+      alert(e.message);
+    } finally { btn.disabled = false; btn.textContent = 'Сохранить'; }
+    return;
+  }
+
+  // ── ДОБАВЛЕНИЕ нового видео ──
+  const pastedUrl = document.getElementById('vUrl').value.trim();
   let url = '';
   let poster = _vPoster || '';
 
@@ -1237,16 +1415,13 @@ async function publishFeedVideo() {
     btn.disabled = true; btn.textContent = 'Загрузка…';
     setVidProgress(0, 'Загрузка 0%');
     const onProg = p => setVidProgress(p*0.95, 'Загрузка ' + Math.round(p*100) + '%');
-
-    // 1) пробуем загрузить на ВАШ сервер (без сторонних аккаунтов)
     try {
       url = await uploadToOwnServer(_vFile, onProg);
     } catch(e1) {
-      if (!e1.absent) {   // сервер есть, но загрузка не удалась
+      if (!e1.absent) {
         setVidProgress(-1); btn.disabled = false; btn.textContent = 'Опубликовать';
         alert('Не удалось загрузить: ' + e1.message); return;
       }
-      // 2) сервер не принимает файлы → одноразовое облако
       if (!feedConfigured()) {
         setVidProgress(-1);
         const ok = confirm('Чтобы загружать видео с телефона, нужно один раз подключить бесплатное хранилище. Сделать это сейчас? (≈5 минут)');
@@ -1265,12 +1440,13 @@ async function publishFeedVideo() {
   } else if (pastedUrl) {
     if (!/^https?:\/\//i.test(pastedUrl)) { alert('Ссылка должна начинаться с http(s)://'); return; }
     url = pastedUrl;
+    if (!poster) { const cp = cloudinaryPoster(url); if (cp) poster = cp; }
   } else {
     alert('Выберите видео или вставьте ссылку'); return;
   }
 
   setVidProgress(0.97, 'Сохранение…');
-  const item = { id: 'v' + Date.now(), url, poster, caption, hidden: false };
+  const item = Object.assign({ id: 'v' + Date.now(), url, poster, hidden: false, views: 0, likes: 0 }, meta);
   feedList.push(item);
 
   try {
@@ -1279,7 +1455,7 @@ async function publishFeedVideo() {
     closeModal('feedModal');
     renderFeedCab();
   } catch(e) {
-    feedList.pop(); // откат
+    feedList.pop();
     setVidProgress(-1);
     alert(e.message);
   } finally {
@@ -1327,6 +1503,99 @@ function deleteFeed(i) {
   feedList.splice(i, 1);
   renderFeedCab();
   putFeed().catch(e => { feedList = backup; renderFeedCab(); alert(e.message); });
+}
+
+// ── перетаскивание для сортировки ──
+let _drag = null;
+function feedDragStart(e, i) {
+  e.preventDefault();
+  const item = e.currentTarget.closest('.feed-item');
+  _drag = { item };
+  item.classList.add('dragging');
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch(_) {}
+  document.addEventListener('pointermove', feedDragMove);
+  document.addEventListener('pointerup', feedDragEnd, { once: true });
+}
+function feedDragMove(e) {
+  if (!_drag) return;
+  const list = document.getElementById('feedListCab');
+  const items = [...list.querySelectorAll('.feed-item')];
+  const y = e.clientY;
+  for (const el of items) {
+    if (el === _drag.item) continue;
+    const r = el.getBoundingClientRect();
+    if (y >= r.top && y <= r.bottom) {
+      const rect = el.getBoundingClientRect();
+      if (y < rect.top + rect.height/2) list.insertBefore(_drag.item, el);
+      else list.insertBefore(_drag.item, el.nextSibling);
+      break;
+    }
+  }
+}
+function feedDragEnd() {
+  if (!_drag) return;
+  document.removeEventListener('pointermove', feedDragMove);
+  _drag.item.classList.remove('dragging');
+  const list = document.getElementById('feedListCab');
+  const order = [...list.querySelectorAll('.feed-item')].map(el => +el.dataset.i);
+  const newList = order.map(idx => feedList[idx]).filter(Boolean);
+  const changed = newList.some((v, k) => v !== feedList[k]);
+  _drag = null;
+  if (changed && newList.length === feedList.length) {
+    feedList = newList;
+    renderFeedCab();
+    putFeed().catch(err => alert(err.message));
+  } else {
+    renderFeedCab();
+  }
+}
+
+// ── ПРОФИЛЬ «О магазине» ──
+let profileData = null;
+async function loadProfileCab() {
+  try {
+    const res = await fetch(`${SERVER_URL}/profile/${storeId}`, { signal: AbortSignal.timeout(8000) });
+    if (res.ok) { const d = await res.json(); profileData = d.profile || d || null; }
+  } catch(e) {}
+}
+function openProfileModal() {
+  const p = profileData || {};
+  document.getElementById('pfDesc').value      = p.desc || '';
+  document.getElementById('pfAddr').value      = p.address || '';
+  document.getElementById('pfHours').value     = p.hours || '';
+  document.getElementById('pfIg').value        = p.igUrl || '';
+  document.getElementById('pfWa').value        = p.waNumber || '';
+  document.getElementById('pfMap').value       = p.mapUrl || '';
+  document.getElementById('pfFollowers').value = (p.followers != null ? p.followers : '');
+  document.getElementById('profileModal').classList.add('open');
+}
+async function saveProfileCab() {
+  const btn = document.getElementById('pfSaveBtn');
+  const profile = {
+    desc:      document.getElementById('pfDesc').value.trim(),
+    address:   document.getElementById('pfAddr').value.trim(),
+    hours:     document.getElementById('pfHours').value.trim(),
+    igUrl:     document.getElementById('pfIg').value.trim(),
+    waNumber:  document.getElementById('pfWa').value.replace(/[^\d]/g, ''),
+    mapUrl:    document.getElementById('pfMap').value.trim(),
+    followers: parseInt(document.getElementById('pfFollowers').value, 10) || 0,
+  };
+  btn.disabled = true; btn.textContent = 'Сохранение…';
+  try {
+    const res = await fetch(`${SERVER_URL}/profile/${storeId}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile, password: storePass }), signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      if (res.status === 404 || res.status === 405) throw new Error('Сервер не принимает профиль. Нужен GET/PUT /profile/:storeId (есть в обновлённом server.js).');
+      if (res.status === 401 || res.status === 403) throw new Error('Нет доступа: проверьте пароль магазина.');
+      throw new Error('Ошибка сохранения (код ' + res.status + ').');
+    }
+    profileData = profile;
+    closeModal('profileModal');
+    alert('Профиль сохранён. Изменения появятся у покупателей во вкладке «О магазине».');
+  } catch(e) { alert(e.message); }
+  finally { btn.disabled = false; btn.textContent = 'Сохранить'; }
 }
 
 // ── ЗАКАЗЫ ───────────────────────────────────────────
