@@ -73,6 +73,19 @@
   }
   .logo-sm { display: flex; align-items: center; gap: 10px; }
   .header-logo { height: 46px; width: auto; object-fit: contain; display: block; }
+  /* радио-пилюля */
+  .radio { display:flex; align-items:center; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:999px; overflow:hidden; }
+  .radio-main { display:flex; align-items:center; gap:8px; background:transparent; border:none; color:#9a9a9a; font-family:inherit; font-weight:800; font-size:13px; padding:9px 13px; cursor:pointer; }
+  .radio.on .radio-main { color:var(--gold); }
+  .radio-eq { display:inline-flex; align-items:flex-end; gap:2px; height:14px; }
+  .radio-eq i { width:3px; height:5px; background:currentColor; border-radius:2px; }
+  .radio.on .radio-eq i { animation:eqbar .9s ease-in-out infinite; }
+  .radio.on .radio-eq i:nth-child(2){ animation-delay:.18s } .radio.on .radio-eq i:nth-child(3){ animation-delay:.34s }
+  @keyframes eqbar { 0%,100%{height:4px} 50%{height:14px} }
+  .radio-mute { display:none; background:transparent; border:none; border-left:1px solid #2a2a2a; color:#cfcfcf; font-size:14px; padding:9px 11px; cursor:pointer; line-height:1; }
+  .radio.on .radio-mute { display:block; }
+  .radio.on.muted .radio-mute { color:#666; }
+  #ytRadio { position:fixed; width:1px; height:1px; left:-9999px; top:-9999px; opacity:0; pointer-events:none; }
   .cart-btn {
     position: relative; background: var(--card); border: none;
     width: 42px; height: 42px; border-radius: 12px;
@@ -925,7 +938,15 @@
     <img src="logo-red.png" alt="AlcoMarket" class="header-logo"
          onerror="this.onerror=null;this.src='icon-192.png'">
   </div>
+  <div class="radio" id="radioPill" title="Радио АлкоМаркет">
+    <button class="radio-main" onclick="radioToggle()" aria-label="Радио АлкоМаркет">
+      <span class="radio-eq"><i></i><i></i><i></i></span>
+      <span class="radio-label">Радио</span>
+    </button>
+    <button class="radio-mute" id="radioMuteBtn" onclick="radioMute()" aria-label="Звук">🔊</button>
+  </div>
 </header>
+<div id="ytRadio"></div>
 
 <!-- PAGES -->
 
@@ -2320,6 +2341,7 @@ function renderFeedGrid() {
 
 function openFeed(startIdx) {
   if (!FEED.length) return;
+  radioDuck(true);
   const player = document.getElementById('feedPlayer');
   const track = document.getElementById('fpTrack');
   track.innerHTML = FEED.map(v => {
@@ -2433,7 +2455,73 @@ function closeFeed() {
   if (fpObserver) { fpObserver.disconnect(); fpObserver = null; }
   fpCurrentVideo = null;
   document.getElementById('fpTrack').innerHTML = '';
+  radioDuck(false);
 }
+
+// ====== РАДИО АЛКОМАРКЕТ (фоновая музыка, скрытый YouTube-плеер) ======
+const RADIO_VIDEO_ID = '8M2J_WtpDgk';   // источник «Радио АлкоМаркет» (YouTube). Поменять — впишите другой ID.
+let ytPlayer = null, ytReady = false, radioPlaying = false, radioMuted = false, radioWantPlay = false, radioDucked = false;
+
+function loadRadio() {
+  radioMuted   = localStorage.getItem('radioMuted') === '1';
+  radioWantPlay = localStorage.getItem('radioOn') === '1';
+  applyRadioUI();
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+}
+window.onYouTubeIframeAPIReady = function () {
+  ytPlayer = new YT.Player('ytRadio', {
+    videoId: RADIO_VIDEO_ID,
+    playerVars: { autoplay:0, controls:0, disablekb:1, playsinline:1, modestbranding:1, rel:0, loop:1, playlist:RADIO_VIDEO_ID },
+    events: {
+      onReady: () => { ytReady = true; if (radioMuted) ytPlayer.mute(); if (radioWantPlay) restoreRadio(); },
+      onStateChange: (e) => {
+        if (e.data === YT.PlayerState.PLAYING) { radioPlaying = true; applyRadioUI(); }
+        else if (e.data === YT.PlayerState.PAUSED) { if (!radioDucked) { radioPlaying = false; applyRadioUI(); } }
+        else if (e.data === YT.PlayerState.ENDED) { try { ytPlayer.playVideo(); } catch(_) {} } // зацикливаем
+      }
+    }
+  });
+};
+// восстановление при заходе: пробуем со звуком; если браузер блокирует — играем без звука (это разрешено), тап включит звук
+function restoreRadio() {
+  try { if (!radioMuted) ytPlayer.unMute(); ytPlayer.playVideo(); } catch(_) {}
+  setTimeout(() => {
+    if (!radioPlaying && ytReady) {
+      try { ytPlayer.mute(); ytPlayer.playVideo(); } catch(_) {}
+      radioMuted = true; localStorage.setItem('radioMuted','1'); applyRadioUI();
+    }
+  }, 1300);
+}
+function radioToggle() {
+  if (radioPlaying) {
+    radioPlaying = false; radioWantPlay = false; localStorage.setItem('radioOn','0');
+    try { if (ytReady) ytPlayer.pauseVideo(); } catch(_) {}
+  } else {
+    radioWantPlay = true; localStorage.setItem('radioOn','1');
+    try { if (ytReady) { if (radioMuted) ytPlayer.mute(); else ytPlayer.unMute(); ytPlayer.playVideo(); } } catch(_) {}
+  }
+  applyRadioUI();
+}
+function radioMute() {
+  radioMuted = !radioMuted;
+  localStorage.setItem('radioMuted', radioMuted ? '1' : '0');
+  try { if (ytReady) { radioMuted ? ytPlayer.mute() : ytPlayer.unMute(); } } catch(_) {}
+  applyRadioUI();
+}
+// пауза радио на время просмотра видео, затем возврат
+function radioDuck(on) {
+  if (on) { if (radioPlaying && ytReady) { radioDucked = true; try { ytPlayer.pauseVideo(); } catch(_) {} } }
+  else    { if (radioDucked && ytReady) { radioDucked = false; try { ytPlayer.playVideo(); } catch(_) {} } }
+}
+function applyRadioUI() {
+  const pill = document.getElementById('radioPill'); if (!pill) return;
+  pill.classList.toggle('on', radioPlaying || radioWantPlay);
+  pill.classList.toggle('muted', radioMuted);
+  const mb = document.getElementById('radioMuteBtn'); if (mb) mb.textContent = radioMuted ? '🔇' : '🔊';
+}
+window.addEventListener('load', loadRadio);
 
 // ---- КНОПКА-ДЕЙСТВИЕ НА ВИДЕО ----
 // По умолчанию — «В корзину» (если к видео прикреплён товар). «none» — без кнопки.
