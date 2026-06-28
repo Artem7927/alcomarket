@@ -199,9 +199,9 @@
   .st-mini .s { font-size:10.5px; color:var(--muted); margin-top:2px; }
   .st-mini .v.green { color:var(--green); } .st-mini .v.red { color:var(--red); } .st-mini .v.gold { color:var(--gold); } .st-mini .v.blue { color:#4a9eff; }
 
-  .stat-modal { position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:200; display:none; align-items:center; justify-content:center; padding:18px; }
+  .stat-modal { position:fixed; inset:0; background:rgba(0,0,0,.9); z-index:200; display:none; align-items:center; justify-content:center; padding:18px; }
   .stat-modal.open { display:flex; }
-  .stat-modal-card { background:var(--dark); border:1px solid var(--border); border-radius:20px; padding:20px; width:100%; max-width:410px; max-height:86vh; overflow-y:auto; animation:stPop .25s ease; }
+  .stat-modal-card { background:#16181c; border:1px solid #2a2d33; border-radius:20px; padding:20px; width:100%; max-width:410px; max-height:86vh; overflow-y:auto; box-shadow:0 24px 70px rgba(0,0,0,.7); animation:stPop .25s ease; }
   @keyframes stPop { from{opacity:0; transform:scale(.92)} to{opacity:1; transform:none} }
   .stm-x { float:right; background:var(--card2); border:none; color:#fff; width:34px; height:34px; border-radius:50%; font-size:18px; cursor:pointer; line-height:1; }
   .stm-title { font-size:18px; font-weight:800; color:#fff; margin-bottom:4px; }
@@ -2416,8 +2416,14 @@ function openStat(type, key) {
   else if (type === 'hours') {
     const hrs = []; for (let h=0;h<24;h++) hrs.push(S.hourRev[h]||0);
     const mx = Math.max(...hrs,1);
-    const bars = hrs.map((v,h)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;max-width:9px;height:${Math.max(2,Math.round(v/mx*100))}px;background:linear-gradient(180deg,var(--gold),#d4920a);border-radius:3px 3px 0 0"></div></div>`).join('');
-    html += `<div class="stm-title">Заказы по часам</div><div class="stm-sub">${STAT_PERIOD_LABEL()} · когда покупают</div>
+    let peak = 0; hrs.forEach((v,h) => { if (v > hrs[peak]) peak = h; });
+    const bars = hrs.map((v,h) => {
+      const active = (h===peak && v>0);
+      const col = active ? 'linear-gradient(180deg,#F2A900,#d4920a)' : 'linear-gradient(180deg,#5a4a1e,#3a3018)';
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;max-width:9px;height:${Math.max(2,Math.round(v/mx*100))}px;background:${col};border-radius:3px 3px 0 0"></div></div>`;
+    }).join('');
+    const peakLbl = String(peak).padStart(2,'0')+':00–'+String((peak+1)%24).padStart(2,'0')+':00';
+    html += `<div class="stm-title">Выручка по часам</div><div class="stm-sub">${STAT_PERIOD_LABEL()} · пик в ${peakLbl}${hrs[peak]?(' · '+stFmt(hrs[peak])+' ₸'):''}</div>
       <div style="display:flex;align-items:flex-end;gap:2px;height:130px;margin-top:10px">${bars}</div>
       <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:5px"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>`;
   }
