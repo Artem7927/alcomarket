@@ -1695,6 +1695,7 @@ function handleSearch() {
   currentCat = 'Все';
   document.querySelectorAll('.cat-pill').forEach((x,i) => x.classList.toggle('active', i===0));
   renderProducts(v);
+  if (typeof presenceSearch === 'function') presenceSearch(v);
 }
 
 // ============ ВИДЕО МОДАЛ (Qazaq) ============
@@ -1811,6 +1812,7 @@ function addToCart(id, qty) {
   if (ex) ex.qty += qty; else cart.push({...p, qty});
   updateCartUI();
   showToast('✅ Добавлено: ' + p.name);
+  if (typeof presencePing === 'function') presencePing(null, 'cart_add', p.name);
 }
 
 function updateCartUI() {
@@ -2149,6 +2151,7 @@ async function submitOrder() {
     const _resp = await r.json().catch(() => null);
     if (_resp && _resp.ok && _resp.order && _resp.order.id) serverOrderId = _resp.order.id;
   } catch(e) { console.warn('Server error:', e); }
+  if (typeof presencePing === 'function') presencePing('orders', 'order', orderTotal.toLocaleString('ru-RU') + ' ₸');
 
   const itemsText = cart.map(i => `• ${i.emoji} ${i.name} ×${i.qty} = ${(i.price*i.qty).toLocaleString()} ₸`).join('\n');
   const waText =
@@ -2230,6 +2233,7 @@ function showPage(id, el) {
   if (el) el.classList.add('active');
   if (id === 'cart') renderCart();
   if (id === 'orders' && window.AlcoOrders) AlcoOrders.render();
+  if (typeof presencePing === 'function') presencePing(_screenMap[id] || 'browsing');
   window.scrollTo(0,0);
 }
 
@@ -2237,6 +2241,32 @@ init();
 loadProducts();
 loadPromos();
 loadFeed();
+
+// ====== ПРИСУТСТВИЕ (живой индикатор для кабинета) ======
+let _curScreen = 'browsing';
+const _screenMap = { home:'browsing', cart:'cart', orders:'orders', info:'about', about:'about' };
+function presenceSid() {
+  let s = localStorage.getItem('alcoSid');
+  if (!s) { s = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); localStorage.setItem('alcoSid', s); }
+  return s;
+}
+function presencePing(screen, action, label) {
+  if (screen) _curScreen = screen;
+  try {
+    fetch(`${SERVER_URL}/presence/${STORE_ID}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, keepalive:true,
+      body: JSON.stringify({ sid: presenceSid(), screen: _curScreen, action: action || undefined, label: label || undefined })
+    }).catch(()=>{});
+  } catch(e) {}
+}
+let _searchPingT = null;
+function presenceSearch(q) {
+  clearTimeout(_searchPingT);
+  if (!q || q.trim().length < 2) return;
+  _searchPingT = setTimeout(() => presencePing(null, 'search', q.trim()), 800);
+}
+presencePing('browsing', 'open');
+setInterval(() => presencePing(_curScreen), 30000);
 
 // ============ ЛЕНТА ВИДЕО (TikTok-стиль) ============
 // Сервер должен отдавать JSON по адресу `${SERVER_URL}/feed/${STORE_ID}`:
@@ -2348,6 +2378,7 @@ function renderFeedGrid() {
 function openFeed(startIdx) {
   if (!FEED.length) return;
   radioDuck(true);
+  if (typeof presencePing === 'function') presencePing(null, 'video', (FEED[startIdx] && FEED[startIdx].caption) || 'видео');
   const player = document.getElementById('feedPlayer');
   const track = document.getElementById('fpTrack');
   track.innerHTML = FEED.map(v => {
