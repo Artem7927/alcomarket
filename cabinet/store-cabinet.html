@@ -1798,7 +1798,7 @@ function renderOrders() {
       <div class="order-head" onclick="toggleOrder('${o.id}')">
         <div>
           <div class="order-num">${o.id}</div>
-          <div class="order-meta">${o.date} ${o.time}</div>
+          <div class="order-meta">${fmtKZ(o.createdAt)}</div>
           <div class="order-meta">${o.client} · <a href="tel:${o.phone}" onclick="event.stopPropagation()" style="color:var(--gold);text-decoration:none">${o.phone}</a></div>
           ${isNew ? `<div class="order-age">⏱ ${orderAge(o.createdAt)}</div>` : ''}
         </div>
@@ -1848,6 +1848,16 @@ function orderAge(iso) {
   const h = Math.floor(min / 60), m = min % 60;
   return m ? `${h} ч ${m} мин назад` : `${h} ч назад`;
 }
+// дата+время в поясе Экибастуза (UTC+5) — ручной сдвиг, не зависит от устройства
+function fmtKZ(input) {
+  if (input == null || input === '') return '';
+  try {
+    const d = (typeof input === 'number') ? new Date(input) : new Date(input);
+    if (isNaN(d)) return '';
+    const k = new Date(d.getTime() + 5 * 3600 * 1000), p = n => String(n).padStart(2, '0');
+    return `${p(k.getUTCDate())}.${p(k.getUTCMonth() + 1)}.${k.getUTCFullYear()} ${p(k.getUTCHours())}:${p(k.getUTCMinutes())}`;
+  } catch (e) { return ''; }
+}
 
 function pluralOrders(n) {
   const a = n % 100, b = n % 10;
@@ -1878,7 +1888,7 @@ function openOrderDetail(id) {
     ${cancelReason ? `<div class="orow"><span>Причина отмены</span><span style="color:var(--red)">${cancelReason}</span></div>` : ''}
     ${o.closedBy ? `<div class="orow"><span>${o.status==='cancel'?'Отменил':'Закрыл'}</span><span>${o.closedBy}</span></div>` : ''}
     ${o.deliveryStatus ? `<div class="orow"><span>Курьер</span><span>${deliveryBadge(o.deliveryStatus)}</span></div>` : ''}
-    <div class="orow"><span>Дата</span><span>${o.date} ${o.time}</span></div>
+    <div class="orow"><span>Дата</span><span>${fmtKZ(o.createdAt)}</span></div>
     <div class="orow"><span>Клиент</span><span>${o.client || '—'}</span></div>
     <div class="orow"><span>Телефон</span><span>${o.phone ? `<a href="tel:${o.phone}" style="color:var(--gold);text-decoration:none">${o.phone}</a>` : '—'}</span></div>
     <div class="orow"><span>Адрес</span><span>${o.address || '—'}</span></div>
@@ -2665,7 +2675,7 @@ function openClient(idx) {
     return `
     <div class="cl-order" onclick="openOrderDetail('${o.id}')">
       <div class="cl-order-top">
-        <span>${o.date} ${o.time} · <span style="color:${col}">${mark}</span></span>
+        <span>${fmtKZ(o.createdAt)} · <span style="color:${col}">${mark}</span></span>
         <span style="display:flex;align-items:center;gap:8px"><span style="color:${col};font-weight:800">${o.orderTotal.toLocaleString()} ₸</span><span class="cl-order-chev">›</span></span>
       </div>
       <div class="cl-order-items">${items || '—'}</div>
