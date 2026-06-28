@@ -2179,6 +2179,7 @@ async function submitOrder() {
       address: fullAddress,
       payMethod: payMethod,
       deliveryMethod: deliveryMethod,
+      createdAt: orderData.createdAt,
       items: cart.map(function(i){ return { name:i.name, qty:i.qty, sum:i.price*i.qty }; })
     });
   }
@@ -3197,15 +3198,16 @@ if ('serviceWorker' in navigator) {
   }
   function stateLabel(o){
     if (o.status === "cancel") return { t:"Отменён", c:"cancel" };
+    if (o.deliveryStatus === "delivered") return { t:"Доставлен", c:"done" };
+    if (o.status === "done") return { t:"Завершён", c:"done" };
     switch(o.deliveryStatus){
-      case "delivered": return { t:"Доставлен", c:"done" };
       case "on_way":    return { t:"В пути", c:"live" };
       case "picked_up": return { t:"Курьер забрал", c:"live" };
       case "assigned":  return { t:"Назначен курьер", c:"live" };
       default:          return { t:"Принят", c:"wait" };
     }
   }
-  function isClosed(o){ return o.deliveryStatus === "delivered" || o.status === "cancel"; }
+  function isClosed(o){ return o.deliveryStatus === "delivered" || o.status === "cancel" || o.status === "done"; }
 
   function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ return []; } }
   function persist(l){ try { localStorage.setItem(KEY, JSON.stringify(l)); } catch(e){} }
@@ -3218,7 +3220,8 @@ if ('serviceWorker' in navigator) {
       total: order.total || 0, goodsTotal: order.goodsTotal, deliveryCost: order.deliveryCost || 0,
       address: order.address || "", payMethod: order.payMethod || "",
       deliveryMethod: order.deliveryMethod || "", ts: Date.now(),
-      status: "new", deliveryStatus: null, times: {}
+      createdAt: order.createdAt || new Date().toISOString(),
+      status: "new", deliveryStatus: null, autoClosed: false, times: {}
     });
     persist(list.slice(0,5));
     openSet[order.orderId] = true; // новый заказ открыт сразу
@@ -3230,7 +3233,10 @@ if ('serviceWorker' in navigator) {
     return load().filter(function(o){ return !isClosed(o) && (now - o.ts) <= STALE_MS; });
   }
 
-  function fmtT(iso){ if(!iso) return ""; try { return new Date(iso).toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}); } catch(e){ return ""; } }
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  // время в поясе Экибастуза (UTC+5) — ручной сдвиг, не зависит от настроек устройства/ICU
+  function fmtT(input){ if(input==null||input==="") return ""; try { var d=(typeof input==="number")?new Date(input):new Date(input); if(isNaN(d)) return ""; var k=new Date(d.getTime()+5*3600*1000); return pad2(k.getUTCHours())+":"+pad2(k.getUTCMinutes()); } catch(e){ return ""; } }
+  function fmtKZ(input){ if(input==null||input==="") return ""; try { var d=(typeof input==="number")?new Date(input):new Date(input); if(isNaN(d)) return ""; var k=new Date(d.getTime()+5*3600*1000); return pad2(k.getUTCDate())+"."+pad2(k.getUTCMonth()+1)+", "+pad2(k.getUTCHours())+":"+pad2(k.getUTCMinutes()); } catch(e){ return ""; } }
   function money(n){ return (n||0).toLocaleString("ru") + " \u20b8"; }
   function esc(x){ return String(x==null?"":x).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];}); }
   function payLabel(p){ return p==="kaspi" ? "Kaspi" : p==="cash" ? "Наличные" : (p||"\u2014"); }
@@ -3241,7 +3247,7 @@ if ('serviceWorker' in navigator) {
     return '<div class="ord-steps">' + STEPS.map(function(st, idx){
       var cls = done ? "done" : (idx < cur ? "done" : (idx === cur ? "curr" : ""));
       var t = tm[st.time] ? fmtT(tm[st.time]) : "";
-      if (idx === 0 && !t) t = fmtT(new Date(o.ts).toISOString());
+      if (idx === 0 && !t) t = fmtT(o.createdAt || o.ts);
       return '<div class="ord-step '+cls+'"><span class="dot"></span>'
            +   '<div class="st-t">'+st.t+'</div>'
            +   (t ? '<div class="st-time">'+t+'</div>' : '')
@@ -3251,7 +3257,7 @@ if ('serviceWorker' in navigator) {
 
   function cardHTML(o){
     var st = stateLabel(o);
-    var when = (function(){ try { return new Date(o.ts).toLocaleString("ru",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}); } catch(e){ return ""; } })();
+    var when = fmtKZ(o.createdAt || o.ts);
     var open = openSet[o.orderId] ? " open" : "";
     var goods = (o.goodsTotal != null) ? o.goodsTotal : ((o.total||0) - (o.deliveryCost||0));
     var deliv = o.deliveryCost || 0;
@@ -3314,6 +3320,8 @@ if ('serviceWorker' in navigator) {
         var list = load(), i = list.findIndex(function(x){ return x.orderId === o.orderId; });
         if (i !== -1){
           if (d.status) list[i].status = d.status;
+          if ("autoClosed" in d) list[i].autoClosed = d.autoClosed;
+          if (d.createdAt) list[i].createdAt = d.createdAt;
           if ("deliveryStatus" in d) list[i].deliveryStatus = d.deliveryStatus;
           var tm = list[i].times || {};
           list[i].times = {
