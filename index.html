@@ -2466,7 +2466,7 @@ function closeFeed() {
 
 // ====== РАДИО АЛКОМАРКЕТ (фоновая музыка, скрытый YouTube-плеер) ======
 const RADIO_VIDEO_ID = '8M2J_WtpDgk';   // источник «Радио АлкоМаркет» (YouTube). Поменять — впишите другой ID.
-let ytPlayer = null, ytReady = false, radioPlaying = false, radioMuted = false, radioWantPlay = false, radioDucked = false;
+let ytPlayer = null, ytReady = false, radioPlaying = false, radioMuted = false, radioWantPlay = false, radioDucked = false, radioSeekDone = false, radioPosTimer = null;
 
 function loadRadio() {
   radioMuted   = localStorage.getItem('radioMuted') === '1';
@@ -2483,9 +2483,18 @@ window.onYouTubeIframeAPIReady = function () {
     events: {
       onReady: () => { ytReady = true; if (radioMuted) ytPlayer.mute(); if (radioWantPlay) restoreRadio(); },
       onStateChange: (e) => {
-        if (e.data === YT.PlayerState.PLAYING) { radioPlaying = true; applyRadioUI(); }
-        else if (e.data === YT.PlayerState.PAUSED) { if (!radioDucked) { radioPlaying = false; applyRadioUI(); } }
-        else if (e.data === YT.PlayerState.ENDED) { try { ytPlayer.playVideo(); } catch(_) {} } // зацикливаем
+        if (e.data === YT.PlayerState.PLAYING) {
+          radioPlaying = true;
+          if (!radioSeekDone) { radioSeekDone = true; radioApplyStart(0); }
+          startRadioPosSave();
+          applyRadioUI();
+        } else if (e.data === YT.PlayerState.PAUSED) {
+          radioSavePos();
+          if (!radioDucked) { radioPlaying = false; applyRadioUI(); }
+        } else if (e.data === YT.PlayerState.ENDED) {
+          localStorage.setItem('radioPos','0');   // прошёл весь круг → следующий заход снова «поймает волну»
+          try { ytPlayer.playVideo(); } catch(_) {}  // зацикливаем эфир
+        }
       }
     }
   });
@@ -2518,8 +2527,27 @@ function radioMute() {
 }
 // пауза радио на время просмотра видео, затем возврат
 function radioDuck(on) {
-  if (on) { if (radioPlaying && ytReady) { radioDucked = true; try { ytPlayer.pauseVideo(); } catch(_) {} } }
+  if (on) { if (radioPlaying && ytReady) { radioDucked = true; radioSavePos(); try { ytPlayer.pauseVideo(); } catch(_) {} } }
   else    { if (radioDucked && ytReady) { radioDucked = false; try { ytPlayer.playVideo(); } catch(_) {} } }
+}
+// умный старт: продолжить с сохранённого места, иначе — случайная точка («поймал волну»)
+function radioApplyStart(attempt) {
+  attempt = attempt || 0;
+  let dur = 0; try { dur = ytPlayer.getDuration() || 0; } catch(_) {}
+  if ((!dur || dur < 30) && attempt < 6) { setTimeout(() => radioApplyStart(attempt + 1), 500); return; } // ждём, пока станет известна длительность
+  if (!dur || dur < 30) dur = 5400; // запас ~1.5 ч
+  const saved = parseFloat(localStorage.getItem('radioPos') || '0');
+  let target;
+  if (saved > 5 && saved < dur - 15) target = saved;          // продолжить с места остановки
+  else target = Math.random() * Math.max(1, dur - 60);        // случайная точка эфира
+  try { ytPlayer.seekTo(Math.max(0, target), true); } catch(_) {}
+}
+function startRadioPosSave() {
+  if (radioPosTimer) return;
+  radioPosTimer = setInterval(() => { if (radioPlaying && !radioDucked) radioSavePos(); }, 5000);
+}
+function radioSavePos() {
+  try { const t = ytPlayer.getCurrentTime(); if (t > 0) localStorage.setItem('radioPos', String(Math.floor(t))); } catch(_) {}
 }
 const RADIO_ICON_ON  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 6a8 8 0 0 1 0 12"/></svg>`;
 const RADIO_ICON_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M22 9.5l-5 5"/><path d="M17 9.5l5 5"/></svg>`;
@@ -2530,6 +2558,8 @@ function applyRadioUI() {
   const mb = document.getElementById('radioMuteBtn'); if (mb) mb.innerHTML = radioMuted ? RADIO_ICON_OFF : RADIO_ICON_ON;
 }
 window.addEventListener('load', loadRadio);
+window.addEventListener('pagehide', radioSavePos);
+window.addEventListener('visibilitychange', () => { if (document.hidden) radioSavePos(); });
 
 // ---- КНОПКА-ДЕЙСТВИЕ НА ВИДЕО ----
 // По умолчанию — «В корзину» (если к видео прикреплён товар). «none» — без кнопки.
