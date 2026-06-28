@@ -144,6 +144,18 @@
 
   /* ===== ПРЕМИУМ ДАШБОРД ===== */
   .st-periods { display:flex; gap:6px; margin-bottom:10px; }
+  /* живой индикатор присутствия */
+  .pres-card { background:linear-gradient(180deg,#142016,#0f140f); border:1px solid #224a2c; border-radius:15px; padding:13px 15px; margin-bottom:11px; cursor:pointer; display:flex; align-items:center; gap:13px; transition:transform .12s; }
+  .pres-card:active { transform:scale(.99); }
+  .pres-dot { width:9px; height:9px; border-radius:50%; background:#3a3a3a; flex:none; }
+  .pres-card.live .pres-dot { background:#27AE60; box-shadow:0 0 0 0 rgba(39,174,96,.6); animation:presPulse 1.6s infinite; }
+  @keyframes presPulse { 0%{box-shadow:0 0 0 0 rgba(39,174,96,.55)} 70%{box-shadow:0 0 0 10px rgba(39,174,96,0)} 100%{box-shadow:0 0 0 0 rgba(39,174,96,0)} }
+  .pres-n { font-size:26px; font-weight:800; color:#fff; line-height:1; display:flex; align-items:baseline; gap:7px; }
+  .pres-n span { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .pres-mid { flex:1; min-width:0; }
+  .pres-l { font-size:10.5px; color:#7fd49a; font-weight:800; text-transform:uppercase; letter-spacing:.6px; display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+  .pres-s { font-size:11.5px; color:var(--muted); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pres-go { color:#7fd49a; font-size:20px; flex:none; opacity:.7; }
   .st-per { flex:1; padding:9px 4px; border:1px solid var(--border); background:var(--card); color:var(--muted); border-radius:10px; font-family:'Montserrat'; font-size:12px; font-weight:800; cursor:pointer; }
   .st-per.active { background:var(--red); color:#fff; border-color:var(--red); }
   .st-kpis { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
@@ -2202,7 +2214,7 @@ function showSub(name, el) {
   document.querySelectorAll('#tab-products .subtab').forEach(s => s.classList.remove('active'));
   document.getElementById('sub-' + name).classList.add('active');
   el.classList.add('active');
-  if (name === 'stats') renderStats();
+  if (name === 'stats') { renderStats(); } else { stopPresence(); }
 }
 
 // ── СТАТИСТИКА (диаграммы) ───────────────────────────
@@ -2376,8 +2388,55 @@ function renderStats() {
     </div>`;
 
   _stat = { cur, prev, m, pm, R, top, cats, catTotal, hourRev, series14, labels14, cancCur, cancRate, newClients, repeatClients, repeatPct, clientsTotal: curPhones.size };
-  el.innerHTML = periodsHtml + kpisHtml + revHtml + topHtml + catHtml + miniHtml;
+  el.innerHTML = '<div id="presenceLive"></div>' + periodsHtml + kpisHtml + revHtml + topHtml + catHtml + miniHtml;
+  renderPresenceCard();
+  startPresence();
 }
+
+// ── ЖИВОЙ ИНДИКАТОР «КТО СЕЙЧАС В МАГАЗИНЕ» ──
+let _presence = { online: 0, byScreen: {}, events: [] };
+let _presTimer = null;
+async function loadPresence() {
+  try {
+    const res = await fetch(`${SERVER_URL}/presence/${storeId}`, { signal: AbortSignal.timeout(7000) });
+    if (res.ok) { const d = await res.json(); if (d && d.ok) _presence = d; }
+  } catch(e) {}
+  renderPresenceCard();
+}
+function startPresence() { if (_presTimer) return; loadPresence(); _presTimer = setInterval(loadPresence, 10000); }
+function stopPresence() { if (_presTimer) { clearInterval(_presTimer); _presTimer = null; } }
+function renderPresenceCard() {
+  const el = document.getElementById('presenceLive'); if (!el) return;
+  const n = _presence.online || 0;
+  const bs = _presence.byScreen || {};
+  const parts = [];
+  if (bs.browsing) parts.push(`смотрят ${bs.browsing}`);
+  if (bs.cart)     parts.push(`в корзине ${bs.cart}`);
+  if (bs.orders)   parts.push(`оформляют ${bs.orders}`);
+  if (bs.about)    parts.push(`о магазине ${bs.about}`);
+  el.innerHTML = `
+    <div class="pres-card ${n ? 'live' : ''}" onclick="openStat('presence')">
+      <span class="pres-dot"></span>
+      <div class="pres-mid">
+        <div class="pres-l">В магазине сейчас</div>
+        <div class="pres-n">${n}<span>${n === 1 ? 'человек' : 'онлайн'}</span></div>
+        <div class="pres-s">${parts.length ? parts.join(' · ') : 'затишье — никого онлайн'}</div>
+      </div>
+      <span class="pres-go">›</span>
+    </div>`;
+}
+function presAgo(s) {
+  s = s || 0;
+  if (s < 8) return 'только что';
+  if (s < 60) return s + ' сек назад';
+  const m = Math.round(s / 60);
+  if (m < 60) return m + ' мин назад';
+  return Math.round(m / 60) + ' ч назад';
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopPresence();
+  else if (document.querySelector('#sub-stats.active')) startPresence();
+});
 
 const STAT_PERIOD_LABEL = () => ({ today:'сегодня', '7d':'за 7 дней', '30d':'за 30 дней', all:'за всё время' }[statPeriod]);
 function openStat(type, key) {
@@ -2440,6 +2499,22 @@ function openStat(type, key) {
         <div class="stm-li"><span>Повторных</span><span>${S.repeatClients}</span></div>
         <div class="stm-li"><span>Доля повторных</span><span>${S.repeatPct}%</span></div>
       </div>`;
+  }
+  else if (type === 'presence') {
+    const ev = _presence.events || [];
+    const ic = a => ({ open:'👀', browsing:'👀', search:'🔎', cart_add:'🛒', video:'🎬', order:'✅' }[a] || '•');
+    const lb = a => ({ open:'зашёл в магазин', browsing:'смотрит каталог', search:'искал', cart_add:'добавил в корзину', video:'смотрит видео', order:'оформил заказ' }[a] || a);
+    const bs = _presence.byScreen || {};
+    const parts = [];
+    if (bs.browsing) parts.push(`смотрят ${bs.browsing}`);
+    if (bs.cart)     parts.push(`в корзине ${bs.cart}`);
+    if (bs.orders)   parts.push(`оформляют ${bs.orders}`);
+    if (bs.about)    parts.push(`о магазине ${bs.about}`);
+    html += `<div class="stm-title">В магазине сейчас</div>
+      <div class="stm-sub">${_presence.online || 0} онлайн${parts.length ? ' · ' + parts.join(' · ') : ''}</div>
+      <div class="stm-big" style="color:var(--green)">${_presence.online || 0}</div>
+      <div class="stm-sub" style="margin-top:6px">Последние действия</div>
+      <div class="stm-list">${ev.length ? ev.map(e => `<div class="stm-li"><span>${ic(e.action)} ${lb(e.action)}${e.label ? (' · ' + escHtml(e.label)) : ''}</span><span style="color:var(--muted);font-weight:600">${presAgo(e.ago)}</span></div>`).join('') : '<div class="stm-sub">Пока тихо — нет активности</div>'}</div>`;
   }
   else if (type === 'video') {
     const vids = (feedList||[]).slice().sort((a,b)=>(b.views||0)-(a.views||0));
@@ -3000,6 +3075,9 @@ function showTab(name, el) {
   if (name === 'clients') renderClients();
   if (name === 'shift')   renderShift();
   if (name === 'feed')    renderFeedCab();
+  // живой индикатор опрашиваем только когда открыта вкладка статистики
+  if (name === 'products' && document.querySelector('#sub-stats.active')) startPresence();
+  else if (name !== 'products') stopPresence();
   window.scrollTo(0,0);
 }
 
