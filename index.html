@@ -779,6 +779,36 @@
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ───────── КИНОБАР ───────── */
+  .cine-intro { padding: 4px 16px 14px; }
+  .cine-intro .ci-tag { font-size: 11px; font-weight: 700; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; }
+  .cine-intro .ci-desc { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .cine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
+  .cine-card { position: relative; border-radius: 14px; overflow: hidden; background: var(--card); border: 1px solid var(--border); cursor: pointer; aspect-ratio: 2/3; }
+  .cine-card:active { transform: scale(.98); }
+  .cine-poster { width: 100%; height: 100%; object-fit: cover; display: block; background: linear-gradient(160deg,#2a2a2a,#161616); }
+  .cine-fade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.45) 38%, rgba(0,0,0,0) 70%); }
+  .cine-meta { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 11px; }
+  .cine-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; line-height: .98; letter-spacing: .5px; color: #fff; }
+  .cine-sub { font-size: 10px; color: #cfcfcf; margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .cine-year { color: var(--gold); font-weight: 800; }
+  .cine-badge { position: absolute; top: 8px; left: 8px; background: rgba(212,43,43,.92); color: #fff; font-size: 9px; font-weight: 800; letter-spacing: 1px; padding: 3px 7px; border-radius: 999px; text-transform: uppercase; }
+  .cine-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 46px; height: 46px; border-radius: 50%; background: rgba(0,0,0,.5); border: 1.5px solid rgba(255,255,255,.85); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; }
+  .cine-card:hover .cine-play { opacity: 1; }
+  .cine-play svg { width: 20px; height: 20px; fill: #fff; margin-left: 2px; }
+
+  /* плеер кино */
+  .cine-player { position: fixed; inset: 0; z-index: 400; background: #000; display: none; flex-direction: column; }
+  .cine-player.open { display: flex; }
+  .cine-pl-bar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; padding-top: max(12px, env(safe-area-inset-top)); background: #0b0b0b; border-bottom: 1px solid #1c1c1c; }
+  .cine-pl-close { width: 38px; height: 38px; flex: none; border-radius: 11px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #fff; font-size: 20px; cursor: pointer; line-height: 1; }
+  .cine-pl-tt { min-width: 0; }
+  .cine-pl-tt b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 19px; letter-spacing: .5px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cine-pl-tt span { font-size: 11px; color: var(--muted); }
+  .cine-pl-stage { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; }
+  .cine-pl-stage iframe { width: 100%; height: 100%; border: 0; }
+  .cine-pl-note { font-size: 11px; color: var(--muted); padding: 9px 14px; padding-bottom: max(9px, env(safe-area-inset-bottom)); background: #0b0b0b; border-top: 1px solid #1c1c1c; text-align: center; }
 </style>
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#D42B2B">
@@ -1178,6 +1208,29 @@
   </div>
 </div>
 
+<!-- КИНОБАР -->
+<div class="page" id="page-cinema">
+  <div class="page-hdr">🍿 КИНОБАР</div>
+  <div class="cine-intro">
+    <div class="ci-tag">Кино под пиво</div>
+    <div class="ci-desc">Классика в общественном достоянии — нуар, хорроры и культовое B-кино. Бесплатно, без рекламы, прямо в магазине.</div>
+  </div>
+  <div class="cine-grid" id="cineGrid"></div>
+</div>
+
+<!-- ПЛЕЕР КИНО (полноэкранный) -->
+<div class="cine-player" id="cinePlayer">
+  <div class="cine-pl-bar">
+    <button class="cine-pl-close" onclick="closeMovie()" aria-label="Закрыть">×</button>
+    <div class="cine-pl-tt">
+      <b id="cinePlTitle"></b>
+      <span id="cinePlSub"></span>
+    </div>
+  </div>
+  <div class="cine-pl-stage" id="cinePlStage"></div>
+  <div class="cine-pl-note">Источник: Internet Archive · фильм в общественном достоянии</div>
+</div>
+
 <!-- FEED PLAYER (полноэкранный TikTok-плеер) -->
 <div id="feedPlayer" class="feed-player">
   <button class="fp-close" onclick="closeFeed()" aria-label="Закрыть">
@@ -1310,6 +1363,7 @@
     <div class="nav-badge" id="ordersCount">0</div>
   </div>
   <div class="nav-item" onclick="showPage('info',this)"><div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-info"/></svg></div><div>О магазине</div></div>
+  <div class="nav-item" onclick="showPage('cinema',this)"><div class="ni">🍿</div><div>Кино</div></div>
   <div class="nav-item" onclick="showPage('platform',this)" style="padding:2px 0">
     <img src="drakarskif-logo.png"
       style="height:52px;width:auto;opacity:0.9"
@@ -2234,6 +2288,7 @@ function showPage(id, el) {
   if (el) el.classList.add('active');
   if (id === 'cart') renderCart();
   if (id === 'orders' && window.AlcoOrders) AlcoOrders.render();
+  if (id === 'cinema') renderCinema();
   if (typeof presencePing === 'function') presencePing(_screenMap[id] || 'browsing');
   window.scrollTo(0,0);
 }
@@ -3349,5 +3404,64 @@ if ('serviceWorker' in navigator) {
 <style>#abmFrameWrap{position:fixed;inset:0;z-index:99999;display:none;background:#0b0b0d}#abmFrameWrap.on{display:block}#abmFrame{border:0;width:100%;height:100%;display:block}</style>
 <div id="abmFrameWrap"><iframe id="abmFrame" src="alkobarometr.html?v=21" title="Алкобарометр"></iframe></div>
 <script>(function(){var lastCart=[];function hide(){document.getElementById('abmFrameWrap').classList.remove('on');}window.openBarometer=function(){if(typeof cart==="undefined"||!cart.length){if(typeof showToast==="function")showToast("Корзина пуста");return;}lastCart=cart;document.getElementById('abmFrameWrap').classList.add('on');var f=document.getElementById('abmFrame');try{f.contentWindow.postMessage({type:'abm-cart',cart:lastCart},'*');}catch(e){}};window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='abm-ready'){var f=document.getElementById('abmFrame');try{f.contentWindow.postMessage({type:'abm-cart',cart:lastCart},'*');}catch(_){}}if(d.type==='abm-close'){hide();}if(d.type==='abm-checkout'){hide();if(typeof goToOrder==='function')goToOrder();}});})();</script>
+<!-- ───────── КИНОБАР: данные и логика ───────── -->
+<script>
+/* Фильмы в общественном достоянии (public domain).
+   Источник — Internet Archive: магазин ничего не хранит у себя,
+   плеер просто встраивает страницу архива (поток идёт с их серверов).
+   Добавить фильм = открыть archive.org, найти ленту в статусе Public Domain,
+   скопировать идентификатор из адреса (archive.org/details/ИДЕНТИФИКАТОР)
+   и дописать новый объект в массив ниже. Постер тянется автоматически. */
+const CINEMA = [
+  { id:'night-of-the-living-dead-1968-english', title:'Ночь живых мертвецов', year:1968, genre:'Хоррор · зомби', dir:'Джордж Ромеро', badge:'Культ', desc:'Группа людей заперлась в фермерском доме, пока вокруг бродят оживших мертвецы. Фильм, с которого начался весь жанр про зомби.' },
+  { id:'the-last-man-on-earth-1964_202312', title:'Последний человек на Земле', year:1964, genre:'Sci-Fi · хоррор', dir:'Винсент Прайс', badge:'I Am Legend', desc:'Чума превратила людей в подобие вампиров, и один доктор остался единственным выжившим. Первоисточник «Я — легенда».' },
+  { id:'carnival-of-souls-1962_202010', title:'Карнавал душ', year:1962, genre:'Хоррор · мистика', dir:'Херк Харви', desc:'Единственная выжившая в аварии девушка устраивается органисткой в церковь — и её начинает преследовать призрачная фигура. Сновидческая атмосфера культового B-хоррора.' },
+  { id:'TheLittleShopOfHorrors1960_765', title:'Маленький магазинчик ужасов', year:1960, genre:'Комедия · хоррор', dir:'Роджер Корман', badge:'Дж. Николсон', desc:'Неуклюжий продавец цветов выращивает растение, которое питается кровью. Чёрная комедия Кормана, снятая за два дня, с молодым Джеком Николсоном.' },
+  { id:'house-on-haunted-hill-1959_202511', title:'Дом на холме призраков', year:1959, genre:'Хоррор · саспенс', dir:'Винсент Прайс', desc:'Эксцентричный миллионер предлагает гостям по $10 000, если те переживут ночь в доме с привидениями. Классический Винсент Прайс.' },
+  { id:'plan-9-from-outer-space_202009', title:'План 9 из открытого космоса', year:1959, genre:'Sci-Fi · трэш', dir:'Эд Вуд', badge:'So bad it\'s good', desc:'Инопланетяне воскрешают мертвецов, чтобы остановить человечество. Знаменитый «худший фильм всех времён» — и оттого бессмертный.' },
+  { id:'detour_202110', title:'Объезд', year:1945, genre:'Нуар', dir:'Эдгар Улмер', desc:'Пианист едет автостопом через всю страну — и попадает в роковую цепочку случайностей. Эталон нуара о неотвратимой судьбе, снятый за шесть дней.' },
+];
+
+const ARCHIVE_EMBED = id => 'https://archive.org/embed/' + id;
+const ARCHIVE_POSTER = id => 'https://archive.org/services/img/' + id;
+
+let cineRendered = false;
+function renderCinema() {
+  if (cineRendered) return;            // строим один раз
+  const grid = document.getElementById('cineGrid');
+  if (!grid) return;
+  grid.innerHTML = CINEMA.map(m => `
+    <div class="cine-card" onclick="openMovie('${m.id}')">
+      <img class="cine-poster" loading="lazy" src="${ARCHIVE_POSTER(m.id)}" alt="${m.title}"
+           onerror="this.style.visibility='hidden'">
+      <div class="cine-fade"></div>
+      ${m.badge ? `<div class="cine-badge">${m.badge}</div>` : ''}
+      <div class="cine-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="cine-meta">
+        <div class="cine-title">${m.title}</div>
+        <div class="cine-sub"><span class="cine-year">${m.year}</span> · ${m.genre}</div>
+      </div>
+    </div>`).join('');
+  cineRendered = true;
+}
+
+function openMovie(id) {
+  const m = CINEMA.find(x => x.id === id);
+  if (!m) return;
+  // приглушаем радио, чтобы звук не накладывался
+  try { if (window.ytPlayer && window.ytReady) ytPlayer.pauseVideo(); } catch(_) {}
+  document.getElementById('cinePlTitle').textContent = m.title;
+  document.getElementById('cinePlSub').textContent = m.year + ' · ' + m.genre + (m.dir ? ' · ' + m.dir : '');
+  document.getElementById('cinePlStage').innerHTML =
+    `<iframe src="${ARCHIVE_EMBED(m.id)}" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>`;
+  document.getElementById('cinePlayer').classList.add('open');
+  if (typeof presencePing === 'function') { try { presencePing('cinema'); } catch(_) {} }
+}
+
+function closeMovie() {
+  document.getElementById('cinePlayer').classList.remove('open');
+  document.getElementById('cinePlStage').innerHTML = '';   // выгружаем плеер = останавливаем фильм
+}
+</script>
 </body>
 </html>
