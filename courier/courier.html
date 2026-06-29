@@ -468,20 +468,35 @@
 <!-- ── LIVE-ГЕОПОЗИЦИЯ КУРЬЕРА ─────────────────────────────────────────
      Берёт токен из ?t=…, ловит GPS и шлёт на сервер каждые ~10 сек, пока
      страница открыта. Клиент видит точку курьера на карте в «Моих заказах».
-     После «Доставлен»/отмены сервер просит остановиться — блок гаснет сам.
-     Своя область видимости — с кодом выше не конфликтует. ───────────────── -->
+     Внизу страницы — индикатор: передаётся гео или нет. ───────────────── -->
+<style>
+  #geoPill{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;
+    padding:12px 14px;border-radius:14px;font:600 14px/1.3 system-ui,sans-serif;
+    display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+  #geoPill .gp-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+  #geoPill.ok{background:#0e3b2a;color:#7CF0B6;border:1px solid #1f6e4f}
+  #geoPill.ok .gp-dot{background:#27E08A;animation:gpp 1.4s ease-in-out infinite}
+  #geoPill.warn{background:#3b2a0e;color:#FFD27C;border:1px solid #7a5a1f}
+  #geoPill.warn .gp-dot{background:#F2A900}
+  #geoPill.err{background:#3b1414;color:#FF9B9B;border:1px solid #7a2222}
+  #geoPill.err .gp-dot{background:#E04545}
+  @keyframes gpp{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
+<div id="geoPill" class="warn"><span class="gp-dot"></span><span id="geoPillTxt">Определяем геолокацию…</span></div>
 <script>
 (function () {
   var SERVER_URL = 'https://alcodelivery-db-production.up.railway.app';
   var SEND_EVERY_MS = 10000;   // как часто отправлять точку (10 сек)
 
-  var token = new URLSearchParams(location.search).get('t');
-  if (!token || !('geolocation' in navigator)) return;
+  var pill = document.getElementById('geoPill');
+  var pillTxt = document.getElementById('geoPillTxt');
+  function setPill(cls, txt){ if(pill){ pill.className = cls; pillTxt.textContent = txt; } }
 
-  var last = null;     // последняя известная позиция {lat,lng}
-  var lastSent = 0;    // когда последний раз отправляли
-  var stopped = false; // сервер сказал прекратить (доставлено/отменено)
-  var watchId = null;
+  var token = new URLSearchParams(location.search).get('t');
+  if (!token) { setPill('err', 'Ссылка без токена — открой заказ из WhatsApp'); return; }
+  if (!('geolocation' in navigator)) { setPill('err', 'Браузер не поддерживает геолокацию'); return; }
+
+  var last = null, lastSent = 0, stopped = false, watchId = null, everSent = false;
 
   function send() {
     if (stopped || !last) return;
@@ -494,27 +509,33 @@
       body: JSON.stringify({ lat: last.lat, lng: last.lng }),
       keepalive: true
     })
-    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function (d) {
-      if (d && d.stop) { stopped = true; if (watchId != null) navigator.geolocation.clearWatch(watchId); }
+      if (d && d.stop) { stopped = true; if (watchId != null) navigator.geolocation.clearWatch(watchId); setPill('ok', 'Заказ доставлен — трекинг выключен'); return; }
+      everSent = true;
+      setPill('ok', 'Вы на карте у клиента');
     })
-    .catch(function () {});
+    .catch(function (st) {
+      // 404 = старый сервер без эндпоинта; иначе сеть
+      setPill('err', st === 404 ? 'Сервер не обновлён (нет приёма гео)' : 'Нет связи с сервером');
+    });
   }
 
-  // watchPosition экономнее по батарее, чем setInterval + getCurrentPosition
   watchId = navigator.geolocation.watchPosition(
     function (pos) {
       last = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (!everSent) setPill('warn', 'Геолокация есть, отправляем…');
       send();
     },
-    function () { /* курьер не дал доступ к гео — просто молчим */ },
+    function (err) {
+      if (err && err.code === 1) setPill('err', 'Доступ к геолокации запрещён — разреши в браузере');
+      else setPill('err', 'GPS недоступен — включи геолокацию на телефоне');
+    },
     { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
   );
 
-  // подстраховка: шлём последнюю точку по таймеру, даже если GPS «не дёргается»
   setInterval(send, SEND_EVERY_MS);
 
-  // финальная точка при закрытии страницы
   window.addEventListener('pagehide', function () {
     if (stopped || !last) return;
     try {
