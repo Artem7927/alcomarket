@@ -3189,6 +3189,7 @@ if ('serviceWorker' in navigator) {
     { t:"Доставлен",           time:"deliveredAt" }
   ];
   function stageIndex(o){
+    if (o.status === "done") return 4; // магазин закрыл заказ → считаем доставленным
     switch(o.deliveryStatus){
       case "delivered": return 4;
       case "on_way":    return 3;
@@ -3247,7 +3248,7 @@ if ('serviceWorker' in navigator) {
 
   function stepperHTML(o){
     if (o.status === "cancel") return "";
-    var cur = stageIndex(o), done = (o.deliveryStatus === "delivered"), tm = o.times || {};
+    var cur = stageIndex(o), done = (o.deliveryStatus === "delivered" || o.status === "done"), tm = o.times || {};
     return '<div class="ord-steps">' + STEPS.map(function(st, idx){
       var cls = done ? "done" : (idx < cur ? "done" : (idx === cur ? "curr" : ""));
       var t = tm[st.time] ? fmtT(tm[st.time]) : "";
