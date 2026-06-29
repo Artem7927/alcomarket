@@ -839,6 +839,12 @@
   .ord-step.curr .dot{background:#27AE60;border-color:#27AE60;animation:ordp 1.4s ease-in-out infinite}
   .ord-step.curr .st-t{color:#27AE60}
   @keyframes ordp{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(39,174,96,.5)}50%{transform:scale(1.15);box-shadow:0 0 0 5px rgba(39,174,96,0)}}
+  /* live-трекинг курьера в карточке заказа */
+  .ord-track{margin-top:14px}
+  .ord-trkmap{height:190px;border-radius:14px;overflow:hidden;border:1px solid #333;background:#0e0e10}
+  .ord-trk-cap{font-size:12px;color:#9a9a9a;margin-top:8px;display:flex;align-items:center;gap:6px}
+  .ord-trk-wait{display:flex;align-items:center;gap:8px;background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:12px 14px;font-size:13px;color:#bdbdbd;margin-top:14px}
+  .ord-trk-wait .pulse{width:9px;height:9px;border-radius:50%;background:#F2A900;animation:ordp 1.4s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -1084,8 +1090,8 @@
         </div>
         <div class="delivery-info-box" id="deliveryInfoBox">
           <div class="dib-row" style="margin-bottom:8px">
-            <span class="dib-label">Зона доставки</span>
-            <span class="dib-val" id="zoneName" style="color:var(--muted)">Не выбрано</span>
+            <span class="dib-label">Доставка</span>
+            <span class="dib-val" id="zoneName" style="color:var(--muted)">по городу</span>
           </div>
           <div class="dib-row" style="margin-bottom:8px">
             <span class="dib-label">Стоимость доставки</span>
@@ -1405,15 +1411,10 @@ let currentStep = 1;
 const STORE_LAT = 51.722614;
 const STORE_LNG = 75.330505;
 
-const DELIVERY_ZONES = [
-  { id:1, price:'600 ₸',  cost:600,  color:'#2ecc71', label:'Зона 1', time:'25–35 мин', pts:[[51.731028,75.309551],[51.733304,75.321793],[51.721900,75.327497],[51.719624,75.315255]] },
-  { id:2, price:'700 ₸',  cost:700,  color:'#f1c40f', label:'Зона 2', time:'30–45 мин', pts:[[51.735592,75.300578],[51.740143,75.325062],[51.717336,75.336470],[51.712784,75.311986]] },
-  { id:3, price:'800 ₸',  cost:800,  color:'#9b59b6', label:'Зона 3', time:'35–50 мин', pts:[[51.740156,75.291604],[51.746983,75.328332],[51.712771,75.345444],[51.705945,75.308716]] },
-  { id:4, price:'900 ₸',  cost:900,  color:'#3498db', label:'Зона 4', time:'40–55 мин', pts:[[51.744720,75.282631],[51.753822,75.331601],[51.708207,75.354417],[51.699105,75.305447]] },
-  { id:5, price:'1000 ₸', cost:1000, color:'#F4821F', label:'Зона 5', time:'45–60 мин', pts:[[51.749284,75.273658],[51.760662,75.334870],[51.703643,75.363390],[51.692265,75.302178]] },
-  { id:6, price:'1100 ₸', cost:1100, color:'#e91e8c', label:'Зона 6', time:'50–65 мин', pts:[[51.753848,75.264685],[51.767502,75.338139],[51.699079,75.372363],[51.685425,75.298909]] },
-  { id:7, price:'1500 ₸', cost:1500, color:'#e74c3c', label:'Зона 7', time:'55–75 мин', pts:[[51.758412,75.255712],[51.774341,75.341408],[51.694515,75.381336],[51.678585,75.295640]] },
-];
+// Доставка по городу — ЕДИНЫЙ тариф, без зон.
+// Любая выбранная на карте точка считается доставляемой по фиксированной цене.
+const FLAT_DELIVERY = { price:'800 ₸', cost:800, color:'#F2A900', label:'Доставка по городу', time:'30–45 мин' };
+const DELIVERY_ZONES = []; // зоны отключены — полигоны на карте больше не рисуются
 
 let deliveryMap = null;
 let deliveryMarker = null;
@@ -1460,10 +1461,8 @@ function pipCheck(point, polygon) {
 }
 
 function getZoneByPoint(lat, lng) {
-  for (const z of DELIVERY_ZONES) {
-    if (pipCheck([lat, lng], z.pts)) return z;
-  }
-  return null;
+  // Единый тариф: любая точка по городу доставляется за фиксированную цену.
+  return FLAT_DELIVERY;
 }
 
 function initMap() {
@@ -2179,6 +2178,8 @@ async function submitOrder() {
       address: fullAddress,
       payMethod: payMethod,
       deliveryMethod: deliveryMethod,
+      destLat: (deliveryMethod === 'delivery' ? selectedLat : null),
+      destLng: (deliveryMethod === 'delivery' ? selectedLng : null),
       createdAt: orderData.createdAt,
       items: cart.map(function(i){ return { name:i.name, qty:i.qty, sum:i.price*i.qty }; })
     });
@@ -3220,6 +3221,9 @@ if ('serviceWorker' in navigator) {
       total: order.total || 0, goodsTotal: order.goodsTotal, deliveryCost: order.deliveryCost || 0,
       address: order.address || "", payMethod: order.payMethod || "",
       deliveryMethod: order.deliveryMethod || "", ts: Date.now(),
+      destLat: (order.destLat != null ? order.destLat : null),
+      destLng: (order.destLng != null ? order.destLng : null),
+      courierLoc: null,
       createdAt: order.createdAt || new Date().toISOString(),
       status: "new", deliveryStatus: null, autoClosed: false, times: {}
     });
@@ -3285,11 +3289,13 @@ if ('serviceWorker' in navigator) {
       +   '</div>'
       +   '<div class="ord-pay">Оплата: '+payLabel(o.payMethod)+'<br>'+esc(o.address)+'</div>'
       +   stepperHTML(o)
+      +   trackHTML(o)
       + '</div>'
     + '</div>';
   }
 
   function render(){
+    destroyMaps();
     var list = load(), mount = document.getElementById("orders-list");
     if (mount){
       mount.innerHTML = list.length
@@ -3302,9 +3308,84 @@ if ('serviceWorker' in navigator) {
       badge.textContent = n;
       badge.style.display = n > 0 ? "flex" : "none";
     }
+    mountMaps(list);
   }
 
   function toggle(id){ openSet[id] = !openSet[id]; render(); }
+
+  // ── Live-карта курьера ────────────────────────────────────────────
+  var ST_LAT = (typeof STORE_LAT === 'number') ? STORE_LAT : 51.722614;
+  var ST_LNG = (typeof STORE_LNG === 'number') ? STORE_LNG : 75.330505;
+  var trkMaps = {};   // orderId -> { map, courier, dest }
+  var trkView = {};   // orderId -> { center, zoom } — чтобы карта не «прыгала» между опросами
+
+  // показываем карту в раскрытой карточке активной доставки (не самовывоз)
+  function wantsTrack(o){
+    return !isClosed(o) && o.deliveryMethod !== 'pickup'
+        && ['assigned','picked_up','on_way'].indexOf(o.deliveryStatus) !== -1
+        && openSet[o.orderId];
+  }
+
+  function trackHTML(o){
+    if (!wantsTrack(o)) return '';
+    if (o.courierLoc && o.courierLoc.lat != null){
+      return '<div class="ord-track">'
+           +   '<div id="trkmap-'+esc(o.orderId)+'" class="ord-trkmap"></div>'
+           +   '<div class="ord-trk-cap">🛵 Курьер в пути — позиция обновляется автоматически</div>'
+           + '</div>';
+    }
+    // курьер назначен, но ещё не вышел на линию (страница курьера не открыта)
+    return '<div class="ord-trk-wait"><span class="pulse"></span>Курьер назначен. Карта появится, как только он выйдет в путь.</div>';
+  }
+
+  function pin(emoji, bg){
+    return L.divIcon({ className:'', iconSize:[30,30], iconAnchor:[15,15],
+      html:'<div style="width:30px;height:30px;border-radius:50%;background:'+bg+';border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1">'+emoji+'</div>' });
+  }
+
+  function destroyMaps(){
+    for (var id in trkMaps){
+      try {
+        var m = trkMaps[id].map;
+        trkView[id] = { center: m.getCenter(), zoom: m.getZoom() };
+        m.remove();
+      } catch(e){}
+    }
+    trkMaps = {};
+  }
+
+  function mountMaps(list){
+    if (typeof L === 'undefined') return;
+    list.forEach(function(o){
+      if (!wantsTrack(o) || !(o.courierLoc && o.courierLoc.lat != null)) return;
+      var el = document.getElementById('trkmap-'+o.orderId);
+      if (!el || trkMaps[o.orderId]) return;
+
+      var map = L.map(el, { zoomControl:false, attributionControl:false, dragging:true, tap:false });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:18 }).addTo(map);
+
+      L.marker([ST_LAT, ST_LNG], { icon: pin('🏪', '#D42B2B') }).addTo(map);
+      var dest = (o.destLat != null && o.destLng != null) ? [o.destLat, o.destLng] : null;
+      if (dest) L.marker(dest, { icon: pin('📍', '#27AE60') }).addTo(map);
+
+      var cLat = o.courierLoc.lat, cLng = o.courierLoc.lng;
+      var courier = L.marker([cLat, cLng], { icon: pin('🛵', '#F2A900'), zIndexOffset:1000 }).addTo(map);
+
+      // линия курьер → клиент (куда едет)
+      var route = dest ? L.polyline([[cLat, cLng], dest], { color:'#F2A900', weight:3, opacity:.7, dashArray:'6,6' }).addTo(map) : null;
+
+      trkMaps[o.orderId] = { map:map, courier:courier, route:route, dest:dest };
+
+      if (trkView[o.orderId]){
+        map.setView(trkView[o.orderId].center, trkView[o.orderId].zoom, { animate:false });
+      } else {
+        var pts = [[cLat, cLng], [ST_LAT, ST_LNG]];
+        if (dest) pts.push(dest);
+        map.fitBounds(L.latLngBounds(pts).pad(0.25), { animate:false });
+      }
+      setTimeout(function(){ try{ map.invalidateSize(); }catch(e){} }, 60);
+    });
+  }
 
   var timer = null;
   async function tick(){
@@ -3323,6 +3404,8 @@ if ('serviceWorker' in navigator) {
           if ("autoClosed" in d) list[i].autoClosed = d.autoClosed;
           if (d.createdAt) list[i].createdAt = d.createdAt;
           if ("deliveryStatus" in d) list[i].deliveryStatus = d.deliveryStatus;
+          // живая точка курьера (есть только пока он в пути; после доставки сервер её не отдаёт)
+          list[i].courierLoc = (d.courierLoc && d.courierLoc.lat != null) ? d.courierLoc : null;
           var tm = list[i].times || {};
           list[i].times = {
             createdAt:   d.createdAt   || tm.createdAt,
@@ -3339,7 +3422,35 @@ if ('serviceWorker' in navigator) {
     if (!activeOrders().length) stop();
   }
   function start(){ if (timer || !activeOrders().length) return; tick(); timer = setInterval(tick, POLL_MS); }
-  function stop(){ if (timer){ clearInterval(timer); timer = null; } }
+  function stop(){ if (timer){ clearInterval(timer); timer = null; } locStop(); }
+
+  // ── Быстрый поллер позиции курьера (лёгкий, только пока есть открытая карта) ──
+  var locTimer = null;
+  async function locTick(){
+    var ids = Object.keys(trkMaps);
+    if (!ids.length){ locStop(); return; }
+    await Promise.all(ids.map(async function(id){
+      var ref = trkMaps[id]; if (!ref) return;
+      try {
+        var r = await fetch(API_BASE + "/courier-loc/" + id, { cache:"no-store" });
+        if (!r.ok) return;
+        var d = await r.json();
+        if (!d || !d.loc || d.loc.lat == null) return;
+        var ll = [d.loc.lat, d.loc.lng];
+        ref.courier.setLatLng(ll);                                   // плавный сдвиг маркера
+        if (ref.route && ref.dest) ref.route.setLatLngs([ll, ref.dest]);
+        // сохраним последнюю точку в localStorage (чтобы карта сразу легла при перерисовке)
+        var list = load(), i = list.findIndex(function(x){ return x.orderId === id; });
+        if (i !== -1){ list[i].courierLoc = { lat:d.loc.lat, lng:d.loc.lng, at:d.loc.at }; persist(list); }
+      } catch(e){}
+    }));
+  }
+  function locStart(){ if (locTimer) return; locTimer = setInterval(locTick, 8000); }
+  function locStop(){ if (locTimer){ clearInterval(locTimer); locTimer = null; } }
+
+  // запускаем быстрый поллер, когда на экране появилась хотя бы одна карта
+  var _mountMaps = mountMaps;
+  mountMaps = function(list){ _mountMaps(list); if (Object.keys(trkMaps).length) locStart(); else locStop(); };
 
   document.addEventListener("visibilitychange", function(){ document.hidden ? stop() : start(); });
   document.addEventListener("DOMContentLoaded", function(){ render(); start(); });
