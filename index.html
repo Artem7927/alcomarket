@@ -1469,7 +1469,7 @@ function initMap() {
   if (mapInitialized) return;
   mapInitialized = true;
   deliveryMap = L.map('deliveryMap', { center:[STORE_LAT, STORE_LNG], zoom:13, zoomControl:true, attributionControl:false });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:18 }).addTo(deliveryMap);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(deliveryMap);
 
   [...DELIVERY_ZONES].reverse().forEach(zone => {
     L.polygon(zone.pts, { color:zone.color, weight:2, fillColor:zone.color, fillOpacity:0.12, dashArray:'6,4', interactive:false }).addTo(deliveryMap);
@@ -3362,7 +3362,7 @@ if ('serviceWorker' in navigator) {
       if (!el || trkMaps[o.orderId]) return;
 
       var map = L.map(el, { zoomControl:false, attributionControl:false, dragging:true, tap:false });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:18 }).addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
 
       L.marker([ST_LAT, ST_LNG], { icon: pin('🏪', '#D42B2B') }).addTo(map);
       var dest = (o.destLat != null && o.destLng != null) ? [o.destLat, o.destLng] : null;
