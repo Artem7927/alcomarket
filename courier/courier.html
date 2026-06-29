@@ -464,5 +464,67 @@
   load();
 })();
 </script>
+
+<!-- ── LIVE-ГЕОПОЗИЦИЯ КУРЬЕРА ─────────────────────────────────────────
+     Берёт токен из ?t=…, ловит GPS и шлёт на сервер каждые ~10 сек, пока
+     страница открыта. Клиент видит точку курьера на карте в «Моих заказах».
+     После «Доставлен»/отмены сервер просит остановиться — блок гаснет сам.
+     Своя область видимости — с кодом выше не конфликтует. ───────────────── -->
+<script>
+(function () {
+  var SERVER_URL = 'https://alcodelivery-db-production.up.railway.app';
+  var SEND_EVERY_MS = 10000;   // как часто отправлять точку (10 сек)
+
+  var token = new URLSearchParams(location.search).get('t');
+  if (!token || !('geolocation' in navigator)) return;
+
+  var last = null;     // последняя известная позиция {lat,lng}
+  var lastSent = 0;    // когда последний раз отправляли
+  var stopped = false; // сервер сказал прекратить (доставлено/отменено)
+  var watchId = null;
+
+  function send() {
+    if (stopped || !last) return;
+    var now = Date.now();
+    if (now - lastSent < SEND_EVERY_MS) return;
+    lastSent = now;
+    fetch(SERVER_URL + '/courier/' + token + '/location', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: last.lat, lng: last.lng }),
+      keepalive: true
+    })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (d && d.stop) { stopped = true; if (watchId != null) navigator.geolocation.clearWatch(watchId); }
+    })
+    .catch(function () {});
+  }
+
+  // watchPosition экономнее по батарее, чем setInterval + getCurrentPosition
+  watchId = navigator.geolocation.watchPosition(
+    function (pos) {
+      last = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      send();
+    },
+    function () { /* курьер не дал доступ к гео — просто молчим */ },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+
+  // подстраховка: шлём последнюю точку по таймеру, даже если GPS «не дёргается»
+  setInterval(send, SEND_EVERY_MS);
+
+  // финальная точка при закрытии страницы
+  window.addEventListener('pagehide', function () {
+    if (stopped || !last) return;
+    try {
+      navigator.sendBeacon(
+        SERVER_URL + '/courier/' + token + '/location',
+        new Blob([JSON.stringify({ lat: last.lat, lng: last.lng })], { type: 'application/json' })
+      );
+    } catch (e) {}
+  });
+})();
+</script>
 </body>
 </html>
