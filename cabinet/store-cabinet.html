@@ -1988,10 +1988,6 @@ async function forwardCourier(id) {
     if (!confirm('Курьер уже назначен на этот заказ.\nСоздать НОВУЮ ссылку? Старая перестанет работать.')) return;
   }
 
-  // Открываем вкладку WhatsApp СРАЗУ по нажатию (это жест пользователя — попап не блокируется).
-  // Ссылку внутрь подставим, как только сервер её вернёт. Если создать заказ не выйдет — вкладку закроем.
-  const waTab = window.open('', '_blank');
-
   showLoading(true);
   try {
     const res = await fetch(`${SERVER_URL}/orders/${id}/assign-courier`, {
@@ -2004,19 +2000,26 @@ async function forwardCourier(id) {
     if (!data.ok || !data.url) throw new Error(data.error || 'Не удалось создать ссылку');
 
     const pay = o.payMethod === 'kaspi' ? 'Kaspi' : 'Наличные';
+    // Без эмодзи: в ссылке WhatsApp они часто ломаются в «кракозябры» (?????).
     const txt =
-      `🛵 Заказ ${o.id} — доставка\n` +
-      `📍 ${o.address}\n` +
-      `💰 ${o.orderTotal.toLocaleString()} ₸ (${pay})\n\n` +
-      `🔗 Открой ссылку — заказ целиком и кнопки статуса:\n${data.url}`;
-    const waUrl = 'https://wa.me/?text=' + encodeURIComponent(txt);
+      `Заказ ${o.id} — доставка\n` +
+      `Адрес: ${o.address}\n` +
+      `Сумма: ${o.orderTotal.toLocaleString()} тг (${pay})\n\n` +
+      `Открой ссылку — заказ целиком и кнопки статуса:\n${data.url}`;
+    const enc = encodeURIComponent(txt);
 
-    // сразу уводим в WhatsApp выбирать чат курьера
-    if (waTab) { waTab.location.href = waUrl; }
-    else { window.location.href = waUrl; } // если попап всё же заблокировали — переходим в этой же вкладке
     await loadOrders();
+    showLoading(false);
+
+    // Схема whatsapp:// открывает приложение НАПРЯМУЮ (без промежуточной веб-страницы
+    // api.whatsapp.com «скачайте приложение»). Переходим в этой же вкладке —
+    // телефон перехватит схему и откроет WhatsApp, кабинет останется на месте.
+    window.location.href = 'whatsapp://send?text=' + enc;
+    // Запасной путь: если приложение не установлено (схему никто не перехватил),
+    // через 1.2 сек уводим на обычный wa.me, чтобы клик не пропал впустую.
+    setTimeout(function(){ window.location.href = 'https://wa.me/?text=' + enc; }, 1200);
+    return;
   } catch (e) {
-    if (waTab) waTab.close();     // не удалось — лишнюю вкладку закрываем
     alert(e.message || 'Не удалось назначить курьера');
     await loadOrders().catch(() => {}); // подтягиваем реальное состояние — сервер мог всё же сохранить
   } finally {
