@@ -845,6 +845,14 @@
   .ord-trk-cap{font-size:12px;color:#9a9a9a;margin-top:8px;display:flex;align-items:center;gap:6px}
   .ord-trk-wait{display:flex;align-items:center;gap:8px;background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:12px 14px;font-size:13px;color:#bdbdbd;margin-top:14px}
   .ord-trk-wait .pulse{width:9px;height:9px;border-radius:50%;background:#F2A900;animation:ordp 1.4s ease-in-out infinite}
+  .ord-trkmap{position:relative;cursor:pointer}
+  .ord-trkmap .ord-trk-expand{position:absolute;top:10px;right:10px;z-index:500;width:32px;height:32px;border-radius:9px;background:rgba(10,10,10,.72);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);pointer-events:none}
+  .ord-trkmap .ord-trk-expand svg{width:16px;height:16px;fill:#F2A900}
+  .ord-trk-fs{position:fixed;inset:0;z-index:5000;background:#0a0a0a;display:flex;flex-direction:column}
+  .ord-trk-fs-map{flex:1;min-height:0}
+  .ord-trk-fs-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#141414;border-bottom:1px solid #2a2a2a}
+  .ord-trk-fs-title{font-size:14px;font-weight:800;color:#F2A900}
+  .ord-trk-fs-close{width:36px;height:36px;border-radius:11px;background:#1f1f1f;border:1px solid #333;color:#ddd;font-size:20px;display:flex;align-items:center;justify-content:center}
 </style>
 </head>
 <body>
@@ -3295,9 +3303,19 @@ if ('serviceWorker' in navigator) {
     + '</div>';
   }
 
+  var lastRenderKey = null;
   function render(){
+    var list = load();
+    // ключ из того, что реально меняет разметку/карту (курьерская позиция — не в счёт,
+    // её плавно двигает locTick напрямую через setLatLng без пересборки DOM)
+    var key = JSON.stringify(list.map(function(o){
+      return [o.orderId, o.status, o.deliveryStatus, o.autoClosed, !!openSet[o.orderId], !!(o.courierLoc && o.courierLoc.lat != null)];
+    }));
+    if (key === lastRenderKey) return; // ничего значимого не изменилось — карту не трогаем
+    lastRenderKey = key;
+
     destroyMaps();
-    var list = load(), mount = document.getElementById("orders-list");
+    var mount = document.getElementById("orders-list");
     if (mount){
       mount.innerHTML = list.length
         ? list.map(cardHTML).join("")
@@ -3331,17 +3349,26 @@ if ('serviceWorker' in navigator) {
     if (!wantsTrack(o)) return '';
     if (o.courierLoc && o.courierLoc.lat != null){
       return '<div class="ord-track">'
-           +   '<div id="trkmap-'+esc(o.orderId)+'" class="ord-trkmap"></div>'
-           +   '<div class="ord-trk-cap">🛵 Курьер в пути — позиция обновляется автоматически</div>'
+           +   '<div id="trkmap-'+esc(o.orderId)+'" class="ord-trkmap" onclick="AlcoOrders._openFullMap(\''+esc(o.orderId)+'\')">'
+           +     '<div class="ord-trk-expand"><svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></div>'
+           +   '</div>'
+           +   '<div class="ord-trk-cap">🛵 Курьер в пути — тапни на карту, чтобы развернуть</div>'
            + '</div>';
     }
     // курьер назначен, но ещё не вышел на линию (страница курьера не открыта)
     return '<div class="ord-trk-wait"><span class="pulse"></span>Курьер назначен. Карта появится, как только он выйдет в путь.</div>';
   }
 
-  function pin(emoji, bg){
-    return L.divIcon({ className:'', iconSize:[30,30], iconAnchor:[15,15],
-      html:'<div style="width:30px;height:30px;border-radius:50%;background:'+bg+';border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1">'+emoji+'</div>' });
+  // премиальные SVG-пины (вместо эмодзи): авто, магазин, точка назначения
+  var SVG_CAR   = '<path fill="#fff" d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm11 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM5 11l1.5-4.5h11L19 11H5z"/>';
+  var SVG_STORE = '<path fill="#fff" d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/>';
+  var SVG_PLACE = '<path fill="#fff" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/>';
+
+  function mapPin(kind){
+    var c = { car:{a:'#F6C75B',b:'#D08A1E',s:SVG_CAR}, store:{a:'#E5352F',b:'#A51E1E',s:SVG_STORE}, dest:{a:'#2ecc71',b:'#1e8e4e',s:SVG_PLACE} }[kind];
+    var html = '<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(145deg,'+c.a+','+c.b+');border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center">'
+             + '<svg viewBox="0 0 24 24" width="21" height="21">'+c.s+'</svg></div>';
+    return L.divIcon({ className:'', iconSize:[38,38], iconAnchor:[19,19], html:html });
   }
 
   function destroyMaps(){
@@ -3365,12 +3392,12 @@ if ('serviceWorker' in navigator) {
       var map = L.map(el, { zoomControl:false, attributionControl:false, dragging:true, tap:false });
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
 
-      L.marker([ST_LAT, ST_LNG], { icon: pin('🏪', '#D42B2B') }).addTo(map);
+      L.marker([ST_LAT, ST_LNG], { icon: mapPin('store') }).addTo(map);
       var dest = (o.destLat != null && o.destLng != null) ? [o.destLat, o.destLng] : null;
-      if (dest) L.marker(dest, { icon: pin('📍', '#27AE60') }).addTo(map);
+      if (dest) L.marker(dest, { icon: mapPin('dest') }).addTo(map);
 
       var cLat = o.courierLoc.lat, cLng = o.courierLoc.lng;
-      var courier = L.marker([cLat, cLng], { icon: pin('🛵', '#F2A900'), zIndexOffset:1000 }).addTo(map);
+      var courier = L.marker([cLat, cLng], { icon: mapPin('car'), zIndexOffset:1000 }).addTo(map);
 
       // линия курьер → клиент (куда едет)
       var route = dest ? L.polyline([[cLat, cLng], dest], { color:'#F2A900', weight:3, opacity:.7, dashArray:'6,6' }).addTo(map) : null;
@@ -3389,6 +3416,53 @@ if ('serviceWorker' in navigator) {
   }
 
   var timer = null;
+  var fsMap = null; // { orderId, map, courier, route, dest }
+
+  function closeFullMap(){
+    if (!fsMap) return;
+    try { fsMap.map.remove(); } catch(e){}
+    var el = document.getElementById('ord-trk-fs-root');
+    if (el) el.remove();
+    fsMap = null;
+  }
+
+  function openFullMap(orderId){
+    var list = load();
+    var o = list.find(function(x){ return x.orderId === orderId; });
+    if (!o || !o.courierLoc || o.courierLoc.lat == null) return;
+    closeFullMap();
+
+    var root = document.createElement('div');
+    root.id = 'ord-trk-fs-root';
+    root.className = 'ord-trk-fs';
+    root.innerHTML =
+        '<div class="ord-trk-fs-bar">'
+      +   '<div class="ord-trk-fs-title">Заказ '+esc(orderId)+' · курьер в пути</div>'
+      +   '<button class="ord-trk-fs-close" onclick="AlcoOrders._closeFullMap()">✕</button>'
+      + '</div>'
+      + '<div class="ord-trk-fs-map" id="ord-trk-fs-map"></div>';
+    document.body.appendChild(root);
+
+    var map = L.map('ord-trk-fs-map', { zoomControl:true, attributionControl:false });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
+
+    L.marker([ST_LAT, ST_LNG], { icon: mapPin('store') }).addTo(map);
+    var dest = (o.destLat != null && o.destLng != null) ? [o.destLat, o.destLng] : null;
+    if (dest) L.marker(dest, { icon: mapPin('dest') }).addTo(map);
+
+    var cLat = o.courierLoc.lat, cLng = o.courierLoc.lng;
+    var courier = L.marker([cLat, cLng], { icon: mapPin('car'), zIndexOffset:1000 }).addTo(map);
+    var route = dest ? L.polyline([[cLat, cLng], dest], { color:'#F2A900', weight:4, opacity:.75, dashArray:'7,7' }).addTo(map) : null;
+
+    var pts = [[cLat, cLng], [ST_LAT, ST_LNG]];
+    if (dest) pts.push(dest);
+    map.fitBounds(L.latLngBounds(pts).pad(0.25), { animate:false });
+    setTimeout(function(){ try{ map.invalidateSize(); }catch(e){} }, 60);
+
+    fsMap = { orderId:orderId, map:map, courier:courier, route:route, dest:dest };
+    locStart(); // подхватит и обычную карту в карточке, и эту — locTick обновляет обе
+  }
+
   async function tick(){
     var active = activeOrders();
     if (!active.length){ stop(); render(); return; }
@@ -3429,17 +3503,27 @@ if ('serviceWorker' in navigator) {
   var locTimer = null;
   async function locTick(){
     var ids = Object.keys(trkMaps);
+    if (fsMap && ids.indexOf(fsMap.orderId) === -1) ids.push(fsMap.orderId); // если карточка вдруг свернулась
     if (!ids.length){ locStop(); return; }
     await Promise.all(ids.map(async function(id){
-      var ref = trkMaps[id]; if (!ref) return;
+      var ref = trkMaps[id];
       try {
         var r = await fetch(API_BASE + "/courier-loc/" + id, { cache:"no-store" });
         if (!r.ok) return;
         var d = await r.json();
-        if (!d || !d.loc || d.loc.lat == null) return;
+        if (!d || !d.loc || d.loc.lat == null){
+          if (fsMap && fsMap.orderId === id) closeFullMap(); // доставлено/отменено — закрываем полноэкранный режим
+          return;
+        }
         var ll = [d.loc.lat, d.loc.lng];
-        ref.courier.setLatLng(ll);                                   // плавный сдвиг маркера
-        if (ref.route && ref.dest) ref.route.setLatLngs([ll, ref.dest]);
+        if (ref){
+          ref.courier.setLatLng(ll);                                   // плавный сдвиг маркера
+          if (ref.route && ref.dest) ref.route.setLatLngs([ll, ref.dest]);
+        }
+        if (fsMap && fsMap.orderId === id){
+          fsMap.courier.setLatLng(ll);
+          if (fsMap.route && fsMap.dest) fsMap.route.setLatLngs([ll, fsMap.dest]);
+        }
         // сохраним последнюю точку в localStorage (чтобы карта сразу легла при перерисовке)
         var list = load(), i = list.findIndex(function(x){ return x.orderId === id; });
         if (i !== -1){ list[i].courierLoc = { lat:d.loc.lat, lng:d.loc.lng, at:d.loc.at }; persist(list); }
@@ -3455,7 +3539,7 @@ if ('serviceWorker' in navigator) {
 
   document.addEventListener("visibilitychange", function(){ document.hidden ? stop() : start(); });
   document.addEventListener("DOMContentLoaded", function(){ render(); start(); });
-  window.AlcoOrders = { save:save, render:render, start:start, stop:stop, toggle:toggle };
+  window.AlcoOrders = { save:save, render:render, start:start, stop:stop, toggle:toggle, _openFullMap:openFullMap, _closeFullMap:closeFullMap };
 })();
 </script>
 <style>#abmFrameWrap{position:fixed;inset:0;z-index:99999;display:none;background:#0b0b0d}#abmFrameWrap.on{display:block}#abmFrame{border:0;width:100%;height:100%;display:block}</style>
