@@ -1997,8 +1997,12 @@ async function forwardCourier(id) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, ...orderAuthBody() }),
+      // Раньше тайм-аута не было вовсе — "Failed to fetch" означает, что запрос
+      // не долетел до сервера (сервер не отвечал/был недоступен). 20с — чтобы не
+      // обрывать соединение раньше, чем сервер (с его retry-логикой) успеет ответить.
+      signal: AbortSignal.timeout(20000),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!data.ok || !data.url) throw new Error(data.error || 'Не удалось создать ссылку');
 
     const pay = o.payMethod === 'kaspi' ? 'Kaspi' : 'Наличные';
@@ -2019,7 +2023,17 @@ async function forwardCourier(id) {
     await loadOrders();   // подтянуть статус доставки в карточку
   } catch (e) {
     if (waWin && !waWin.closed) waWin.close();   // не оставляем пустую вкладку при ошибке
-    alert('Курьер: ' + e.message);
+    // Различаем: сервер не ответил вовремя vs соединение вообще не установилось
+    // (сервер недоступен/упал/сеть на телефоне). "Failed to fetch" — это второй случай.
+    const isNetworkDown = e.name === 'TypeError' && /fetch/i.test(e.message || '');
+    const msg = e.name === 'TimeoutError' || e.name === 'AbortError'
+      ? 'Сервер не ответил вовремя. Попробуйте ещё раз через несколько секунд.'
+      : isNetworkDown
+        ? 'Нет связи с сервером доставки. Проверьте интернет-соединение или что сервер (Railway) запущен.'
+        : e.message;
+    alert('Курьер: ' + msg);
+    // Заказ мог всё же обновиться на сервере — подтянем актуальное состояние.
+    await loadOrders().catch(() => {});
   }
 }
 
@@ -2842,12 +2856,23 @@ async function updateOrderStatus(orderId, status, reason) {
       headers: { 'Content-Type': 'application/json' },
       // владелец шлёт password, продавец — sellerPin (сервер сам пишет автора в statusLog)
       body: JSON.stringify({ status, storeId, reason, ...orderAuthBody() }),
-      signal: AbortSignal.timeout(6000),
+      // Было 6с — сервер при конфликте записи (writeWithRetry) может отвечать
+      // дольше 6с, и клиент обрывал запрос раньше, чем сервер успевал сохранить.
+      // 20с с запасом покрывает худший случай retry-цепочки на сервере.
+      signal: AbortSignal.timeout(20000),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.ok) { alert(data.error || 'Ошибка обновления'); return; }
     await loadOrders();
-  } catch(e) { alert('Ошибка обновления'); }
+  } catch(e) {
+    // Различаем таймаут/обрыв соединения и реальную ошибку — иначе непонятно, что чинить.
+    const msg = e.name === 'TimeoutError' || e.name === 'AbortError'
+      ? 'Сервер не ответил вовремя (таймаут). Проверьте статус заказа — он мог всё же сохраниться.'
+      : 'Нет соединения с сервером: ' + (e.message || e);
+    alert(msg);
+    // Подтягиваем заказы заново — обновление могло дойти на сервер, даже если клиент не дождался ответа.
+    await loadOrders().catch(() => {});
+  }
   finally { showLoading(false); }
 }
 
