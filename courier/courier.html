@@ -147,6 +147,37 @@
   .screen h2{font-size:22px; font-weight:850; letter-spacing:-.01em; margin:0}
   .screen p{font-size:15.5px; color:var(--muted); margin:0; max-width:30ch}
   .screen .order-tag{margin-top:8px; font-size:13px; color:var(--muted); font-weight:700; font-variant-numeric:tabular-nums}
+
+  /* ── Режим ПРИЛОЖЕНИЯ штатного курьера: список моих доставок ── */
+  #list{flex:1; display:flex; flex-direction:column}
+  .lst-head{background:var(--ink); color:#fff; padding:18px 18px 16px;
+    border-radius:0 0 22px 22px; box-shadow:var(--shadow)}
+  .lst-eyebrow{display:flex; justify-content:space-between; align-items:center;
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#9AA6BE; font-weight:800}
+  .lst-name{font-size:22px; font-weight:850; margin-top:6px; letter-spacing:-.01em}
+  .lst-store{font-size:13.5px; color:#B9C2D6; margin-top:2px}
+  .lst-body{flex:1; padding:14px 14px 90px; display:flex; flex-direction:column; gap:11px}
+  .lst-empty{margin:auto; text-align:center; color:var(--muted); padding:40px 24px}
+  .lst-empty b{display:block; color:var(--text); font-size:17px; margin-bottom:6px}
+  .lo{background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+    box-shadow:var(--shadow); padding:14px 15px; text-align:left; width:100%;
+    font-family:var(--font); cursor:pointer; -webkit-appearance:none; appearance:none}
+  .lo:active{transform:scale(.985)}
+  .lo-top{display:flex; justify-content:space-between; align-items:center; gap:10px}
+  .lo-id{font-weight:850; font-size:15px; color:var(--text); font-variant-numeric:tabular-nums}
+  .lo-st{font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    padding:4px 9px; border-radius:999px; white-space:nowrap}
+  .lo-st.assigned{background:var(--gold-soft); color:#8A5F12}
+  .lo-st.picked_up{background:#E3ECF9; color:#2A5AA8}
+  .lo-st.on_way{background:#E2F3E9; color:var(--go)}
+  .lo-addr{font-size:14.5px; color:var(--text); margin-top:8px; line-height:1.35}
+  .lo-meta{display:flex; justify-content:space-between; align-items:center; margin-top:9px;
+    font-size:13px; color:var(--muted)}
+  .lo-sum{font-weight:850; color:var(--text); font-variant-numeric:tabular-nums}
+  .lo-sum.cash{color:#8A5F12}
+  .back-lst{background:transparent; border:none; color:#B9C2D6; font-family:var(--font);
+    font-size:13px; font-weight:800; padding:0; cursor:pointer; display:none; align-items:center; gap:5px}
+  .back-lst svg{width:15px; height:15px}
   .spinner{width:34px; height:34px; border:3px solid var(--line); border-top-color:var(--ink); border-radius:50%; animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -178,11 +209,28 @@
     <div id="state-order" class="order-tag" hidden></div>
   </div>
 
+  <!-- ПРИЛОЖЕНИЕ штатного курьера: список моих доставок (?s=<storeId>&c=<token>) -->
+  <div id="list" hidden>
+    <div class="lst-head">
+      <div class="lst-eyebrow">
+        <span>Мои доставки</span>
+        <button class="refresh" id="listRefresh" type="button">Обновить</button>
+      </div>
+      <div class="lst-name" id="listCourierName">—</div>
+      <div class="lst-store" id="listStoreName"></div>
+    </div>
+    <div class="lst-body" id="listBody"></div>
+  </div>
+
   <!-- Рабочий экран -->
   <div id="app" hidden style="display:flex;flex-direction:column;flex:1">
     <header>
       <div class="eyebrow">
-        <span>Доставка</span>
+        <button class="back-lst" id="backToList" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Мои доставки
+        </button>
+        <span id="eyebrowLabel">Доставка</span>
         <button class="refresh" id="refresh" type="button">Обновить</button>
       </div>
       <div class="store" id="storeName">—</div>
@@ -262,7 +310,20 @@
 
   // ── Конфиг ──
   var API = "https://alcodelivery-db-production.up.railway.app";
-  var TOKEN = new URLSearchParams(location.search).get("t") || "";
+  var qs = new URLSearchParams(location.search);
+  var TOKEN = qs.get("t") || "";               // одноразовый токен ОДНОГО заказа (привлечённый курьер)
+
+  // Режим ПРИЛОЖЕНИЯ штатного курьера: постоянная ссылка ?s=<storeId>&c=<appToken>.
+  // Запоминаем в localStorage — PWA/закладка откроется и без параметров в адресе.
+  var APP_S = qs.get("s") || "", APP_C = qs.get("c") || "";
+  try {
+    if (APP_S && APP_C) localStorage.setItem("courier_app", JSON.stringify({ s: APP_S, c: APP_C }));
+    else if (!TOKEN) {
+      var sv = JSON.parse(localStorage.getItem("courier_app") || "null");
+      if (sv && sv.s && sv.c) { APP_S = sv.s; APP_C = sv.c; }
+    }
+  } catch (e) {}
+  var APP_MODE = !TOKEN && !!(APP_S && APP_C);
 
   // ── Утилиты ──
   var $ = function(id){ return document.getElementById(id); };
@@ -282,6 +343,7 @@
     $("loading").hidden = which!=="loading";
     $("state").hidden   = which!=="state";
     $("app").hidden     = which!=="app";
+    $("list").hidden    = which!=="list";
   }
 
   // ── Иконки для экранов-состояний ──
@@ -421,6 +483,16 @@
       .then(function(r){ return r.json().then(function(d){ return {status:r.status, d:d}; }); })
       .then(function(res){
         var d=res.d;
+        // Режим приложения: тупиковые состояния заказа не должны запирать курьера —
+        // возвращаем к списку с пояснением.
+        if(APP_MODE && d && (d.cancelled || d.delivered || d.expired || res.status===404 || d.ok===false)){
+          toast(d.cancelled ? "Заказ отменён магазином"
+              : d.delivered ? "Заказ уже доставлен"
+              : "Заказ недоступен — список обновлён");
+          CourierGeo.stop();
+          loadList();
+          return;
+        }
         if(d && d.cancelled){ stateScreen("warn","Заказ отменён","Магазин отменил этот заказ — доставка не нужна.", d.id); return; }
         if(d && d.delivered){ stateScreen("ok","Доставлено","Заказ уже отмечен доставленным. Спасибо за работу!", d.id); return; }
         if(d && d.expired){ stateScreen("dead","Ссылка истекла","Срок действия ссылки закончился. Попросите магазин прислать новую."); return; }
@@ -444,7 +516,10 @@
     .then(function(res){
       var d=res.d;
       if(d && d.ok){
-        if(to==="delivered"){ stateScreen("ok","Доставлено","Заказ закрыт. Спасибо за работу!", d.order&&d.order.id); return; }
+        if(to==="delivered"){
+          if(APP_MODE){ toast("Доставлено. Заказ закрыт"); CourierGeo.stop(); loadList(); return; }
+          stateScreen("ok","Доставлено","Заказ закрыт. Спасибо за работу!", d.order&&d.order.id); return;
+        }
         CUR = d.deliveryStatus || to;
         renderTrack(CUR);
         renderAction(CUR);
@@ -460,8 +535,84 @@
     .catch(function(){ toast("Нет связи. Попробуйте ещё раз."); renderAction(CUR); });
   }
 
+  // ── ПРИЛОЖЕНИЕ штатного курьера: список моих доставок ──────────────
+  var LIST_POLL_MS = 25000, listTimer = null;
+
+  var ST_RU = { assigned:"Назначен", picked_up:"Забрал", on_way:"В пути" };
+  function listOrderHTML(o){
+    var st = o.deliveryStatus || "assigned";
+    var pay = o.payMethod === "kaspi"
+      ? '<span>Kaspi</span>'
+      : '<span class="lo-sum cash">Наличные</span>';
+    return '<button class="lo" type="button" data-t="'+esc(o.t||"")+'">'
+      + '<div class="lo-top"><span class="lo-id">Заказ '+esc(o.id)+'</span>'
+      +   '<span class="lo-st '+esc(st)+'">'+(ST_RU[st]||st)+'</span></div>'
+      + '<div class="lo-addr">'+esc(o.address||"—")+'</div>'
+      + '<div class="lo-meta">'+pay+'<span class="lo-sum">'+money(o.orderTotal)+' \u20b8</span></div>'
+      + '</button>';
+  }
+
+  function loadList(silent){
+    if(!APP_MODE) return;
+    stopListPoll();
+    if(!silent) show("loading");
+    fetch(API + "/courier-app/" + encodeURIComponent(APP_S) + "/" + encodeURIComponent(APP_C))
+      .then(function(r){ return r.json().then(function(d){ return {status:r.status, d:d}; }); })
+      .then(function(res){
+        var d = res.d;
+        if(res.status===403 && d && d.disabled){
+          try{ localStorage.removeItem("courier_app"); }catch(e){}
+          stateScreen("dead","Доступ отключён","Магазин отключил ваш доступ курьера. Свяжитесь с магазином.");
+          return;
+        }
+        if(res.status===404 || !d || d.ok===false){
+          stateScreen("dead","Ссылка недействительна",(d&&d.error)||"Попросите магазин выдать новую ссылку курьера.");
+          return;
+        }
+        $("listCourierName").textContent = (d.courier && d.courier.name) || "Курьер";
+        $("listStoreName").textContent   = d.storeName || "";
+        var orders = d.orders || [];
+        $("listBody").innerHTML = orders.length
+          ? orders.map(listOrderHTML).join("")
+          : '<div class="lst-empty"><b>Пока нет доставок</b>Когда магазин назначит вам заказ, он появится здесь. Список обновляется сам.</div>';
+        // тап по заказу → открываем его через обычный одноразовый токен
+        Array.prototype.forEach.call($("listBody").querySelectorAll(".lo"), function(btn){
+          btn.onclick = function(){ openOrder(btn.getAttribute("data-t")); };
+        });
+        show("list");
+        listTimer = setTimeout(function(){ loadList(true); }, LIST_POLL_MS);
+      })
+      .catch(function(){
+        if(silent){ listTimer = setTimeout(function(){ loadList(true); }, LIST_POLL_MS); return; }
+        stateScreen("dead","Нет связи","Не удалось загрузить доставки. Проверьте интернет и откройте страницу заново.");
+      });
+  }
+  function stopListPoll(){ if(listTimer){ clearTimeout(listTimer); listTimer = null; } }
+
+  function openOrder(t){
+    if(!t){ toast("Заказ ещё без ссылки — обновите список"); return; }
+    stopListPoll();
+    TOKEN = t;
+    $("backToList").style.display = "flex";
+    $("eyebrowLabel").style.display = "none";
+    CourierGeo.start(t);   // геопинги идут по токену ОТКРЫТОГО заказа
+    load();
+  }
+  function backToList(){
+    TOKEN = "";
+    CourierGeo.stop();
+    loadList();
+  }
+
   $("refresh").onclick = load;
-  load();
+  $("listRefresh").onclick = function(){ loadList(); };
+  $("backToList").onclick = backToList;
+
+  if(APP_MODE){
+    loadList();
+  } else {
+    load();   // геотрекинг для ?t=… запускает сам гео-блок ниже
+  }
 })();
 </script>
 
@@ -491,15 +642,16 @@
   var pill = document.getElementById('geoPill');
   var pillTxt = document.getElementById('geoPillTxt');
   function setPill(cls, txt){ if(pill){ pill.className = cls; pillTxt.textContent = txt; } }
+  function hidePill(){ if(pill){ pill.style.display = 'none'; } }
+  function showPill(){ if(pill){ pill.style.display = ''; } }
 
-  var token = new URLSearchParams(location.search).get('t');
-  if (!token) { setPill('err', 'Ссылка без токена — открой заказ из WhatsApp'); return; }
-  if (!('geolocation' in navigator)) { setPill('err', 'Браузер не поддерживает геолокацию'); return; }
-
-  var last = null, lastSent = 0, stopped = false, watchId = null, everSent = false;
+  // Токен теперь ДИНАМИЧЕСКИЙ: в режиме приложения штатного курьера он меняется
+  // при открытии заказа (CourierGeo.start) и сбрасывается при возврате к списку.
+  var token = null;
+  var last = null, lastSent = 0, stopped = false, watchId = null, everSent = false, sendTimer = null;
 
   function send() {
-    if (stopped || !last) return;
+    if (stopped || !last || !token) return;
     var now = Date.now();
     if (now - lastSent < SEND_EVERY_MS) return;
     lastSent = now;
@@ -511,7 +663,7 @@
     })
     .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function (d) {
-      if (d && d.stop) { stopped = true; if (watchId != null) navigator.geolocation.clearWatch(watchId); setPill('ok', 'Заказ доставлен — трекинг выключен'); return; }
+      if (d && d.stop) { stopTracking(); setPill('ok', 'Заказ доставлен — трекинг выключен'); return; }
       everSent = true;
       setPill('ok', 'Вы на карте у клиента');
     })
@@ -521,23 +673,40 @@
     });
   }
 
-  watchId = navigator.geolocation.watchPosition(
-    function (pos) {
-      last = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      if (!everSent) setPill('warn', 'Геолокация есть, отправляем…');
-      send();
-    },
-    function (err) {
-      if (err && err.code === 1) setPill('err', 'Доступ к геолокации запрещён — разреши в браузере');
-      else setPill('err', 'GPS недоступен — включи геолокацию на телефоне');
-    },
-    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
-  );
+  function startTracking(t) {
+    token = t;
+    stopped = false; everSent = false; lastSent = 0;
+    showPill();
+    if (!('geolocation' in navigator)) { setPill('err', 'Браузер не поддерживает геолокацию'); return; }
+    setPill('warn', 'Определяем геолокацию…');
+    if (watchId == null) {
+      watchId = navigator.geolocation.watchPosition(
+        function (pos) {
+          last = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          if (!everSent) setPill('warn', 'Геолокация есть, отправляем…');
+          send();
+        },
+        function (err) {
+          if (err && err.code === 1) setPill('err', 'Доступ к геолокации запрещён — разреши в браузере');
+          else setPill('err', 'GPS недоступен — включи геолокацию на телефоне');
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      );
+    }
+    if (!sendTimer) sendTimer = setInterval(send, SEND_EVERY_MS);
+  }
 
-  setInterval(send, SEND_EVERY_MS);
+  function stopTracking() {
+    stopped = true; token = null;
+    if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+    if (sendTimer) { clearInterval(sendTimer); sendTimer = null; }
+    hidePill();
+  }
+
+  window.CourierGeo = { start: startTracking, stop: stopTracking };
 
   window.addEventListener('pagehide', function () {
-    if (stopped || !last) return;
+    if (stopped || !last || !token) return;
     try {
       navigator.sendBeacon(
         SERVER_URL + '/courier/' + token + '/location',
@@ -545,6 +714,11 @@
       );
     } catch (e) {}
   });
+
+  // Обычная одноразовая ссылка ?t=… (привлечённый курьер) — старт сразу, как раньше.
+  var legacyToken = new URLSearchParams(location.search).get('t');
+  if (legacyToken) startTracking(legacyToken);
+  else hidePill();   // режим приложения: пилюля появится при открытии заказа
 })();
 </script>
 </body>
