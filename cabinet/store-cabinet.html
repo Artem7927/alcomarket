@@ -1979,38 +1979,24 @@ function deliveryBadge(s) {
 // Назначить курьера: берём с сервера одноразовую ссылку (токен) и пересылаем её
 // в WhatsApp вместе с описанием заказа. Курьер откроет ссылку — там заказ и кнопки статуса.
 // Работает и у владельца (пароль), и у продавца (sellerPin) — авторизация через orderAuthBody().
-// Назначить курьера: берём с сервера одноразовую ссылку (токен) и показываем
-// карточку со ссылкой + кнопкой «Открыть WhatsApp». Кнопка — обычная <a>,
-// открывается по тапу пользователя, поэтому браузер её никогда не блокирует.
-//
-// Раньше здесь заранее открывалось пустое окно (window.open('','_blank')) —
-// расчёт был обойти блокировку попапов после await. На практике это давало
-// белый/висящий about:blank, если что-то шло не так (ошибка сети, close()
-// не срабатывал в мобильном браузере). Открытие вкладки по клику на кнопку
-// внутри уже отрисованной карточки надёжнее и не имеет этих проблем.
 async function forwardCourier(id) {
   const o = findOrder(id);
   if (!o) return;
 
-  // Раньше здесь был confirm('Курьер уже назначен...') при повторном назначении.
-  // Убрано: в этом встроенном браузере (Custom Tab внутри WhatsApp/Telegram)
-  // системные confirm()-диалоги иногда не показываются вовсе или сразу же
-  // "отменяются" сами по себе — из-за этого кнопка выглядела так, будто вообще
-  // не реагирует на нажатие. Переназначение курьера безопасно само по себе
-  // (сервер просто выпускает новую ссылку взамен старой, деньги/статус заказа
-  // это не трогает), поэтому подтверждение не требуется.
-  await assignCourierAndShow(id, o, /*isRetry*/ false);
-}
+  // повторное назначение делает прежнюю ссылку недействительной — предупреждаем
+  if (o.courierToken && o.deliveryStatus && o.deliveryStatus !== 'delivered') {
+    if (!confirm('Курьер уже назначен на этот заказ.\nСоздать НОВУЮ ссылку? Старая перестанет работать.')) return;
+  }
 
-async function assignCourierAndShow(id, o, isRetry) {
+  showCourierModal(o.id, { loading: true });   // сразу показываем окно «Создаём ссылку…»
+
   try {
     const res = await fetch(`${SERVER_URL}/orders/${id}/assign-courier`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, ...orderAuthBody() }),
-      signal: AbortSignal.timeout(20000),
     });
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json();
     if (!data.ok || !data.url) throw new Error(data.error || 'Не удалось создать ссылку');
 
     const pay = o.payMethod === 'kaspi' ? 'Kaspi' : 'Наличные';
@@ -2021,50 +2007,46 @@ async function assignCourierAndShow(id, o, isRetry) {
       `🔗 Открой ссылку — заказ целиком и кнопки статуса:\n${data.url}`;
     const waUrl = 'https://wa.me/?text=' + encodeURIComponent(txt);
 
-    showCourierLinkFallback(o.id, data.url, waUrl);
+    showCourierModal(o.id, { courierUrl: data.url, waUrl: waUrl });  // ссылка + кнопка WhatsApp
     await loadOrders();
   } catch (e) {
-    // Один автоматический повтор при явной сетевой ошибке/таймауте — реальные
-    // обрывы соединения на мобильной сети случаются, и часто второй попытки
-    // достаточно, чтобы не дёргать пользователя зря.
-    const isNetworkDown = e.name === 'TypeError' && /fetch/i.test(e.message || '');
-    const isTimeout = e.name === 'TimeoutError' || e.name === 'AbortError';
-    if (!isRetry && (isNetworkDown || isTimeout)) {
-      await new Promise(r => setTimeout(r, 800));
-      return assignCourierAndShow(id, o, /*isRetry*/ true);
-    }
-
-    const msg = isTimeout
-      ? 'Сервер не ответил вовремя. Попробуйте ещё раз.'
-      : isNetworkDown
-        ? 'Нет связи с сервером доставки. Проверьте интернет-соединение.'
-        : e.message; // напр. "Конфликт записи..." — реальная ошибка сервера, показываем как есть
-    alert('Курьер: ' + msg);
-    await loadOrders().catch(() => {});
+    showCourierModal(o.id, { error: e.message });  // ошибку показываем в этом же окне, а не в alert
   }
 }
 
-// Запасной вариант, если браузер заблокировал автопереход в WhatsApp:
-// показываем ссылку курьера с кнопками «WhatsApp» и «Копировать» (тап по ним — новый жест, не блокируется).
-function showCourierLinkFallback(orderId, courierUrl, waUrl) {
+// Единое окно назначения курьера: грузится → показывает ссылку с кнопкой WhatsApp → или ошибку.
+// Кнопка WhatsApp — это <a>, тап по ней открывает WhatsApp напрямую (жест пользователя, без блокировок попапов).
+function showCourierModal(orderId, state) {
   let m = document.getElementById('courierLinkModal');
   if (!m) {
     m = document.createElement('div');
     m.id = 'courierLinkModal';
-    m.style.cssText = 'position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
+    m.style.cssText = 'position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px';
     document.body.appendChild(m);
   }
-  m.innerHTML =
-      '<div style="background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:20px;max-width:360px;width:100%">'
-    +   '<div style="font-size:15px;font-weight:800;color:#F2A900;margin-bottom:6px">Ссылка курьеру · заказ '+orderId+'</div>'
-    +   '<div style="font-size:12px;color:#999;margin-bottom:12px">Отправь эту ссылку курьеру в WhatsApp:</div>'
-    +   '<div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;padding:10px;font-size:12px;color:#ddd;word-break:break-all;margin-bottom:14px">'+courierUrl+'</div>'
-    +   '<div style="display:flex;gap:8px">'
-    +     '<a href="'+waUrl+'" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:13px;border-radius:12px;background:#25D366;color:#fff;font-weight:800;text-decoration:none">WhatsApp</a>'
-    +     '<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+courierUrl+'\');this.textContent=\'Скопировано\'" style="flex:1;padding:13px;border-radius:12px;background:#2a2a2a;color:#fff;font-weight:800;border:none">Копировать</button>'
-    +   '</div>'
-    +   '<button onclick="document.getElementById(\'courierLinkModal\').remove()" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;background:transparent;color:#888;border:1px solid #333;font-weight:700">Закрыть</button>'
-    + '</div>';
+  const box = function(inner){ return '<div style="background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:20px;max-width:360px;width:100%">'+inner+'</div>'; };
+  const closeBtn = '<button onclick="document.getElementById(\'courierLinkModal\').remove()" style="width:100%;margin-top:10px;padding:12px;border-radius:12px;background:transparent;color:#999;border:1px solid #333;font-weight:700">Закрыть</button>';
+
+  if (state.loading) {
+    m.innerHTML = box('<div style="font-size:15px;font-weight:800;color:#F2A900;margin-bottom:6px">Заказ '+orderId+'</div><div style="font-size:13px;color:#bbb">Создаём ссылку для курьера…</div>');
+    return;
+  }
+  if (state.error) {
+    m.innerHTML = box(
+        '<div style="font-size:15px;font-weight:800;color:#ff6b6b;margin-bottom:8px">Не удалось назначить курьера</div>'
+      + '<div style="font-size:13px;color:#ccc;margin-bottom:6px;word-break:break-word">'+state.error+'</div>'
+      + closeBtn);
+    return;
+  }
+  m.innerHTML = box(
+      '<div style="font-size:15px;font-weight:800;color:#F2A900;margin-bottom:6px">Ссылка курьеру · заказ '+orderId+'</div>'
+    + '<div style="font-size:12px;color:#999;margin-bottom:12px">Нажми «WhatsApp», выбери чат курьера и отправь. Или скопируй ссылку.</div>'
+    + '<div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;padding:10px;font-size:12px;color:#ddd;word-break:break-all;margin-bottom:14px">'+state.courierUrl+'</div>'
+    + '<div style="display:flex;gap:8px">'
+    +   '<a href="'+state.waUrl+'" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:14px;border-radius:12px;background:#25D366;color:#fff;font-weight:800;text-decoration:none">WhatsApp</a>'
+    +   '<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+state.courierUrl+'\');this.textContent=\'Скопировано\'" style="flex:1;padding:14px;border-radius:12px;background:#2a2a2a;color:#fff;font-weight:800;border:none">Копировать</button>'
+    + '</div>'
+    + closeBtn);
 }
 
 // ── НАСТРОЙКИ МАГАЗИНА (приём заказов + часы) ────────
@@ -2863,20 +2845,12 @@ async function updateOrderStatus(orderId, status, reason) {
       headers: { 'Content-Type': 'application/json' },
       // владелец шлёт password, продавец — sellerPin (сервер сам пишет автора в statusLog)
       body: JSON.stringify({ status, storeId, reason, ...orderAuthBody() }),
-      // Было 6с — сервер при конфликте записи (writeWithRetry) может отвечать
-      // дольше 6с, и клиент обрывал запрос раньше, чем сервер успевал сохранить.
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(6000),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok) { alert(data.error || 'Ошибка обновления'); await loadOrders().catch(()=>{}); return; }
+    if (!res.ok || !data.ok) { alert(data.error || 'Ошибка обновления'); return; }
     await loadOrders();
-  } catch(e) {
-    const msg = e.name === 'TimeoutError' || e.name === 'AbortError'
-      ? 'Сервер не ответил вовремя (таймаут). Проверьте статус заказа — он мог всё же сохраниться.'
-      : 'Нет соединения с сервером: ' + (e.message || e);
-    alert(msg);
-    await loadOrders().catch(() => {});
-  }
+  } catch(e) { alert('Ошибка обновления'); }
   finally { showLoading(false); }
 }
 
