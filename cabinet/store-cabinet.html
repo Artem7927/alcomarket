@@ -1995,6 +1995,7 @@ async function forwardCourier(id) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, ...orderAuthBody() }),
+      signal: AbortSignal.timeout(20000), // сервер может ретраить запись — даём время, не рубим раньше времени
     });
     const data = await res.json();
     if (!data.ok || !data.url) throw new Error(data.error || 'Не удалось создать ссылку');
@@ -2011,6 +2012,7 @@ async function forwardCourier(id) {
     await loadOrders();
   } catch (e) {
     showCourierModal(o.id, { error: e.message });  // ошибку показываем в этом же окне, а не в alert
+    await loadOrders().catch(() => {}); // подтягиваем реальное состояние — сервер мог всё же сохранить, пока мы ждали
   }
 }
 
@@ -2845,13 +2847,16 @@ async function updateOrderStatus(orderId, status, reason) {
       headers: { 'Content-Type': 'application/json' },
       // владелец шлёт password, продавец — sellerPin (сервер сам пишет автора в statusLog)
       body: JSON.stringify({ status, storeId, reason, ...orderAuthBody() }),
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(20000), // сервер может ретраить запись при конфликте — не рубим раньше времени
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok) { alert(data.error || 'Ошибка обновления'); return; }
-    await loadOrders();
-  } catch(e) { alert('Ошибка обновления'); }
-  finally { showLoading(false); }
+    if (!res.ok || !data.ok) alert(data.error || 'Ошибка обновления');
+  } catch(e) {
+    alert('Не дождались ответа сервера — проверяю, применилось ли изменение…');
+  } finally {
+    await loadOrders().catch(() => {}); // в любом случае подтягиваем актуальное состояние заказа
+    showLoading(false);
+  }
 }
 
 // ── ТОВАРЫ ───────────────────────────────────────────
