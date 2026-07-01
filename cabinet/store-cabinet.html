@@ -206,6 +206,43 @@
   .cpick-item .go { color:var(--gold); font-size:18px; }
   .cpick-div { display:flex; align-items:center; gap:10px; color:#666; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin:12px 0; }
   .cpick-div::before, .cpick-div::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* ── КАБИНЕТ КУРЬЕРА ── */
+  .cgeo { display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px 13px; font-size:12px; color:#aaa; margin-bottom:12px; }
+  .cgeo .dot { width:9px; height:9px; border-radius:50%; background:#555; flex:0 0 auto; }
+  .cgeo.ok { color:#8fe3b4; border-color:rgba(39,174,96,.4); }
+  .cgeo.ok .dot { background:var(--green); animation:cgp 1.4s ease-in-out infinite; }
+  .cgeo.err { color:#ff9b9b; border-color:rgba(212,43,43,.4); }
+  .cgeo.err .dot { background:var(--red); }
+  @keyframes cgp { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .cd-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:15px; margin-bottom:12px; }
+  .cd-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .cd-id { font-size:15px; font-weight:800; }
+  .cd-st { font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:4px 10px; border-radius:999px; white-space:nowrap; }
+  .cd-st.assigned  { background:rgba(242,169,0,.15); color:var(--gold); }
+  .cd-st.picked_up { background:rgba(52,152,219,.15); color:var(--blue); }
+  .cd-st.on_way    { background:rgba(39,174,96,.15); color:var(--green); }
+  .cd-addr { font-size:14px; color:#eee; margin-top:9px; line-height:1.4; }
+  .cd-items { font-size:12px; color:var(--muted); margin-top:5px; }
+  .cd-pay { display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:10px 12px; border-radius:11px; background:var(--card2); font-size:13px; }
+  .cd-pay .sum { font-weight:800; }
+  .cd-pay.cash .sum { color:var(--gold); }
+  .cd-contacts { display:flex; gap:8px; margin-top:10px; }
+  .cd-btn { flex:1; padding:11px 6px; border-radius:11px; border:1px solid var(--border); background:var(--card2); color:#eee; font-family:'Montserrat'; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; }
+  .cd-btn.wa { background:#128C4B; border-color:#128C4B; color:#fff; }
+  .cd-go { width:100%; margin-top:10px; padding:15px; border-radius:13px; border:none; font-family:'Montserrat'; font-size:14px; font-weight:800; cursor:pointer; color:#fff; }
+  .cd-go.assigned  { background:linear-gradient(180deg,#F2A900,#CE8C28); color:#1a1200; }
+  .cd-go.picked_up { background:linear-gradient(180deg,#3f9be0,#2a7dbd); }
+  .cd-go.on_way    { background:linear-gradient(180deg,#2ecc71,#1e9e53); }
+  .cd-go:disabled { opacity:.6; }
+  .cwork-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+  .cw-cell { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:12px 8px; text-align:center; }
+  .cw-cell .v { font-size:17px; font-weight:800; color:var(--gold); }
+  .cw-cell .k { font-size:10px; color:var(--muted); margin-top:3px; text-transform:uppercase; letter-spacing:.04em; }
+  .cw-row { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; gap:10px; align-items:center; }
+  .cw-row .a { font-size:13px; color:#eee; }
+  .cw-row .m { font-size:11px; color:var(--muted); margin-top:3px; }
+  .cw-row .s { font-size:14px; font-weight:800; color:var(--gold); white-space:nowrap; }
   .subview { display:none; }
   .subview.active { display:block; }
   .stat-block { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px; }
@@ -518,6 +555,7 @@
   <div class="role-toggle">
     <button class="role-opt active" id="roleOwnerBtn" onclick="setLoginRole('store')">Владелец</button>
     <button class="role-opt" id="roleSellerBtn" onclick="setLoginRole('seller')">Продавец</button>
+    <button class="role-opt" id="roleCourierBtn" onclick="setLoginRole('courier')">Курьер</button>
   </div>
 
   <input class="login-input" type="text" id="storeIdInput" placeholder="ID магазина (alcomarket)" value="alcomarket">
@@ -641,10 +679,32 @@
       <button class="add-btn" onclick="openCourierModal()">+ Добавить</button>
     </div>
     <div class="crr-hint">
-      <b>Основной</b> — зарегистрирован здесь, работает через приложение курьера: видит все свои заказы по одной постоянной ссылке.<br>
+      <b>Основной</b> — зарегистрирован здесь. Задай ему ПИН — он входит в кабинет как «Курьер» и видит свои доставки, заработок и историю. Постоянная ссылка приложения — запасной вариант без входа.<br>
       <b>Привлечённый</b> — разовый: при назначении получает одноразовую ссылку на один заказ в WhatsApp, как раньше.
     </div>
     <div id="couriersList"></div>
+  </div>
+
+  <!-- КУРЬЕР: МОИ ДОСТАВКИ (роль courier) -->
+  <div class="tab" id="tab-cdeliv">
+    <div class="section-hdr">
+      <div class="section-title">Мои доставки</div>
+      <button class="add-btn" onclick="loadCourierCab()">Обновить</button>
+    </div>
+    <div class="cgeo" id="cGeoPill"><span class="dot"></span><span id="cGeoTxt">GPS выключен — нет активных доставок</span></div>
+    <div id="cdelivList"></div>
+  </div>
+
+  <!-- КУРЬЕР: МОЯ РАБОТА (роль courier) -->
+  <div class="tab" id="tab-cwork">
+    <div class="section-hdr"><div class="section-title">Моя работа</div></div>
+    <div class="period-tabs">
+      <button class="period-tab active" onclick="setCworkPeriod('today',this)">Сегодня</button>
+      <button class="period-tab" onclick="setCworkPeriod('week',this)">Неделя</button>
+      <button class="period-tab" onclick="setCworkPeriod('month',this)">Месяц</button>
+    </div>
+    <div class="cwork-stats" id="cworkStats"></div>
+    <div id="cworkList"></div>
   </div>
 
   <!-- АКЦИИ -->
@@ -679,6 +739,12 @@
   <nav class="bottom-nav">
     <div class="nav-item active" id="nav-orders" onclick="showTab('orders',this)">
       <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-clipboard"/></svg></div><div>Заказы</div>
+    </div>
+    <div class="nav-item" id="nav-cdeliv" style="display:none" onclick="showTab('cdeliv',this)">
+      <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-truck"/></svg></div><div>Доставки</div>
+    </div>
+    <div class="nav-item" id="nav-cwork" style="display:none" onclick="showTab('cwork',this)">
+      <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg></div><div>Моя работа</div>
     </div>
     <div class="nav-item" id="nav-shift" style="display:none" onclick="showTab('shift',this)">
       <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-clock"/></svg></div><div>Смена</div>
@@ -1074,10 +1140,12 @@ let promos    = [];
 let orderPeriod = 'today';
 
 // ── РОЛИ И СМЕНЫ (Блок A) ────────────────────────────
-// role: 'store' (владелец, вход по паролю) | 'seller' (продавец, вход по ПИН)
+// role: 'store' (владелец, пароль) | 'seller' (продавец, ПИН) | 'courier' (курьер, ПИН)
 let role        = 'store';
 let seller      = null;     // { id, name } для продавца
 let sellerPin   = '';       // ПИН продавца — уходит в заказы вместо пароля магазина
+let courier     = null;     // { id, name, phone } для курьера
+let courierPin  = '';       // ПИН курьера — авторизация /courier-cab
 let loginRole   = 'store';  // что выбрано на экране входа
 let currentShift = null;    // открытая смена продавца (или null)
 let lastClosed   = null;    // итоги последней закрытой смены (для показа)
@@ -1094,19 +1162,28 @@ function orderAuthQuery() {
     : `password=${encodeURIComponent(storePass)}`;
 }
 
-// ── ЭКРАН ВХОДА: переключатель Владелец / Продавец ───
+// ── ЭКРАН ВХОДА: переключатель Владелец / Продавец / Курьер ───
 function setLoginRole(r) {
   loginRole = r;
-  const isSeller = r === 'seller';
-  document.getElementById('roleOwnerBtn').classList.toggle('active', !isSeller);
+  const isSeller  = r === 'seller';
+  const isCourier = r === 'courier';
+  document.getElementById('roleOwnerBtn').classList.toggle('active', r === 'store');
   document.getElementById('roleSellerBtn').classList.toggle('active', isSeller);
-  document.getElementById('storePassInput').style.display  = isSeller ? 'none' : 'block';
-  document.getElementById('sellerPinInput').style.display  = isSeller ? 'block' : 'none';
-  document.getElementById('loginSub').textContent = isSeller ? 'Вход продавца по личному ПИН' : 'Кабинет владельца магазина';
+  document.getElementById('roleCourierBtn').classList.toggle('active', isCourier);
+  document.getElementById('storePassInput').style.display  = (isSeller || isCourier) ? 'none' : 'block';
+  // продавец и курьер входят по ПИН — поле одно, меняем подсказку
+  const pinEl = document.getElementById('sellerPinInput');
+  pinEl.style.display  = (isSeller || isCourier) ? 'block' : 'none';
+  pinEl.placeholder = isCourier ? 'ПИН курьера (4–6 цифр)' : 'Личный ПИН (4–6 цифр)';
+  document.getElementById('loginSub').textContent =
+    isCourier ? 'Вход курьера по личному ПИН'
+    : isSeller ? 'Вход продавца по личному ПИН'
+    : 'Кабинет владельца магазина';
 }
 
 function doLogin() {
-  if (loginRole === 'seller') trySellerLogin();
+  if (loginRole === 'seller')       trySellerLogin();
+  else if (loginRole === 'courier') tryCourierLogin();
   else tryStoreLogin();
 }
 
@@ -1179,16 +1256,56 @@ async function trySellerLogin() {
   }
 }
 
+// ── ВХОД КУРЬЕРА (личный ПИН) ────────────────────────
+async function tryCourierLogin() {
+  storeId = document.getElementById('storeIdInput').value.trim();
+  const pin = document.getElementById('sellerPinInput').value.trim();
+  if (!storeId || !pin) return;
+
+  try {
+    showLoading(true);
+    const res = await fetch(`${SERVER_URL}/auth/courier`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeId, pin }),
+      signal: AbortSignal.timeout(25000),   // холодный старт Railway
+    });
+    const data = await res.json();
+    if (data.ok) {
+      role = 'courier';
+      courier = data.courier;
+      courierPin = pin;
+      seller = null; sellerPin = '';
+      sessionStorage.setItem('courier_auth', JSON.stringify({ storeId, courierPin }));
+      sessionStorage.removeItem('store_auth');
+      sessionStorage.removeItem('seller_auth');
+      enterDashboard();
+    } else {
+      showError(data.error || 'Неверный ПИН');
+    }
+  } catch (e) {
+    showError('Сервер недоступен');
+  } finally {
+    showLoading(false);
+  }
+}
+
 // ── ОБЩИЙ ВХОД В КАБИНЕТ (после успешной авторизации) ─
 function enterDashboard() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('dashboard').style.display  = 'block';
   document.getElementById('storeName').textContent = (storeData && storeData.name) || storeId;
-  document.getElementById('storeAddr').textContent = role === 'seller'
-    ? ('Продавец: ' + ((seller && seller.name) || ''))
-    : ((storeData && (storeData.address || storeData.city)) || '');
+  document.getElementById('storeAddr').textContent =
+    role === 'seller'  ? ('Продавец: ' + ((seller && seller.name) || ''))
+  : role === 'courier' ? ('Курьер: '   + ((courier && courier.name) || ''))
+  : ((storeData && (storeData.address || storeData.city)) || '');
 
   applyRoleUI();
+  if (role === 'courier') {
+    showTab('cdeliv', document.getElementById('nav-cdeliv'));
+    loadCourierCab();
+    return;
+  }
   showTab('orders', document.getElementById('nav-orders'));
 
   if (role === 'seller') {
@@ -1202,24 +1319,31 @@ function enterDashboard() {
 
 // Показ/скрытие элементов под роль.
 function applyRoleUI() {
-  const isSeller = role === 'seller';
-  // продавцу доступны только Заказы + Смена (курьеров он выбирает в окне назначения)
-  ['products','feed','clients','couriers','promos','commission'].forEach(n => {
+  const isSeller  = role === 'seller';
+  const isCourier = role === 'courier';
+  // продавцу — Заказы + Смена; курьеру — только Доставки + Моя работа
+  ['orders','products','feed','clients','couriers','promos','commission'].forEach(n => {
     const el = document.getElementById('nav-' + n);
-    if (el) el.style.display = isSeller ? 'none' : '';
+    if (!el) return;
+    if (n === 'orders') el.style.display = isCourier ? 'none' : '';
+    else el.style.display = (isSeller || isCourier) ? 'none' : '';
   });
   const navShift = document.getElementById('nav-shift');
   if (navShift) navShift.style.display = isSeller ? '' : 'none';
+  const navCd = document.getElementById('nav-cdeliv');
+  if (navCd) navCd.style.display = isCourier ? '' : 'none';
+  const navCw = document.getElementById('nav-cwork');
+  if (navCw) navCw.style.display = isCourier ? '' : 'none';
 
-  // владельческие кнопки в шапке прячем у продавца
+  // владельческие кнопки в шапке прячем у продавца и курьера
   const btnSet = document.getElementById('btnSettings');
-  if (btnSet) btnSet.style.display = isSeller ? 'none' : '';
+  if (btnSet) btnSet.style.display = (isSeller || isCourier) ? 'none' : '';
   const btnNotif = document.getElementById('notifBtn');
-  if (btnNotif) btnNotif.style.display = isSeller ? 'none' : '';
+  if (btnNotif) btnNotif.style.display = (isSeller || isCourier) ? 'none' : '';
 
   // финансовая сводка магазина — только владельцу; продавец видит свои деньги во вкладке «Смена»
   const oStats = document.getElementById('ordersStats');
-  if (oStats) oStats.style.display = isSeller ? 'none' : '';
+  if (oStats) oStats.style.display = (isSeller || isCourier) ? 'none' : '';
 }
 
 function showError(msg) {
@@ -1231,18 +1355,21 @@ function showError(msg) {
 function logout() {
   sessionStorage.removeItem('store_auth');
   sessionStorage.removeItem('seller_auth');
+  sessionStorage.removeItem('courier_auth');
   location.reload();
 }
 
-// Кнопка «Обновить» в шапке — у владельца грузит всё, у продавца заказы + смену.
+// Кнопка «Обновить» в шапке — у владельца грузит всё, у продавца заказы + смену, у курьера его доставки.
 function reloadData() {
-  if (role === 'seller') { loadOrders().then(() => renderShift()); }
+  if (role === 'courier') { loadCourierCab(); }
+  else if (role === 'seller') { loadOrders().then(() => renderShift()); }
   else loadAll();
 }
 
 // Автовход
-const savedStore  = sessionStorage.getItem('store_auth');
-const savedSeller = sessionStorage.getItem('seller_auth');
+const savedStore   = sessionStorage.getItem('store_auth');
+const savedSeller  = sessionStorage.getItem('seller_auth');
+const savedCourier = sessionStorage.getItem('courier_auth');
 if (savedStore) {
   try {
     const { storeId: sid, storePass: sp } = JSON.parse(savedStore);
@@ -1258,6 +1385,14 @@ if (savedStore) {
     document.getElementById('sellerPinInput').value = sp;
     setLoginRole('seller');
     trySellerLogin();
+  } catch(e) {}
+} else if (savedCourier) {
+  try {
+    const { storeId: sid, courierPin: cp } = JSON.parse(savedCourier);
+    document.getElementById('storeIdInput').value   = sid;
+    document.getElementById('sellerPinInput').value = cp;
+    setLoginRole('courier');
+    tryCourierLogin();
   } catch(e) {}
 }
 
@@ -2212,11 +2347,12 @@ function renderCouriers(list) {
       : '';
     return '<div class="crr-card'+(on?'':' off')+'">'
       + '<div class="crr-top"><div><div class="crr-name">'+escHtml(c.name)+'</div>'
-      +   (c.phone ? '<div class="crr-phone">'+escHtml(c.phone)+'</div>' : '')
+      +   '<div class="crr-phone">'+(c.phone ? escHtml(c.phone)+' · ' : '')+(c.pin ? 'ПИН кабинета: '+escHtml(c.pin) : 'ПИН кабинета не задан')+'</div>'
       + '</div><span class="crr-badge '+(on?'on':'off')+'">'+(on?'Работает':'Отключён')+'</span></div>'
       + '<div class="crr-actions">'
       +   (wa ? '<a class="crr-btn wa" href="'+wa+'" target="_blank" rel="noopener" style="text-decoration:none">WhatsApp ссылку</a>' : '')
       +   (c.appUrl ? '<button class="crr-btn" onclick="copyCourierLink(this,\''+c.appUrl+'\')">Копировать ссылку</button>' : '')
+      +   '<button class="crr-btn" onclick="setCourierPin(\''+c.id+'\',\''+escHtml(c.name).replace(/'/g,'')+'\')">'+(c.pin?'Сменить ПИН':'Задать ПИН')+'</button>'
       +   '<button class="crr-btn" onclick="toggleCourierActive(\''+c.id+'\','+(on?'false':'true')+')">'+(on?'Отключить':'Включить')+'</button>'
       +   '<button class="crr-btn danger" onclick="deleteCourier(\''+c.id+'\',\''+escHtml(c.name).replace(/'/g,'')+'\')">Удалить</button>'
       + '</div></div>';
@@ -2241,7 +2377,8 @@ function openCourierModal() {
   m.innerHTML = '<div style="background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:20px;max-width:360px;width:100%">'
     + '<div style="font-size:15px;font-weight:800;color:#F2A900;margin-bottom:12px">Новый курьер</div>'
     + '<input id="crrName" placeholder="Имя" style="width:100%;padding:13px;border-radius:12px;background:#0d0d0d;border:1px solid #2a2a2a;color:#fff;font-family:\'Montserrat\';font-size:14px;margin-bottom:8px">'
-    + '<input id="crrPhone" placeholder="Телефон (для WhatsApp)" inputmode="tel" style="width:100%;padding:13px;border-radius:12px;background:#0d0d0d;border:1px solid #2a2a2a;color:#fff;font-family:\'Montserrat\';font-size:14px;margin-bottom:14px">'
+    + '<input id="crrPhone" placeholder="Телефон (для WhatsApp)" inputmode="tel" style="width:100%;padding:13px;border-radius:12px;background:#0d0d0d;border:1px solid #2a2a2a;color:#fff;font-family:\'Montserrat\';font-size:14px;margin-bottom:8px">'
+    + '<input id="crrPin" placeholder="ПИН для входа в кабинет (4–6 цифр, можно позже)" inputmode="numeric" style="width:100%;padding:13px;border-radius:12px;background:#0d0d0d;border:1px solid #2a2a2a;color:#fff;font-family:\'Montserrat\';font-size:14px;margin-bottom:14px">'
     + '<button onclick="saveCourier()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(180deg,#E5352F,#C21F1F);color:#fff;border:none;font-family:\'Montserrat\';font-weight:800;font-size:14px">Добавить</button>'
     + '<button onclick="document.getElementById(\'courierAddModal\').remove()" style="width:100%;margin-top:8px;padding:12px;border-radius:12px;background:transparent;color:#999;border:1px solid #333;font-family:\'Montserrat\';font-weight:700">Отмена</button>'
     + '</div>';
@@ -2251,13 +2388,15 @@ function openCourierModal() {
 async function saveCourier() {
   const name  = document.getElementById('crrName')?.value.trim();
   const phone = document.getElementById('crrPhone')?.value.trim();
+  const pin   = document.getElementById('crrPin')?.value.trim() || '';
   if (!name) { alert('Укажите имя курьера'); return; }
+  if (pin && !/^\d{4,6}$/.test(pin)) { alert('ПИН — 4–6 цифр'); return; }
   showLoading(true);
   try {
     const res = await fetch(`${SERVER_URL}/couriers/${storeId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: storePass, name, phone }),
+      body: JSON.stringify({ password: storePass, name, phone, pin }),
       signal: AbortSignal.timeout(15000),
     });
     const data = await res.json();
@@ -2311,6 +2450,225 @@ async function deleteCourier(cid, name) {
   } finally {
     showLoading(false);
   }
+}
+
+// Задать/сменить ПИН курьера для входа в кабинет (роль «Курьер»).
+async function setCourierPin(cid, name) {
+  const pin = prompt('ПИН для входа курьера «'+name+'» в кабинет (4–6 цифр).\nПустое поле — убрать ПИН.');
+  if (pin === null) return;
+  if (pin !== '' && !/^\d{4,6}$/.test(pin.trim())) { alert('ПИН — 4–6 цифр'); return; }
+  showLoading(true);
+  try {
+    const res = await fetch(`${SERVER_URL}/couriers/${storeId}/${cid}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: storePass, pin: pin.trim() }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Не получилось');
+    couriersCache = null;
+    await loadCouriers();
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// КАБИНЕТ КУРЬЕРА (роль 'courier'): «Доставки» + «Моя работа».
+// Активные заказы приходят с одноразовыми токенами (t) — статусы и геопинги
+// идут через СТАРЫЕ публичные эндпоинты /courier/:t/..., ноль дублей на сервере.
+// ══════════════════════════════════════════════════════
+let cData = { active: [], history: [] };
+let cPollTimer = null;
+const C_POLL_MS = 20000;
+let cworkPeriod = 'today';
+
+const CD_ST_RU = { assigned:'Назначен', picked_up:'Забрал', on_way:'В пути' };
+const CD_NEXT = {
+  assigned:  { to:'picked_up', label:'Забрал товар' },
+  picked_up: { to:'on_way',    label:'Я в пути' },
+  on_way:    { to:'delivered', label:'Доставил', confirm:true },
+};
+
+async function loadCourierCab() {
+  if (role !== 'courier') return;
+  clearTimeout(cPollTimer);
+  showLoading(true);
+  try {
+    const res = await fetch(`${SERVER_URL}/courier-cab/${storeId}?pin=${encodeURIComponent(courierPin)}`, { signal: AbortSignal.timeout(25000) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Не удалось загрузить');
+    cData = { active: data.active || [], history: data.history || [] };
+    document.getElementById('storeName').textContent = data.storeName || storeId;
+    renderCourierDeliv();
+    renderCourierWork();
+    courierGeoSync();
+  } catch (e) {
+    const el = document.getElementById('cdelivList');
+    if (el) el.innerHTML = '<div style="padding:24px;text-align:center;color:#ff7b7b">'+escHtml(e.message)+'</div>';
+  } finally {
+    showLoading(false);
+    cPollTimer = setTimeout(loadCourierCab, C_POLL_MS);
+  }
+}
+
+function cdWa(p){ const d = phoneKey(p); return d ? ('https://wa.me/7' + d) : ''; }
+function cdMap(q){ return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(q||'') + '&travelmode=driving'; }
+
+function renderCourierDeliv() {
+  const el = document.getElementById('cdelivList');
+  if (!el) return;
+  if (!cData.active.length) {
+    el.innerHTML = `<div class="empty" style="padding:28px"><div class="empty-icon"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-truck"/></svg></div><div class="empty-text">Пока нет доставок.<br>Когда магазин назначит заказ, он появится здесь — экран обновляется сам.</div></div>`;
+    return;
+  }
+  el.innerHTML = cData.active.map(o => {
+    const st = o.deliveryStatus || 'assigned';
+    const next = CD_NEXT[st];
+    const nItems = (o.items||[]).reduce((s,i)=>s+Number(i.qty||0),0);
+    const pay = o.payMethod === 'kaspi'
+      ? '<div class="cd-pay"><span>Оплата Kaspi — наличные не брать</span><span class="sum">'+(o.orderTotal||0).toLocaleString()+' ₸</span></div>'
+      : '<div class="cd-pay cash"><span>Взять наличными с клиента</span><span class="sum">'+(o.orderTotal||0).toLocaleString()+' ₸</span></div>';
+    const tel = o.phone ? String(o.phone).replace(/[^\d+]/g,'') : '';
+    const wa  = o.phone ? cdWa(o.phone) : '';
+    return '<div class="cd-card">'
+      + '<div class="cd-top"><span class="cd-id">Заказ '+escHtml(o.id)+'</span><span class="cd-st '+st+'">'+(CD_ST_RU[st]||st)+'</span></div>'
+      + '<div class="cd-addr">'+escHtml(o.address||'—')+(o.client ? ' · '+escHtml(o.client) : '')+'</div>'
+      + '<div class="cd-items">Позиций: '+nItems+(o.comment ? ' · Комментарий: '+escHtml(o.comment) : '')+'</div>'
+      + pay
+      + '<div class="cd-contacts">'
+      +   (tel ? '<a class="cd-btn" href="tel:'+tel+'"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-phone"/></svg> Позвонить</a>' : '')
+      +   (wa  ? '<a class="cd-btn wa" href="'+wa+'" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-chat"/></svg> WhatsApp</a>' : '')
+      +   '<a class="cd-btn" href="'+cdMap(o.address)+'" target="_blank" rel="noopener">Маршрут</a>'
+      + '</div>'
+      + (next ? '<button class="cd-go '+st+'" onclick="courierAdvance(\''+escHtml(o.t||'')+'\',\''+next.to+'\','+(next.confirm?'true':'false')+',this)">'+next.label+'</button>' : '')
+      + '</div>';
+  }).join('');
+}
+
+async function courierAdvance(t, to, needConfirm, btn) {
+  if (!t) { alert('Заказ ещё без токена — обнови список'); return; }
+  if (needConfirm && !confirm('Отметить заказ ДОСТАВЛЕННЫМ? Отменить будет нельзя.')) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Отправляю…'; }
+  try {
+    const res = await fetch(`${SERVER_URL}/courier/${t}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: to }),
+      signal: AbortSignal.timeout(20000),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Не получилось, попробуй ещё раз');
+    await loadCourierCab();
+  } catch (e) {
+    alert(e.message);
+    await loadCourierCab();
+  }
+}
+
+// ── Геотрекинг из кабинета курьера ──────────────────
+// Пока есть заказ в статусе «Забрал»/«В пути», раз в 10 сек шлём точку по токену
+// КАЖДОГО такого заказа — клиент каждого из них видит машину на своей карте.
+let cGeoWatch = null, cGeoTimer = null, cGeoLast = null;
+function cGeoPill(cls, txt) {
+  const p = document.getElementById('cGeoPill'), t = document.getElementById('cGeoTxt');
+  if (p) p.className = 'cgeo' + (cls ? ' ' + cls : '');
+  if (t) t.textContent = txt;
+}
+function cGeoTokens() {
+  return cData.active
+    .filter(o => o.deliveryStatus === 'picked_up' || o.deliveryStatus === 'on_way')
+    .map(o => o.t).filter(Boolean);
+}
+function cGeoSend() {
+  const tokens = cGeoTokens();
+  if (!cGeoLast || !tokens.length) return;
+  tokens.forEach(t => {
+    fetch(`${SERVER_URL}/courier/${t}/location`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: cGeoLast.lat, lng: cGeoLast.lng }),
+      keepalive: true,
+    }).then(r => { if (r.ok) cGeoPill('ok', 'Вы на карте у клиента'); })
+      .catch(() => cGeoPill('err', 'Нет связи с сервером — точка не уходит'));
+  });
+}
+function courierGeoSync() {
+  if (role !== 'courier') return;
+  const need = cGeoTokens().length > 0;
+  if (need && cGeoWatch == null) {
+    if (!('geolocation' in navigator)) { cGeoPill('err', 'Браузер не поддерживает геолокацию'); return; }
+    cGeoPill('', 'Определяем геолокацию…');
+    cGeoWatch = navigator.geolocation.watchPosition(
+      pos => { cGeoLast = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
+      err => cGeoPill('err', err && err.code === 1 ? 'Геолокация запрещена — разреши в браузере' : 'GPS недоступен'),
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
+    cGeoTimer = setInterval(cGeoSend, 10000);
+  }
+  if (!need && cGeoWatch != null) {
+    navigator.geolocation.clearWatch(cGeoWatch); cGeoWatch = null;
+    clearInterval(cGeoTimer); cGeoTimer = null; cGeoLast = null;
+    cGeoPill('', 'GPS выключен — нет активных доставок');
+  }
+  if (!need && cGeoWatch == null) cGeoPill('', 'GPS выключен — нет активных доставок');
+}
+
+// ── «Моя работа»: заработок за доставку, время, история ──
+function setCworkPeriod(p, el) {
+  cworkPeriod = p;
+  document.querySelectorAll('#tab-cwork .period-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderCourierWork();
+}
+function cworkFrom() {
+  const now = new Date();
+  if (cworkPeriod === 'week')  return now.getTime() - 7  * 864e5;
+  if (cworkPeriod === 'month') return now.getTime() - 30 * 864e5;
+  const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); // сегодня
+}
+function fmtDur(min) {
+  if (min == null) return '—';
+  return min >= 60 ? Math.floor(min/60)+' ч '+(min%60)+' м' : min + ' мин';
+}
+function fmtKzTime(iso) {
+  if (!iso) return '';
+  const d = new Date(new Date(iso).getTime() + 5*3600*1000); // Экибастуз UTC+5
+  const p = n => String(n).padStart(2,'0');
+  return p(d.getUTCDate())+'.'+p(d.getUTCMonth()+1)+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes());
+}
+function renderCourierWork() {
+  const stEl = document.getElementById('cworkStats'), listEl = document.getElementById('cworkList');
+  if (!stEl || !listEl) return;
+  const from = cworkFrom();
+  const rows = cData.history.filter(h => h.deliveredAt && new Date(h.deliveredAt).getTime() >= from);
+
+  const count = rows.length;
+  // заработок = сумма стоимости доставки по закрытым заказам
+  const earned = rows.reduce((s, h) => s + Number(h.deliveryCost || 0), 0);
+  const durs = rows.map(h => (h.assignedAt && h.deliveredAt)
+    ? Math.round((new Date(h.deliveredAt) - new Date(h.assignedAt)) / 60000) : null)
+    .filter(v => v != null && v >= 0 && v < 24*60);
+  const avg = durs.length ? Math.round(durs.reduce((a,b)=>a+b,0) / durs.length) : null;
+
+  stEl.innerHTML =
+      '<div class="cw-cell"><div class="v">'+count+'</div><div class="k">Доставок</div></div>'
+    + '<div class="cw-cell"><div class="v">'+earned.toLocaleString()+' ₸</div><div class="k">За доставку</div></div>'
+    + '<div class="cw-cell"><div class="v">'+fmtDur(avg)+'</div><div class="k">Среднее время</div></div>';
+
+  listEl.innerHTML = rows.length
+    ? rows.map(h => {
+        const dur = (h.assignedAt && h.deliveredAt)
+          ? Math.round((new Date(h.deliveredAt) - new Date(h.assignedAt)) / 60000) : null;
+        return '<div class="cw-row"><div>'
+          + '<div class="a">'+escHtml(h.id)+' · '+escHtml(h.address||'')+'</div>'
+          + '<div class="m">'+fmtKzTime(h.deliveredAt)+' · '+fmtDur(dur)+' · '+(h.payMethod==='kaspi'?'Kaspi':'Наличные')+'</div>'
+          + '</div><div class="s">+'+Number(h.deliveryCost||0).toLocaleString()+' ₸</div></div>';
+      }).join('')
+    : '<div style="padding:22px;text-align:center;color:#777">За этот период доставок не было</div>';
 }
 
 // Единое окно назначения курьера: грузится → показывает ссылку с кнопкой WhatsApp → или ошибку.
@@ -3496,6 +3854,7 @@ function showTab(name, el) {
   if (nav) nav.classList.add('active');
   if (name === 'clients') renderClients();
   if (name === 'couriers') loadCouriers();
+  if (name === 'cwork')   renderCourierWork();
   if (name === 'shift')   renderShift();
   if (name === 'feed')    renderFeedCab();
   // живой индикатор опрашиваем только когда открыта вкладка статистики
