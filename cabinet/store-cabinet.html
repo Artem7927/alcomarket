@@ -1991,15 +1991,24 @@ async function forwardCourier(id) {
   // ВАЖНО: мобильный Chrome блокирует window.open, вызванный ПОСЛЕ await.
   // Поэтому открываем вкладку СРАЗУ по тапу (пустую), а адрес подставим после ответа сервера.
   let waWin = window.open('', '_blank');
+  // Пустая about:blank выглядит как "белый экран" и пугает — кладём туда текст-заглушку,
+  // пока ждём ответ сервера.
+  try {
+    waWin && waWin.document.write(
+      '<html><head><meta charset="utf-8"><title>Назначение курьера…</title></head>' +
+      '<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;' +
+      'background:#0d0d0d;color:#F2A900;font:600 15px system-ui,sans-serif;text-align:center;padding:20px">' +
+      'Создаём ссылку курьеру…<br>Сейчас откроется WhatsApp' +
+      '</body></html>'
+    );
+  } catch(_) {}
 
   try {
     const res = await fetch(`${SERVER_URL}/orders/${id}/assign-courier`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, ...orderAuthBody() }),
-      // Раньше тайм-аута не было вовсе — "Failed to fetch" означает, что запрос
-      // не долетел до сервера (сервер не отвечал/был недоступен). 20с — чтобы не
-      // обрывать соединение раньше, чем сервер (с его retry-логикой) успеет ответить.
+      // Раньше тайм-аута не было вовсе — запрос мог висеть без ответа сколь угодно долго.
       signal: AbortSignal.timeout(20000),
     });
     const data = await res.json().catch(() => ({}));
@@ -2022,17 +2031,16 @@ async function forwardCourier(id) {
 
     await loadOrders();   // подтянуть статус доставки в карточку
   } catch (e) {
-    if (waWin && !waWin.closed) waWin.close();   // не оставляем пустую вкладку при ошибке
-    // Различаем: сервер не ответил вовремя vs соединение вообще не установилось
-    // (сервер недоступен/упал/сеть на телефоне). "Failed to fetch" — это второй случай.
+    // не оставляем повисшую пустую/заглушечную вкладку при ошибке
+    try { if (waWin && !waWin.closed) waWin.close(); } catch(_) {}
     const isNetworkDown = e.name === 'TypeError' && /fetch/i.test(e.message || '');
     const msg = e.name === 'TimeoutError' || e.name === 'AbortError'
       ? 'Сервер не ответил вовремя. Попробуйте ещё раз через несколько секунд.'
       : isNetworkDown
-        ? 'Нет связи с сервером доставки. Проверьте интернет-соединение или что сервер (Railway) запущен.'
-        : e.message;
+        ? 'Нет связи с сервером доставки. Проверьте интернет-соединение.'
+        : e.message; // напр. "Конфликт записи..." — реальная ошибка сервера, показываем как есть
     alert('Курьер: ' + msg);
-    // Заказ мог всё же обновиться на сервере — подтянем актуальное состояние.
+    // Заказ мог всё же назначиться на сервере, несмотря на ошибку у клиента — подтянём актуальное состояние.
     await loadOrders().catch(() => {});
   }
 }
@@ -2858,19 +2866,16 @@ async function updateOrderStatus(orderId, status, reason) {
       body: JSON.stringify({ status, storeId, reason, ...orderAuthBody() }),
       // Было 6с — сервер при конфликте записи (writeWithRetry) может отвечать
       // дольше 6с, и клиент обрывал запрос раньше, чем сервер успевал сохранить.
-      // 20с с запасом покрывает худший случай retry-цепочки на сервере.
       signal: AbortSignal.timeout(20000),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok) { alert(data.error || 'Ошибка обновления'); return; }
+    if (!res.ok || !data.ok) { alert(data.error || 'Ошибка обновления'); await loadOrders().catch(()=>{}); return; }
     await loadOrders();
   } catch(e) {
-    // Различаем таймаут/обрыв соединения и реальную ошибку — иначе непонятно, что чинить.
     const msg = e.name === 'TimeoutError' || e.name === 'AbortError'
       ? 'Сервер не ответил вовремя (таймаут). Проверьте статус заказа — он мог всё же сохраниться.'
       : 'Нет соединения с сервером: ' + (e.message || e);
     alert(msg);
-    // Подтягиваем заказы заново — обновление могло дойти на сервер, даже если клиент не дождался ответа.
     await loadOrders().catch(() => {});
   }
   finally { showLoading(false); }
