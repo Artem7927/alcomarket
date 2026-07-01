@@ -1,5 +1,5 @@
 // AlcoMarket service worker
-const CACHE = 'alcomarket-v38';
+const CACHE = 'alcomarket-v39'; // bump: премиальная карта доставки
 const APP_SHELL = [
   './',
   './index.html',
