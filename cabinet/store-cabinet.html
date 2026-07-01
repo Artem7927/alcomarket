@@ -1122,7 +1122,9 @@ async function tryStoreLogin() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, password: storePass }),
-      signal: AbortSignal.timeout(8000),
+      // 25 сек: Railway после простоя просыпается 10–30 сек (холодный старт).
+      // С 8 сек логин обрывался раньше, чем сервер вставал → «Сервер недоступен».
+      signal: AbortSignal.timeout(25000),
     });
     const data = await res.json();
     if (data.ok) {
@@ -1154,7 +1156,7 @@ async function trySellerLogin() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, pin }),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(25000),   // холодный старт Railway — см. вход владельца
     });
     const data = await res.json();
     if (data.ok) {
