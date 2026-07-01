@@ -1116,6 +1116,12 @@
 
 <script>
 const SERVER_URL  = 'https://alcodelivery-db-production.up.railway.app';
+// Будим Railway СРАЗУ при открытии кабинета, параллельно со входом: холодный старт
+// длится 10–30 сек, и без прогрева всё это время висел бы логин.
+try {
+  const _w = JSON.parse(localStorage.getItem('store_auth') || sessionStorage.getItem('store_auth') || 'null');
+  fetch(`${SERVER_URL}/store-status/${(_w && _w.storeId) || 'alcomarket'}`, { cache: 'no-store' }).catch(() => {});
+} catch (e) {}
 const PLATFORM_WA = '+77714144534'; // номер платформы для счётов
 
 // ── ХРАНИЛИЩE ВИДЕО (Cloudinary, безсерверная загрузка) ──────────────
@@ -1160,6 +1166,74 @@ function orderAuthQuery() {
   return role === 'seller'
     ? `sellerPin=${encodeURIComponent(sellerPin)}`
     : `password=${encodeURIComponent(storePass)}`;
+}
+
+// ── КЭШ ДАННЫХ КАБИНЕТА (stale-while-revalidate) ─────
+// Последние загруженные данные лежат в localStorage: при открытии кабинета
+// рисуем их МГНОВЕННО, а сеть освежает в фоне. Это убирает «белый экран»
+// на холодном старте Railway.
+function cacheSet(key, val) {
+  try { localStorage.setItem('cabc_' + storeId + '_' + key, JSON.stringify({ t: Date.now(), v: val })); } catch (e) {}
+}
+function cacheGet(key) {
+  try {
+    const x = JSON.parse(localStorage.getItem('cabc_' + storeId + '_' + key) || 'null');
+    return x ? x.v : null;
+  } catch (e) { return null; }
+}
+
+// Запомнить/восстановить последнюю вкладку — чтобы после сворачивания PWA
+// возвращаться туда же, а не на «Заказы».
+const ROLE_TABS = {
+  store:   ['orders','products','feed','clients','couriers','promos','commission'],
+  seller:  ['orders','shift'],
+  courier: ['cdeliv','cwork'],
+};
+function savedTabFor(r) {
+  try {
+    const t = localStorage.getItem('cab_tab_' + r);
+    return (t && (ROLE_TABS[r] || []).includes(t)) ? t : null;
+  } catch (e) { return null; }
+}
+
+// Оптимистичный вход: если есть сохранённая авторизация — показываем кабинет
+// и кэшированные данные сразу, не дожидаясь ответа сервера. Логин идёт в фоне.
+let optimisticShown = false;
+let loginRetries = 0;
+function showDashboardShell() {
+  optimisticShown = true;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display  = 'block';
+  document.getElementById('storeName').textContent = storeId;
+  document.getElementById('storeAddr').textContent =
+    role === 'seller' ? 'Продавец' : role === 'courier' ? 'Курьер' : '';
+  applyRoleUI();
+  const tab = savedTabFor(role) || (role === 'courier' ? 'cdeliv' : 'orders');
+  showTab(tab, document.getElementById('nav-' + tab));
+  // мгновенная отрисовка из кэша
+  if (role !== 'courier') {
+    const co = cacheGet('orders');
+    if (co) { allOrders = co; try { renderOrders(); renderCommission(); } catch (e) {} }
+    const cp = cacheGet('products');
+    if (cp && role === 'store') { products = cp; try { renderProducts(); } catch (e) {} }
+  } else {
+    const cc = cacheGet('cdata');
+    if (cc) { cData = cc; try { renderCourierDeliv(); renderCourierWork(); } catch (e) {} }
+  }
+}
+function forceLoginScreen(msg) {
+  optimisticShown = false;
+  document.getElementById('dashboard').style.display  = 'none';
+  document.getElementById('loginScreen').style.display = '';
+  if (msg) showError(msg);
+}
+// Сеть упала при фоновом логине (сервер ещё просыпается) — тихо повторяем,
+// кабинет тем временем живёт на кэше.
+function retryLoginLater(fn) {
+  if (!optimisticShown || loginRetries >= 6) return false;
+  loginRetries++;
+  setTimeout(fn, 10000);
+  return true;
 }
 
 // ── ЭКРАН ВХОДА: переключатель Владелец / Продавец / Курьер ───
@@ -1208,14 +1282,21 @@ async function tryStoreLogin() {
       role = 'store';
       seller = null; sellerPin = '';
       storeData = data.store;
-      sessionStorage.setItem('store_auth', JSON.stringify({ storeId, storePass }));
-      sessionStorage.removeItem('seller_auth');
+      loginRetries = 0;
+      localStorage.setItem('store_auth', JSON.stringify({ storeId, storePass }));
+      localStorage.removeItem('seller_auth'); localStorage.removeItem('courier_auth');
+      sessionStorage.removeItem('store_auth'); sessionStorage.removeItem('seller_auth'); sessionStorage.removeItem('courier_auth');
       enterDashboard();
     } else {
-      showError(data.error || 'Неверный пароль');
+      if (optimisticShown) forceLoginScreen(data.error || 'Неверный пароль');
+      else showError(data.error || 'Неверный пароль');
     }
   } catch (e) {
-    showError('Сервер недоступен');
+    // сервер ещё просыпается: если кабинет уже показан из кэша — тихо повторим
+    if (!retryLoginLater(tryStoreLogin)) {
+      if (optimisticShown) forceLoginScreen('Сервер недоступен');
+      else showError('Сервер недоступен');
+    }
   } finally {
     showLoading(false);
   }
@@ -1243,14 +1324,20 @@ async function trySellerLogin() {
       storeData = data.store;
       currentShift = data.shift || null;
       lastClosed = null;
-      sessionStorage.setItem('seller_auth', JSON.stringify({ storeId, sellerPin }));
-      sessionStorage.removeItem('store_auth');
+      loginRetries = 0;
+      localStorage.setItem('seller_auth', JSON.stringify({ storeId, sellerPin }));
+      localStorage.removeItem('store_auth'); localStorage.removeItem('courier_auth');
+      sessionStorage.removeItem('store_auth'); sessionStorage.removeItem('seller_auth'); sessionStorage.removeItem('courier_auth');
       enterDashboard();
     } else {
-      showError(data.error || 'Неверный ПИН');
+      if (optimisticShown) forceLoginScreen(data.error || 'Неверный ПИН');
+      else showError(data.error || 'Неверный ПИН');
     }
   } catch (e) {
-    showError('Сервер недоступен');
+    if (!retryLoginLater(trySellerLogin)) {
+      if (optimisticShown) forceLoginScreen('Сервер недоступен');
+      else showError('Сервер недоступен');
+    }
   } finally {
     showLoading(false);
   }
@@ -1276,15 +1363,20 @@ async function tryCourierLogin() {
       courier = data.courier;
       courierPin = pin;
       seller = null; sellerPin = '';
-      sessionStorage.setItem('courier_auth', JSON.stringify({ storeId, courierPin }));
-      sessionStorage.removeItem('store_auth');
-      sessionStorage.removeItem('seller_auth');
+      loginRetries = 0;
+      localStorage.setItem('courier_auth', JSON.stringify({ storeId, courierPin }));
+      localStorage.removeItem('store_auth'); localStorage.removeItem('seller_auth');
+      sessionStorage.removeItem('store_auth'); sessionStorage.removeItem('seller_auth'); sessionStorage.removeItem('courier_auth');
       enterDashboard();
     } else {
-      showError(data.error || 'Неверный ПИН');
+      if (optimisticShown) forceLoginScreen(data.error || 'Неверный ПИН');
+      else showError(data.error || 'Неверный ПИН');
     }
   } catch (e) {
-    showError('Сервер недоступен');
+    if (!retryLoginLater(tryCourierLogin)) {
+      if (optimisticShown) forceLoginScreen('Сервер недоступен');
+      else showError('Сервер недоступен');
+    }
   } finally {
     showLoading(false);
   }
@@ -1302,11 +1394,13 @@ function enterDashboard() {
 
   applyRoleUI();
   if (role === 'courier') {
-    showTab('cdeliv', document.getElementById('nav-cdeliv'));
+    const ct = savedTabFor('courier') || 'cdeliv';
+    showTab(ct, document.getElementById('nav-' + ct));
     loadCourierCab();
     return;
   }
-  showTab('orders', document.getElementById('nav-orders'));
+  const st = savedTabFor(role) || 'orders';
+  showTab(st, document.getElementById('nav-' + st));
 
   if (role === 'seller') {
     loadOrders().then(() => renderShift());
@@ -1353,9 +1447,10 @@ function showError(msg) {
 }
 
 function logout() {
-  sessionStorage.removeItem('store_auth');
-  sessionStorage.removeItem('seller_auth');
-  sessionStorage.removeItem('courier_auth');
+  ['store_auth','seller_auth','courier_auth'].forEach(k => {
+    localStorage.removeItem(k);
+    sessionStorage.removeItem(k);
+  });
   location.reload();
 }
 
@@ -1366,34 +1461,36 @@ function reloadData() {
   else loadAll();
 }
 
-// Автовход
-const savedStore   = sessionStorage.getItem('store_auth');
-const savedSeller  = sessionStorage.getItem('seller_auth');
-const savedCourier = sessionStorage.getItem('courier_auth');
-if (savedStore) {
-  try {
-    const { storeId: sid, storePass: sp } = JSON.parse(savedStore);
-    document.getElementById('storeIdInput').value   = sid;
-    document.getElementById('storePassInput').value = sp;
-    setLoginRole('store');
-    tryStoreLogin();
-  } catch(e) {}
-} else if (savedSeller) {
-  try {
-    const { storeId: sid, sellerPin: sp } = JSON.parse(savedSeller);
-    document.getElementById('storeIdInput').value   = sid;
-    document.getElementById('sellerPinInput').value = sp;
-    setLoginRole('seller');
-    trySellerLogin();
-  } catch(e) {}
-} else if (savedCourier) {
-  try {
-    const { storeId: sid, courierPin: cp } = JSON.parse(savedCourier);
-    document.getElementById('storeIdInput').value   = sid;
-    document.getElementById('sellerPinInput').value = cp;
-    setLoginRole('courier');
-    tryCourierLogin();
-  } catch(e) {}
+// Автовход. Авторизация теперь в localStorage: sessionStorage умирает, когда
+// Android выгружает свёрнутую PWA — из-за этого кабинет и «заходил по новому».
+// sessionStorage читаем один раз как миграцию со старой версии.
+function readAuth(k) {
+  try { return JSON.parse(localStorage.getItem(k) || sessionStorage.getItem(k) || 'null'); } catch (e) { return null; }
+}
+const savedStore   = readAuth('store_auth');
+const savedSeller  = readAuth('seller_auth');
+const savedCourier = readAuth('courier_auth');
+if (savedStore && savedStore.storeId) {
+  storeId = savedStore.storeId; storePass = savedStore.storePass || '';
+  document.getElementById('storeIdInput').value   = storeId;
+  document.getElementById('storePassInput').value = storePass;
+  setLoginRole('store'); role = 'store';
+  showDashboardShell();   // кабинет открывается СРАЗУ на кэше, логин — в фоне
+  tryStoreLogin();
+} else if (savedSeller && savedSeller.storeId) {
+  storeId = savedSeller.storeId; sellerPin = savedSeller.sellerPin || '';
+  document.getElementById('storeIdInput').value   = storeId;
+  document.getElementById('sellerPinInput').value = sellerPin;
+  setLoginRole('seller'); role = 'seller';
+  showDashboardShell();
+  trySellerLogin();
+} else if (savedCourier && savedCourier.storeId) {
+  storeId = savedCourier.storeId; courierPin = savedCourier.courierPin || '';
+  document.getElementById('storeIdInput').value   = storeId;
+  document.getElementById('sellerPinInput').value = courierPin;
+  setLoginRole('courier'); role = 'courier';
+  showDashboardShell();
+  tryCourierLogin();
 }
 
 // ── ЗАГРУЗКА ─────────────────────────────────────────
@@ -1408,6 +1505,7 @@ async function loadOrders() {
     const data = await res.json();
     if (!data.ok) return;
     allOrders = (data.orders || []).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    cacheSet('orders', allOrders);   // мгновенный старт при следующем открытии
     renderOrders();
     renderCommission();
     // если открыта вкладка клиентов — обновим её на свежих данных
@@ -1427,6 +1525,7 @@ async function loadProducts() {
     const res  = await fetch(`${SERVER_URL}/products/${storeId}`);
     const data = await res.json();
     products = data.products || [];
+    cacheSet('products', products);
     renderProducts();
   } catch(e) {}
 }
@@ -2502,6 +2601,7 @@ async function loadCourierCab() {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Не удалось загрузить');
     cData = { active: data.active || [], history: data.history || [] };
+    cacheSet('cdata', cData);
     document.getElementById('storeName').textContent = data.storeName || storeId;
     renderCourierDeliv();
     renderCourierWork();
@@ -2516,7 +2616,18 @@ async function loadCourierCab() {
 }
 
 function cdWa(p){ const d = phoneKey(p); return d ? ('https://wa.me/7' + d) : ''; }
-function cdMap(q){ return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(q||'') + '&travelmode=driving'; }
+// Маршрут до клиента: если в заказе есть ТОЧКА с карты клиента — ведём по координатам
+// (dir_action=navigate сразу запускает ведение с перестройкой маршрута по ходу движения).
+// Текстовый адрес — только запасной вариант для старых заказов: Google геокодит его сам
+// и может промахнуться.
+function cdNav(o){
+  if (o && o.destLat != null && o.destLng != null) {
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + o.destLat + ',' + o.destLng
+         + '&travelmode=driving&dir_action=navigate';
+  }
+  return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent((o && o.address) || '')
+       + '&travelmode=driving&dir_action=navigate';
+}
 
 function renderCourierDeliv() {
   const el = document.getElementById('cdelivList');
@@ -2542,7 +2653,7 @@ function renderCourierDeliv() {
       + '<div class="cd-contacts">'
       +   (tel ? '<a class="cd-btn" href="tel:'+tel+'"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-phone"/></svg> Позвонить</a>' : '')
       +   (wa  ? '<a class="cd-btn wa" href="'+wa+'" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-chat"/></svg> WhatsApp</a>' : '')
-      +   '<a class="cd-btn" href="'+cdMap(o.address)+'" target="_blank" rel="noopener">Маршрут</a>'
+      +   '<a class="cd-btn" href="'+cdNav(o)+'" target="_blank" rel="noopener">Маршрут</a>'
       + '</div>'
       + (next ? '<button class="cd-go '+st+'" onclick="courierAdvance(\''+escHtml(o.t||'')+'\',\''+next.to+'\','+(next.confirm?'true':'false')+',this)">'+next.label+'</button>' : '')
       + '</div>';
@@ -3846,6 +3957,7 @@ function requestInvoice() {
 
 // ── UI ────────────────────────────────────────────────
 function showTab(name, el) {
+  try { if ((ROLE_TABS[role] || []).includes(name)) localStorage.setItem('cab_tab_' + role, name); } catch (e) {}
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const tab = document.getElementById('tab-'+name);
