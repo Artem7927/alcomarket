@@ -184,6 +184,28 @@
   .subtabs { display:flex; gap:6px; margin-bottom:14px; background:var(--card); padding:4px; border-radius:12px; }
   .subtab { flex:1; padding:9px 4px; border:none; background:transparent; color:var(--muted); font-family:'Montserrat'; font-size:13px; font-weight:800; border-radius:9px; cursor:pointer; }
   .subtab.active { background:var(--red); color:#fff; }
+
+  /* ── КУРЬЕРЫ ── */
+  .crr-hint { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:12px; color:#aaa; line-height:1.55; margin-bottom:14px; }
+  .crr-hint b { color:var(--gold); }
+  .crr-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:10px; }
+  .crr-card.off { opacity:.55; }
+  .crr-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .crr-name { font-size:15px; font-weight:800; }
+  .crr-phone { font-size:12px; color:var(--muted); margin-top:2px; }
+  .crr-badge { font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:4px 9px; border-radius:999px; white-space:nowrap; }
+  .crr-badge.on  { background:rgba(39,174,96,.15); color:var(--green); }
+  .crr-badge.off { background:rgba(255,255,255,.06); color:#888; }
+  .crr-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .crr-btn { flex:1; min-width:100px; padding:10px 8px; border-radius:10px; border:1px solid var(--border); background:var(--card2); color:#ddd; font-family:'Montserrat'; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .crr-btn.wa { background:#128C4B; border-color:#128C4B; color:#fff; }
+  .crr-btn.danger { color:#ff7b7b; }
+  /* выбор курьера при назначении */
+  .cpick-item { width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:13px 14px; margin-bottom:8px; color:#fff; font-family:'Montserrat'; font-size:14px; font-weight:800; cursor:pointer; text-align:left; }
+  .cpick-item small { display:block; font-size:11px; color:var(--muted); font-weight:600; margin-top:2px; }
+  .cpick-item .go { color:var(--gold); font-size:18px; }
+  .cpick-div { display:flex; align-items:center; gap:10px; color:#666; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin:12px 0; }
+  .cpick-div::before, .cpick-div::after { content:''; flex:1; height:1px; background:var(--border); }
   .subview { display:none; }
   .subview.active { display:block; }
   .stat-block { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px; }
@@ -612,6 +634,19 @@
     <div id="clientsView"></div>
   </div>
 
+  <!-- КУРЬЕРЫ -->
+  <div class="tab" id="tab-couriers">
+    <div class="section-hdr">
+      <div class="section-title">Курьеры</div>
+      <button class="add-btn" onclick="openCourierModal()">+ Добавить</button>
+    </div>
+    <div class="crr-hint">
+      <b>Основной</b> — зарегистрирован здесь, работает через приложение курьера: видит все свои заказы по одной постоянной ссылке.<br>
+      <b>Привлечённый</b> — разовый: при назначении получает одноразовую ссылку на один заказ в WhatsApp, как раньше.
+    </div>
+    <div id="couriersList"></div>
+  </div>
+
   <!-- АКЦИИ -->
   <div class="tab" id="tab-promos">
     <div class="section-hdr">
@@ -656,6 +691,9 @@
     </div>
     <div class="nav-item" id="nav-clients" onclick="showTab('clients',this)">
       <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-users"/></svg></div><div>Клиенты</div>
+    </div>
+    <div class="nav-item" id="nav-couriers" onclick="showTab('couriers',this)">
+      <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-truck"/></svg></div><div>Курьеры</div>
     </div>
     <div class="nav-item" id="nav-promos" onclick="showTab('promos',this)">
       <div class="ni"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-gift"/></svg></div><div>Акции</div>
@@ -1163,8 +1201,8 @@ function enterDashboard() {
 // Показ/скрытие элементов под роль.
 function applyRoleUI() {
   const isSeller = role === 'seller';
-  // продавцу доступны только Заказы + Смена
-  ['products','feed','clients','promos','commission'].forEach(n => {
+  // продавцу доступны только Заказы + Смена (курьеров он выбирает в окне назначения)
+  ['products','feed','clients','couriers','promos','commission'].forEach(n => {
     const el = document.getElementById('nav-' + n);
     if (el) el.style.display = isSeller ? 'none' : '';
   });
@@ -1976,17 +2014,135 @@ function deliveryBadge(s) {
   return `<span style="color:${col};font-weight:800">${DELIVERY_RU[s] || s}</span>`;
 }
 
-// Назначить курьера: берём с сервера одноразовую ссылку (токен) и пересылаем её
-// в WhatsApp вместе с описанием заказа. Курьер откроет ссылку — там заказ и кнопки статуса.
-// Работает и у владельца (пароль), и у продавца (sellerPin) — авторизация через orderAuthBody().
+// ══════════════════════════════════════════════════════
+// КУРЬЕРЫ: два типа назначения на заказ.
+//  • ОСНОВНОЙ (штатный) — заведён во вкладке «Курьеры», работает через своё
+//    приложение (постоянная ссылка ?s=&c=). Назначаем через courierId — заказ
+//    сам появляется у него в списке.
+//  • ПРИВЛЕЧЁННЫЙ — как раньше: одноразовая ссылка на один заказ в WhatsApp.
+// ══════════════════════════════════════════════════════
+
+let couriersCache = null;   // список курьеров (кэш на сессию вкладки)
+
+async function fetchCouriers(force) {
+  if (couriersCache && !force) return couriersCache;
+  const auth = role === 'seller'
+    ? `pin=${encodeURIComponent(sellerPin)}`
+    : `password=${encodeURIComponent(storePass)}`;
+  const res = await fetch(`${SERVER_URL}/couriers/${storeId}?${auth}`, { signal: AbortSignal.timeout(15000) });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Не удалось загрузить курьеров');
+  couriersCache = data.couriers || [];
+  return couriersCache;
+}
+
+// Точка входа с карточки заказа: выбор — штатный курьер или разовая ссылка.
 async function forwardCourier(id) {
   const o = findOrder(id);
   if (!o) return;
 
   // повторное назначение делает прежнюю ссылку недействительной — предупреждаем
   if (o.courierToken && o.deliveryStatus && o.deliveryStatus !== 'delivered') {
-    if (!confirm('Курьер уже назначен на этот заказ.\nСоздать НОВУЮ ссылку? Старая перестанет работать.')) return;
+    if (!confirm('Курьер уже назначен на этот заказ.\nНазначить ЗАНОВО? Старая ссылка перестанет работать.')) return;
   }
+
+  showCourierPick(id, { loading: true });
+  let staff = [];
+  try { staff = (await fetchCouriers()).filter(c => c.active !== false); }
+  catch (e) { /* список не загрузился — оставим только привлечённого */ }
+
+  // штатных нет — сразу привычный поток через WhatsApp, без лишнего окна
+  if (!staff.length) {
+    closeCourierPick();
+    return assignExternalCourier(id);
+  }
+  showCourierPick(id, { staff });
+}
+
+function closeCourierPick() {
+  const m = document.getElementById('courierPickModal');
+  if (m) m.remove();
+}
+
+function showCourierPick(orderId, state) {
+  let m = document.getElementById('courierPickModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'courierPickModal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
+    m.onclick = function(e){ if (e.target === m) closeCourierPick(); };
+    document.body.appendChild(m);
+  }
+  const box = inner => '<div style="background:#1a1a1a;border:1px solid #333;border-radius:20px 20px 0 0;padding:20px;max-width:430px;width:100%;max-height:78vh;overflow-y:auto">'+inner+'</div>';
+
+  if (state.loading) {
+    m.innerHTML = box('<div style="font-size:15px;font-weight:800;color:#F2A900;margin-bottom:6px">Заказ '+orderId+'</div><div style="font-size:13px;color:#bbb">Загружаем курьеров…</div>');
+    return;
+  }
+  const items = state.staff.map(c =>
+    '<button class="cpick-item" onclick="assignStaffCourier(\''+orderId+'\',\''+c.id+'\')">'
+    + '<span>'+escHtml(c.name)+(c.phone ? '<small>'+escHtml(c.phone)+'</small>' : '<small>основной · через приложение</small>')+'</span>'
+    + '<span class="go">›</span></button>'
+  ).join('');
+  m.innerHTML = box(
+      '<div style="font-size:15px;font-weight:800;color:#F2A900;margin-bottom:4px">Кто повезёт заказ '+orderId+'?</div>'
+    + '<div style="font-size:12px;color:#999;margin-bottom:14px">Основной курьер увидит заказ у себя в приложении сразу после назначения.</div>'
+    + items
+    + '<div class="cpick-div">или</div>'
+    + '<button class="cpick-item" onclick="closeCourierPick();assignExternalCourier(\''+orderId+'\')">'
+    +   '<span>Привлечённый курьер<small>одноразовая ссылка на этот заказ · WhatsApp</small></span><span class="go">›</span></button>'
+    + '<button onclick="closeCourierPick()" style="width:100%;margin-top:8px;padding:12px;border-radius:12px;background:transparent;color:#999;border:1px solid #333;font-family:\'Montserrat\';font-weight:700">Отмена</button>'
+  );
+}
+
+// Назначить ШТАТНОГО курьера (courierId): заказ падает ему в приложение.
+async function assignStaffCourier(orderId, courierId) {
+  closeCourierPick();
+  showLoading(true);
+  try {
+    const res = await fetch(`${SERVER_URL}/orders/${orderId}/assign-courier`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeId, courierId, ...orderAuthBody() }),
+      signal: AbortSignal.timeout(20000),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Не удалось назначить курьера');
+
+    await loadOrders();
+    showLoading(false);
+
+    const c = data.courier || {};
+    // напоминание в WhatsApp — опционально; ссылка на ЭТОТ заказ работает и у штатного
+    const remind = c.phone
+      ? 'https://wa.me/' + waPhone(c.phone) + '?text=' + encodeURIComponent('Тебе назначен заказ ' + orderId + '. Открой приложение курьера или ссылку: ' + (data.url || ''))
+      : '';
+    let m = document.getElementById('courierLinkModal');
+    if (!m) {
+      m = document.createElement('div');
+      m.id = 'courierLinkModal';
+      m.style.cssText = 'position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px';
+      document.body.appendChild(m);
+    }
+    m.innerHTML = '<div style="background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:20px;max-width:360px;width:100%">'
+      + '<div style="font-size:15px;font-weight:800;color:#27AE60;margin-bottom:6px">Заказ '+orderId+' назначен</div>'
+      + '<div style="font-size:13px;color:#ccc;margin-bottom:14px">Курьер <b style="color:#fff">'+escHtml(c.name || '')+'</b> увидит заказ в своём приложении.</div>'
+      + (remind ? '<a href="'+remind+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:13px;border-radius:12px;background:#25D366;color:#fff;font-weight:800;text-decoration:none;margin-bottom:8px">Напомнить в WhatsApp</a>' : '')
+      + '<button onclick="document.getElementById(\'courierLinkModal\').remove()" style="width:100%;padding:12px;border-radius:12px;background:transparent;color:#999;border:1px solid #333;font-family:\'Montserrat\';font-weight:700">Закрыть</button>'
+      + '</div>';
+  } catch (e) {
+    alert(e.message || 'Не удалось назначить курьера');
+    await loadOrders().catch(() => {});
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ПРИВЛЕЧЁННЫЙ курьер: одноразовая ссылка на заказ → WhatsApp (прежний поток).
+// Работает и у владельца (пароль), и у продавца (sellerPin) — авторизация через orderAuthBody().
+async function assignExternalCourier(id) {
+  const o = findOrder(id);
+  if (!o) return;
 
   showLoading(true);
   try {
@@ -2022,6 +2178,134 @@ async function forwardCourier(id) {
   } catch (e) {
     alert(e.message || 'Не удалось назначить курьера');
     await loadOrders().catch(() => {}); // подтягиваем реальное состояние — сервер мог всё же сохранить
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ── Вкладка «Курьеры»: управление (только владелец) ──────────────
+async function loadCouriers() {
+  const el = document.getElementById('couriersList');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:24px;text-align:center;color:#777">Загружаем…</div>';
+  try {
+    const list = await fetchCouriers(true);
+    renderCouriers(list);
+  } catch (e) {
+    el.innerHTML = '<div style="padding:24px;text-align:center;color:#ff7b7b">'+escHtml(e.message)+'</div>';
+  }
+}
+
+function renderCouriers(list) {
+  const el = document.getElementById('couriersList');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = `<div class="empty" style="padding:24px"><div class="empty-icon"><svg class="ic" viewBox="0 0 24 24"><use href="#ic-truck"/></svg></div><div class="empty-text">Курьеры не добавлены.<br>Добавьте основного курьера — он получит постоянную ссылку приложения.</div></div>`;
+    return;
+  }
+  el.innerHTML = list.map(c => {
+    const on = c.active !== false;
+    const wa = c.phone && c.appUrl
+      ? 'https://wa.me/' + waPhone(c.phone) + '?text=' + encodeURIComponent('Твоя постоянная ссылка приложения курьера (сохрани/добавь на главный экран):\n' + c.appUrl)
+      : '';
+    return '<div class="crr-card'+(on?'':' off')+'">'
+      + '<div class="crr-top"><div><div class="crr-name">'+escHtml(c.name)+'</div>'
+      +   (c.phone ? '<div class="crr-phone">'+escHtml(c.phone)+'</div>' : '')
+      + '</div><span class="crr-badge '+(on?'on':'off')+'">'+(on?'Работает':'Отключён')+'</span></div>'
+      + '<div class="crr-actions">'
+      +   (wa ? '<a class="crr-btn wa" href="'+wa+'" target="_blank" rel="noopener" style="text-decoration:none">WhatsApp ссылку</a>' : '')
+      +   (c.appUrl ? '<button class="crr-btn" onclick="copyCourierLink(this,\''+c.appUrl+'\')">Копировать ссылку</button>' : '')
+      +   '<button class="crr-btn" onclick="toggleCourierActive(\''+c.id+'\','+(on?'false':'true')+')">'+(on?'Отключить':'Включить')+'</button>'
+      +   '<button class="crr-btn danger" onclick="deleteCourier(\''+c.id+'\',\''+escHtml(c.name).replace(/'/g,'')+'\')">Удалить</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+function copyCourierLink(btn, url) {
+  if (navigator.clipboard) navigator.clipboard.writeText(url);
+  btn.textContent = 'Скопировано';
+  setTimeout(() => { btn.textContent = 'Копировать ссылку'; }, 1600);
+}
+
+function openCourierModal() {
+  let m = document.getElementById('courierAddModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'courierAddModal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px';
+    m.onclick = function(e){ if (e.target === m) m.remove(); };
+    document.body.appendChild(m);
+  }
+  m.innerHTML = '<div style="background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:20px;max-width:360px;width:100%">'
+    + '<div style="font-size:15px;font-weight:800;color:#F2A900;margin-bottom:12px">Новый курьер</div>'
+    + '<input id="crrName" placeholder="Имя" style="width:100%;padding:13px;border-radius:12px;background:#0d0d0d;border:1px solid #2a2a2a;color:#fff;font-family:\'Montserrat\';font-size:14px;margin-bottom:8px">'
+    + '<input id="crrPhone" placeholder="Телефон (для WhatsApp)" inputmode="tel" style="width:100%;padding:13px;border-radius:12px;background:#0d0d0d;border:1px solid #2a2a2a;color:#fff;font-family:\'Montserrat\';font-size:14px;margin-bottom:14px">'
+    + '<button onclick="saveCourier()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(180deg,#E5352F,#C21F1F);color:#fff;border:none;font-family:\'Montserrat\';font-weight:800;font-size:14px">Добавить</button>'
+    + '<button onclick="document.getElementById(\'courierAddModal\').remove()" style="width:100%;margin-top:8px;padding:12px;border-radius:12px;background:transparent;color:#999;border:1px solid #333;font-family:\'Montserrat\';font-weight:700">Отмена</button>'
+    + '</div>';
+  setTimeout(() => document.getElementById('crrName')?.focus(), 50);
+}
+
+async function saveCourier() {
+  const name  = document.getElementById('crrName')?.value.trim();
+  const phone = document.getElementById('crrPhone')?.value.trim();
+  if (!name) { alert('Укажите имя курьера'); return; }
+  showLoading(true);
+  try {
+    const res = await fetch(`${SERVER_URL}/couriers/${storeId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: storePass, name, phone }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Не удалось добавить');
+    document.getElementById('courierAddModal')?.remove();
+    couriersCache = null;
+    await loadCouriers();
+  } catch (e) {
+    alert(e.message || 'Не удалось добавить курьера');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function toggleCourierActive(cid, active) {
+  showLoading(true);
+  try {
+    const res = await fetch(`${SERVER_URL}/couriers/${storeId}/${cid}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: storePass, active: active === 'true' || active === true }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Не получилось');
+    couriersCache = null;
+    await loadCouriers();
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function deleteCourier(cid, name) {
+  if (!confirm('Удалить курьера «'+name+'»? Его ссылка приложения перестанет работать.')) return;
+  showLoading(true);
+  try {
+    const res = await fetch(`${SERVER_URL}/couriers/${storeId}/${cid}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: storePass }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Не получилось');
+    couriersCache = null;
+    await loadCouriers();
+  } catch (e) {
+    alert(e.message);
   } finally {
     showLoading(false);
   }
@@ -3209,6 +3493,7 @@ function showTab(name, el) {
   const nav = el || document.getElementById('nav-'+name);
   if (nav) nav.classList.add('active');
   if (name === 'clients') renderClients();
+  if (name === 'couriers') loadCouriers();
   if (name === 'shift')   renderShift();
   if (name === 'feed')    renderFeedCab();
   // живой индикатор опрашиваем только когда открыта вкладка статистики
