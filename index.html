@@ -1503,6 +1503,9 @@ function getZoneByPoint(lat, lng) {
 
 function initMap() {
   if (mapInitialized) return;
+  // страховка: если контейнер остался «занятым» от прошлой карты — освобождаем
+  const _mc = document.getElementById('deliveryMap');
+  if (_mc && _mc._leaflet_id) { _mc._leaflet_id = null; _mc.innerHTML = ''; }
   mapInitialized = true;
   deliveryMap = L.map('deliveryMap', { center:[STORE_LAT, STORE_LNG], zoom:13, zoomControl:true, attributionControl:false });
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(deliveryMap);
@@ -2159,6 +2162,10 @@ async function submitOrder() {
     commission, storeAmount,
     comment,
     zone: selectedZone ? selectedZone.label : null,
+    // ТОЧНЫЕ координаты, куда клиент ткнул на карте — по ним курьер строит
+    // навигацию. Текстовый адрес Google геокодит сам и часто промахивается.
+    destLat: (deliveryMethod === 'delivery' ? selectedLat : null),
+    destLng: (deliveryMethod === 'delivery' ? selectedLng : null),
     commissionPaid: false,
     createdAt: now.toISOString(),
     date: now.toLocaleDateString('ru', { timeZone: 'Asia/Almaty' }),
@@ -2235,7 +2242,11 @@ async function submitOrder() {
 
   cart = []; updateCartUI();
   selectedLat = null; selectedLng = null; selectedAddress = ''; selectedZone = null;
-  if (deliveryMarker && deliveryMap) { deliveryMap.removeLayer(deliveryMarker); deliveryMarker = null; }
+  // ВАЖНО: инстанс Leaflet надо УНИЧТОЖИТЬ через .remove(), а не просто занулить —
+  // иначе контейнер остаётся «занят» и следующий L.map('deliveryMap') падает
+  // с "Map container is already initialized" → карта мертва до перезагрузки.
+  if (deliveryMap) { try { deliveryMap.remove(); } catch(e) {} }
+  deliveryMarker = null;
   mapInitialized = false; deliveryMap = null;
 }
 
