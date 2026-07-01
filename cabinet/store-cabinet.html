@@ -1979,36 +1979,32 @@ function deliveryBadge(s) {
 // Назначить курьера: берём с сервера одноразовую ссылку (токен) и пересылаем её
 // в WhatsApp вместе с описанием заказа. Курьер откроет ссылку — там заказ и кнопки статуса.
 // Работает и у владельца (пароль), и у продавца (sellerPin) — авторизация через orderAuthBody().
+// Назначить курьера: берём с сервера одноразовую ссылку (токен) и показываем
+// карточку со ссылкой + кнопкой «Открыть WhatsApp». Кнопка — обычная <a>,
+// открывается по тапу пользователя, поэтому браузер её никогда не блокирует.
+//
+// Раньше здесь заранее открывалось пустое окно (window.open('','_blank')) —
+// расчёт был обойти блокировку попапов после await. На практике это давало
+// белый/висящий about:blank, если что-то шло не так (ошибка сети, close()
+// не срабатывал в мобильном браузере). Открытие вкладки по клику на кнопку
+// внутри уже отрисованной карточки надёжнее и не имеет этих проблем.
 async function forwardCourier(id) {
   const o = findOrder(id);
   if (!o) return;
 
-  // повторное назначение делает прежнюю ссылку недействительной — предупреждаем
   if (o.courierToken && o.deliveryStatus && o.deliveryStatus !== 'delivered') {
     if (!confirm('Курьер уже назначен на этот заказ.\nСоздать НОВУЮ ссылку? Старая перестанет работать.')) return;
   }
 
-  // ВАЖНО: мобильный Chrome блокирует window.open, вызванный ПОСЛЕ await.
-  // Поэтому открываем вкладку СРАЗУ по тапу (пустую), а адрес подставим после ответа сервера.
-  let waWin = window.open('', '_blank');
-  // Пустая about:blank выглядит как "белый экран" и пугает — кладём туда текст-заглушку,
-  // пока ждём ответ сервера.
-  try {
-    waWin && waWin.document.write(
-      '<html><head><meta charset="utf-8"><title>Назначение курьера…</title></head>' +
-      '<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;' +
-      'background:#0d0d0d;color:#F2A900;font:600 15px system-ui,sans-serif;text-align:center;padding:20px">' +
-      'Создаём ссылку курьеру…<br>Сейчас откроется WhatsApp' +
-      '</body></html>'
-    );
-  } catch(_) {}
+  await assignCourierAndShow(id, o, /*isRetry*/ false);
+}
 
+async function assignCourierAndShow(id, o, isRetry) {
   try {
     const res = await fetch(`${SERVER_URL}/orders/${id}/assign-courier`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, ...orderAuthBody() }),
-      // Раньше тайм-аута не было вовсе — запрос мог висеть без ответа сколь угодно долго.
       signal: AbortSignal.timeout(20000),
     });
     const data = await res.json().catch(() => ({}));
@@ -2020,27 +2016,27 @@ async function forwardCourier(id) {
       `📍 ${o.address}\n` +
       `💰 ${o.orderTotal.toLocaleString()} ₸ (${pay})\n\n` +
       `🔗 Открой ссылку — заказ целиком и кнопки статуса:\n${data.url}`;
-
     const waUrl = 'https://wa.me/?text=' + encodeURIComponent(txt);
-    if (waWin && !waWin.closed) {
-      waWin.location.href = waUrl;               // подставляем адрес в заранее открытую вкладку
-    } else {
-      // попап всё же заблокирован — показываем ссылку курьера для ручной отправки
-      showCourierLinkFallback(o.id, data.url, waUrl);
+
+    showCourierLinkFallback(o.id, data.url, waUrl);
+    await loadOrders();
+  } catch (e) {
+    // Один автоматический повтор при явной сетевой ошибке/таймауте — реальные
+    // обрывы соединения на мобильной сети случаются, и часто второй попытки
+    // достаточно, чтобы не дёргать пользователя зря.
+    const isNetworkDown = e.name === 'TypeError' && /fetch/i.test(e.message || '');
+    const isTimeout = e.name === 'TimeoutError' || e.name === 'AbortError';
+    if (!isRetry && (isNetworkDown || isTimeout)) {
+      await new Promise(r => setTimeout(r, 800));
+      return assignCourierAndShow(id, o, /*isRetry*/ true);
     }
 
-    await loadOrders();   // подтянуть статус доставки в карточку
-  } catch (e) {
-    // не оставляем повисшую пустую/заглушечную вкладку при ошибке
-    try { if (waWin && !waWin.closed) waWin.close(); } catch(_) {}
-    const isNetworkDown = e.name === 'TypeError' && /fetch/i.test(e.message || '');
-    const msg = e.name === 'TimeoutError' || e.name === 'AbortError'
-      ? 'Сервер не ответил вовремя. Попробуйте ещё раз через несколько секунд.'
+    const msg = isTimeout
+      ? 'Сервер не ответил вовремя. Попробуйте ещё раз.'
       : isNetworkDown
         ? 'Нет связи с сервером доставки. Проверьте интернет-соединение.'
         : e.message; // напр. "Конфликт записи..." — реальная ошибка сервера, показываем как есть
     alert('Курьер: ' + msg);
-    // Заказ мог всё же назначиться на сервере, несмотря на ошибку у клиента — подтянём актуальное состояние.
     await loadOrders().catch(() => {});
   }
 }
